@@ -1972,7 +1972,7 @@ class GF_Gateway_IDPay
             'callback' => $ReturnPath,
         );
 
-        $ch = curl_init('https://api.idpay.ir/v1/payment');
+        $ch = curl_init('https://api.idpay.ir/v1.1/payment');
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
@@ -1987,7 +1987,7 @@ class GF_Gateway_IDPay
         curl_close($ch);
 
         if ($http_status != 201 || empty($result) || empty($result->id) || empty($result->link)) {
-            $Message = sprintf('خطا هنگام ایجاد تراکنش. کد خطا: %s', $http_status);
+            $Message = sprintf('خطا هنگام ایجاد تراکنش. وضعیت خطا: %s', $http_status);
         } else {
             return self::redirect_confirmation($result->link, $ajax);
         }
@@ -2086,56 +2086,66 @@ class GF_Gateway_IDPay
                     $Amount = GFPersian_Payments::amount($Amount, 'IRR', $form, $entry);
                 }
 
-                $pid = $_POST['id'];
-                $porder_id = $_POST['order_id'];
+                if ($_POST['status'] == 10) {
 
-                if (!empty($pid) && !empty($porder_id) && $porder_id == $entry_id) {
+	                $pid       = $_POST['id'];
+	                $porder_id = $_POST['order_id'];
 
-                    $data = array(
-                        'id' => $pid,
-                        'order_id' => $entry_id
-                    );
+	                if ( ! empty( $pid ) && ! empty( $porder_id ) && $porder_id == $entry_id ) {
 
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, 'https://api.idpay.ir/v1/payment/inquiry');
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                        'Content-Type: application/json',
-                        'X-API-KEY:' . self::get_api_key(),
-                        'X-SANDBOX:' . self::get_sandbox()
-                    ));
+		                $data = array(
+			                'id'       => $pid,
+			                'order_id' => $entry_id
+		                );
 
-                    $result = curl_exec($ch);
-                    $result = json_decode($result);
-                    $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    curl_close($ch);
-                    $__params = $Amount . $pid;
-                    if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
-                        return;
-                    }
-                    if ($http_status != 200) {
-                        $Message = sprintf('خطا هنگام بررسی وضعیت تراکنش. کد خطا: %s', $http_status);
-                        $Status = 'failed';
-                    } else {
-                        $inquiry_status = empty($result->status) ? NULL : $result->status;
-                        $inquiry_track_id = empty($result->track_id) ? NULL : $result->track_id;
-                        $inquiry_amount = empty($result->amount) ? NULL : $result->amount;
+		                $ch = curl_init();
+		                curl_setopt( $ch, CURLOPT_URL, 'https://api.idpay.ir/v1.1/payment/verify' );
+		                curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $data ) );
+		                curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+		                curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
+			                'Content-Type: application/json',
+			                'X-API-KEY:' . self::get_api_key(),
+			                'X-SANDBOX:' . self::get_sandbox()
+		                ) );
 
-                        $Transaction_ID = !empty($inquiry_track_id) ? $inquiry_track_id : '-';
+		                $result      = curl_exec( $ch );
+		                $result      = json_decode( $result );
+		                $http_status = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		                curl_close( $ch );
+		                $__params = $Amount . $pid;
+		                if ( GFPersian_Payments::check_verification( $entry, __CLASS__, $__params ) ) {
+			                return;
+		                }
+		                if ( $http_status != 200 ) {
+			                $Message = sprintf( 'خطا هنگام بررسی وضعیت تراکنش. وضعیت خطا: %s - کد خطا: %s - پیام خطا: %s', $http_status, $result->error_code, $result->error_message );
+			                $Status  = 'failed';
+		                } else {
+			                $verify_status   = empty( $result->status ) ? null : $result->status;
+			                $verify_track_id = empty( $result->track_id ) ? null : $result->track_id;
+			                $verify_amount   = empty( $result->amount ) ? null : $result->amount;
 
-                        if (empty($inquiry_status) || empty($inquiry_track_id) || empty($inquiry_amount) || $inquiry_amount != $Amount || $inquiry_status != 100) {
-                            $Message = $inquiry_status;
-                            $Status = 'failed';
-                        } else {
-                            $Message = '';
-                            $Status = 'completed';
-                        }
-                    }
-                } else {
-                    $Message = 'کاربر از انجام تراکنش منصرف شده است';
-                    $Status = 'cancelled';
+			                $Transaction_ID = ! empty( $verify_track_id ) ? $verify_track_id : '-';
+
+			                if ( empty( $verify_status ) || empty( $verify_track_id ) || empty( $verify_amount ) || $verify_amount != $Amount || $verify_status < 100 ) {
+				                $Message = $verify_status;
+				                $Status  = 'failed';
+			                } else {
+				                $Message = '';
+				                $Status  = 'completed';
+			                }
+		                }
+	                } else {
+		                $Message = 'کاربر از انجام تراکنش منصرف شده است';
+		                $Status  = 'cancelled';
+	                }
+
                 }
+                else {
+	                $Message = sprintf(' - وضعیت تراکنش:‌ %s', $_POST['status']);
+	                $Status  = 'failed';
+                }
+
+
             } else if ((!empty($_GET['no']) && $_GET['no'] == 'true')) {
                 $Status = 'completed';
                 $Message = '';
