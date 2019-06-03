@@ -1953,7 +1953,7 @@ class GF_Gateway_IDPay
         do_action('gf_gateway_request_2', $confirmation, $form, $entry, $ajax);
         do_action('gf_IDPay_request_2', $confirmation, $form, $entry, $ajax);
 
-        if (!$confirmation == 'custom') {
+        if ($confirmation !== 'custom') {
             $Amount = GFPersian_Payments::amount($Amount, 'IRR', $form, $entry);
         }
 
