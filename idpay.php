@@ -3,7 +3,7 @@
 Plugin Name: IDPay - Gravity Forms
 Plugin URI: http://idpay.ir/
 Description: درگاه IDPay برای Gravity Forms
-Version: 1.0.0
+Version: 1.0.1
 Author: Developer: JMDMahdi, Publisher: IDPay
 Author URI: http://idpay.ir/
 */
@@ -1025,7 +1025,8 @@ class GF_Gateway_IDPay
             $settings = array(
                 "gname" => rgpost('gf_IDPay_gname'),
                 "api_key" => rgpost('gf_IDPay_api_key'),
-                "sandbox" => rgpost('gf_IDPay_sandbox')
+                "sandbox" => rgpost('gf_IDPay_sandbox'),
+                'currency' => rgpost('gf_IDPay_currency'),
             );
             update_option("gf_IDPay_settings", array_map('sanitize_text_field', $settings));
             if (isset($_POST["gf_IDPay_configured"])) {
@@ -1102,6 +1103,23 @@ class GF_Gateway_IDPay
                                for="gf_IDPay_sandbox"><?php _e("بله", "gravityformsIDPay"); ?></label>
                     </td>
                 </tr>
+                <?php
+                $currency_type = '0';
+                if (sanitize_text_field(rgar($settings, 'currency'))) {
+                    $currency_type = sanitize_text_field($settings["currency"]);
+                }
+                ?>
+                <tr>
+                    <th scope="row"><label
+                                for="gf_IDPay_currency"><?php _e("نوع ارز", "gravityformsIDPay"); ?></label>
+                    </th>
+                    <td>
+                        <select style="width:350px;" name="gf_IDPay_currency">
+                            <option value="0" <?php echo $currency_type == '0' ? 'selected' : ''; ?>>ریال</option>
+                            <option value="1" <?php echo $currency_type == '1' ? 'selected' : ''; ?>>تومان</option>
+                        </select>
+                    </td>
+                </tr>
                 <tr>
                     <td colspan="2"><input style="font-family:tahoma !important;" type="submit"
                                            name="gf_IDPay_submit" class="button-primary"
@@ -1150,6 +1168,13 @@ class GF_Gateway_IDPay
         $settings = get_option("gf_IDPay_settings");
         $api_key = isset($settings["api_key"]) ? $settings["api_key"] : '';
         return trim($api_key);
+    }
+
+    private static function get_currency_type()
+    {
+        $settings = get_option('gf_IDPay_settings');
+        $currency_type = isset($settings['currency']) ? $settings['currency'] : '0';
+        return $currency_type;
     }
 
     private static function get_sandbox()
@@ -1959,6 +1984,7 @@ class GF_Gateway_IDPay
 
         $api_key = self::get_api_key();
         $sandbox = self::get_sandbox();
+        $currency_type = self::get_currency_type();
 
         if (empty($Amount) || !$Amount) {
             $Message = 'واحد پول انتخاب شده پشتیبانی نمی شود.';
@@ -1966,7 +1992,7 @@ class GF_Gateway_IDPay
 
         $data = array(
             'order_id' => $entry_id,
-            'amount' => $Amount,
+            'amount' => $currency_type === '1' ? floor($Amount / 10) : $Amount,
             'phone' => $Mobile,
             'desc' => $Description,
             'callback' => $ReturnPath,
