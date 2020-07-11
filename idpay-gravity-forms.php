@@ -1726,7 +1726,31 @@ class GF_Gateway_IDPay
         update_option('recently_activated', array($plugin => time()) + (array)get_option('recently_activated'));
     }
 
-    public static function Request($confirmation, $form, $entry, $ajax)
+	/**
+	 * Calls the gateway endpoints.
+	 *
+	 * Tries to get response from the gateway for 4 times.
+	 *
+	 * @param $url
+	 * @param $args
+	 *
+	 * @return array|\WP_Error
+	 */
+	private function call_gateway_endpoint( $url, $args ) {
+		$number_of_connection_tries = 4;
+		while ( $number_of_connection_tries ) {
+			$response = wp_safe_remote_post( $url, $args );
+			if ( is_wp_error( $response ) ) {
+				$number_of_connection_tries --;
+				continue;
+			} else {
+				break;
+			}
+		}
+		return $response;
+	}
+
+	public static function Request($confirmation, $form, $entry, $ajax)
     {
         do_action('gf_gateway_request_1', $confirmation, $form, $entry, $ajax);
         do_action('gf_IDPay_request_1', $confirmation, $form, $entry, $ajax);
@@ -1899,22 +1923,28 @@ class GF_Gateway_IDPay
             'desc' => $Description,
             'callback' => $ReturnPath,
         );
+		$headers = array(
+			'Content-Type' => 'application/json',
+			'X-API-KEY'    => $api_key,
+			'X-SANDBOX'    => $sandbox,
+		);
+		$args    = array(
+			'body'    => json_encode( $data ),
+			'headers' => $headers,
+			'timeout' => 15,
+		);
 
-        $ch = curl_init('https://api.idpay.ir/v1.1/payment');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'X-API-KEY:' . $api_key,
-            'X-SANDBOX:' . $sandbox,
-        ));
+		$response = self::call_gateway_endpoint( 'https://api.idpay.ir/v1.1/payment', $args );
 
-        $result = curl_exec($ch);
-        $result = json_decode($result);
-        $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+		$http_status = wp_remote_retrieve_response_code( $response );
+		$result      = wp_remote_retrieve_body( $response );
+		$result      = json_decode( $result );
 
-        if ($http_status != 201 || empty($result) || empty($result->id) || empty($result->link)) {
+		if ( is_wp_error( $response ) ) {
+			$error = $response->get_error_message();
+			$Message = sprintf(__('خطا هنگام ایجاد تراکنش. پیام خطا: %s', 'gravityformsIDPay'), $error);
+		}
+        else if ($http_status != 201 || empty($result) || empty($result->id) || empty($result->link)) {
             $Message = sprintf('خطا هنگام ایجاد تراکنش. وضعیت خطا: %s', $http_status);
         } else {
             return self::redirect_confirmation($result->link, $ajax);
@@ -2090,23 +2120,29 @@ class GF_Gateway_IDPay
                             'id' => $pid,
                             'order_id' => $entry_id
                         );
+						$headers = array(
+							'Content-Type' => 'application/json',
+							'X-API-KEY'    => self::get_api_key(),
+							'X-SANDBOX'    => self::get_sandbox()
+						);
+						$args    = array(
+							'body'    => json_encode( $data ),
+							'headers' => $headers,
+							'timeout' => 15,
+						);
 
-                        $ch = curl_init();
-                        curl_setopt($ch, CURLOPT_URL, 'https://api.idpay.ir/v1.1/payment/verify');
-                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-                            'Content-Type: application/json',
-                            'X-API-KEY:' . self::get_api_key(),
-                            'X-SANDBOX:' . self::get_sandbox()
-                        ));
+						$response = self::call_gateway_endpoint( 'https://api.idpay.ir/v1.1/payment/verify', $args );
 
-                        $result = curl_exec($ch);
-                        $result = json_decode($result);
+						$http_status = wp_remote_retrieve_response_code( $response );
+						$result      = wp_remote_retrieve_body( $response );
+						$result      = json_decode( $result );
 
+						if ( is_wp_error( $response ) ) {
+							$error = $response->get_error_message();
+//							$Message = sprintf(__('خطا هنگام تایید تراکنش. پیام خطا: %s', 'gravityformsIDPay'), $error);
+							$Status = 'Failed';
+						}
 
-                        $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                        curl_close($ch);
                         $__params = $Amount . $pid;
                         if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
                             return;
