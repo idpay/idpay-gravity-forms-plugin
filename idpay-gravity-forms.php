@@ -2053,8 +2053,8 @@ class GF_Gateway_IDPay
             return;
         }
 
-        $form_id = $_GET['id'];
-        $entry_id = $_GET['entry'];
+        $form_id = !empty($_GET['id']) ? $_GET['id'] : null;
+		$entry_id = !empty($_GET['entry']) ? $_GET['entry'] : null;
 
         $entry = GFPersian_Payments::get_entry($entry_id);
 
@@ -2111,8 +2111,8 @@ class GF_Gateway_IDPay
                 }
 
                 if ($_POST['status'] == 10) {
-                    $pid = $_POST['id'];
-                    $porder_id = $_POST['order_id'];
+                    $pid = !empty($_POST['id']) ? $_POST['id'] : null;
+					$porder_id = !empty($_POST['order_id']) ? $_POST['order_id'] : null;
 
                     if (!empty($pid) && !empty($porder_id) && $porder_id == $entry_id) {
 
@@ -2192,6 +2192,7 @@ class GF_Gateway_IDPay
             $entry["payment_date"] = gmdate("Y-m-d H:i:s");
             $entry["transaction_id"] = $transaction_id;
             $entry["transaction_type"] = $transaction_type;
+			$status_code = !empty($_POST['status']) ? $_POST['status'] : 0;
             if ($Status == 'completed') {
                 $entry["is_fulfilled"] = 1;
                 $entry["payment_amount"] = $Total;
@@ -2280,7 +2281,7 @@ class GF_Gateway_IDPay
                 $entry["is_fulfilled"] = 0;
                 GFAPI::update_entry($entry);
 
-                $Note = sprintf(__(' وضعیت پرداخت :%s - مبلغ قابل پرداخت : %s -  کد خطا: %s', "gravityformsIDPay"), self::getStatus($_POST['status']), $Total_Money,  $_POST['status']);
+                $Note = sprintf(__(' وضعیت پرداخت :%s - مبلغ قابل پرداخت : %s -  کد خطا: %s', "gravityformsIDPay"), self::getStatus($status_code), $Total_Money,  $status_code);
 
             } else {
                 $entry["payment_status"] = "Failed";
@@ -2288,7 +2289,7 @@ class GF_Gateway_IDPay
                 $entry["is_fulfilled"] = 0;
                 GFAPI::update_entry($entry);
 
-                $Note = sprintf(__('وضعیت پرداخت : %s - مبلغ قابل پرداخت : %s - کد خطا : %s', "gravityformsIDPay"), self::getStatus($_POST['status']), $Total_Money,  $_POST['status']);
+                $Note = sprintf(__('وضعیت پرداخت : %s - مبلغ قابل پرداخت : %s - کد خطا : %s', "gravityformsIDPay"), self::getStatus($status_code), $Total_Money,  $status_code);
 
             }
 
@@ -2365,9 +2366,11 @@ class GF_Gateway_IDPay
             case 101:
                 return 'پرداخت قبلا تایید شده است';
                 break;
-
             case 200:
                 return 'به دریافت کننده واریز شد';
+                break;
+            default :
+                return 'خطای ناشناخته';
                 break;
         }
     }
