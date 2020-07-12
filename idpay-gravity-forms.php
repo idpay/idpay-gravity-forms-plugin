@@ -1464,7 +1464,6 @@ class GF_Gateway_IDPay
 
     public static function get_order_total($form, $entry)
     {
-
         $total = GFCommon::get_order_total($form, $entry);
         $total = (!empty($total) && $total > 0) ? $total : 0;
 
@@ -1589,7 +1588,6 @@ class GF_Gateway_IDPay
                 "gname" => rgpost('gf_IDPay_gname'),
                 "api_key" => rgpost('gf_IDPay_api_key'),
                 "sandbox" => rgpost('gf_IDPay_sandbox'),
-                'currency' => rgpost('gf_IDPay_currency'),
             );
             update_option("gf_IDPay_settings", array_map('sanitize_text_field', $settings));
             if (isset($_POST["gf_IDPay_configured"])) {
@@ -1664,22 +1662,6 @@ class GF_Gateway_IDPay
                                id="gf_IDPay_sandbox" <?php echo rgar($settings, 'sandbox') ? "checked='checked'" : "" ?>/>
                         <label class="inline"
                                for="gf_IDPay_sandbox"><?php _e("بله", "gravityformsIDPay"); ?></label>
-                    </td>
-                </tr>
-                <?php
-                $currency_type = '0';
-                if (sanitize_text_field(rgar($settings, 'currency'))) {
-                    $currency_type = sanitize_text_field($settings["currency"]);
-                }
-                ?>
-                <tr>
-                    <th scope="row"><label for="gf_IDPay_currency"><?php _e("نوع ارز", "gravityformsIDPay"); ?></label>
-                    </th>
-                    <td>
-                        <select style="width:350px;" name="gf_IDPay_currency">
-                            <option value="0" <?php echo $currency_type == '0' ? 'selected' : ''; ?>>ریال</option>
-                            <option value="1" <?php echo $currency_type == '1' ? 'selected' : ''; ?>>تومان</option>
-                        </select>
                     </td>
                 </tr>
                 <tr>
@@ -1759,15 +1741,6 @@ class GF_Gateway_IDPay
             return $confirmation;
         }
 
-        global $current_user;
-        $user_id = 0;
-        $user_name = __('مهمان', 'gravityformsIDPay');
-
-        if ($current_user && $user_data = get_userdata($current_user->ID)) {
-            $user_id = $current_user->ID;
-            $user_name = $user_data->display_name;
-        }
-
         $entry_id = $entry['id'];
 
         if ($confirmation != 'custom') {
@@ -1781,19 +1754,11 @@ class GF_Gateway_IDPay
                 return $confirmation;
             }
 
-            gform_update_meta($entry['id'], 'IDPay_feed_id', $config['id']);
-            gform_update_meta($entry['id'], 'payment_type', 'form');
-            gform_update_meta($entry['id'], 'payment_gateway', self::get_gname());
+            gform_update_meta($entry_id, 'IDPay_feed_id', $config['id']);
+            gform_update_meta($entry_id, 'payment_type', 'form');
+            gform_update_meta($entry_id, 'payment_gateway', self::get_gname());
 
-            switch ($config["meta"]["type"]) {
-                case "subscription" :
-                    $transaction_type = 2;
-                    break;
-
-                default :
-                    $transaction_type = 1;
-                    break;
-            }
+			$transaction_type = "subscription" == $config["meta"]["type"] ? 2 : 1;
 
             if (GFCommon::has_post_field($form["fields"])) {
                 if (!empty($config["meta"]["update_post_action2"])) {
@@ -1817,44 +1782,30 @@ class GF_Gateway_IDPay
             $Amount = apply_filters(self::$author . "_gform_IDPay_price_{$form['id']}", apply_filters(self::$author . "_gform_IDPay_price", $Amount, $form, $entry), $form, $entry);
 
             if (empty($Amount) || !$Amount || $Amount == 0) {
-                unset($entry["payment_status"], $entry["payment_method"], $entry["is_fulfilled"], $entry["transaction_type"], $entry["payment_amount"], $entry["payment_date"]);
+                unset($entry["payment_status"], $entry["is_fulfilled"], $entry["transaction_type"], $entry["payment_amount"], $entry["payment_date"]);
                 $entry["payment_method"] = "IDPay";
                 GFAPI::update_entry($entry);
 
                 return self::redirect_confirmation(add_query_arg(array('no' => 'true'), self::Return_URL($form['id'], $entry['id'])), $ajax);
             } else {
-
                 $Desc1 = '';
                 if (!empty($config["meta"]["desc_pm"])) {
-                    $Desc1 = str_replace(array('{entry_id}', '{form_title}', '{form_id}'), array(
-                        $entry['id'],
-                        $form['title'],
-                        $form['id']
-                    ), $config["meta"]["desc_pm"]);
+                    $Desc1 = str_replace(
+                        array('{entry_id}', '{form_title}', '{form_id}'),
+                        array($entry['id'], $form['title'], $form['id']),
+                        $config["meta"]["desc_pm"]);
                 }
                 $Desc2 = '';
-                if (rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_desc"]))) {
+                if (!empty($config["meta"]["customer_fields_desc"])) {
                     $Desc2 = rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_desc"]));
                 }
-
-                if (!empty($Desc1) && !empty($Desc2)) {
-                    $Description = $Desc1 . ' - ' . $Desc2;
-                } else if (!empty($Desc1) && empty($Desc2)) {
-                    $Description = $Desc1;
-                } else if (!empty($Desc2) && empty($Desc1)) {
-                    $Description = $Desc2;
-                } else {
-                    $Description = ' ';
-                }
-                $Description = sanitize_text_field($Description);
+                $Description = sanitize_text_field($Desc1 . (!empty($Desc1) && !empty($Desc2)? ' - ' : '') . $Desc2 . ' ');
 
                 $Mobile = '';
-                if (rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_mobile"]))) {
+				if (!empty($config["meta"]["customer_fields_mobile"])) {
                     $Mobile = sanitize_text_field(rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_mobile"])));
                 }
-
             }
-
         } else {
             $Amount = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_price_' . $form['id']);
             $Amount = apply_filters(self::$author . "_gform_custom_gateway_price_{$form['id']}", apply_filters(self::$author . "_gform_custom_gateway_price", $Amount, $form, $entry), $form, $entry);
@@ -1878,9 +1829,6 @@ class GF_Gateway_IDPay
             gform_update_meta($entry_id, 'payment_type', 'custom');
         }
 
-        unset($entry["payment_status"]);
-        unset($entry["payment_method"]);
-        unset($entry["is_fulfilled"]);
         unset($entry["transaction_type"]);
         unset($entry["payment_amount"]);
         unset($entry["payment_date"]);
@@ -1894,82 +1842,84 @@ class GF_Gateway_IDPay
         }
         GFAPI::update_entry($entry);
         $entry = GFPersian_Payments::get_entry($entry_id);
-
-
         $ReturnPath = self::Return_URL($form['id'], $entry_id);
-        $ResNumber = apply_filters('gf_IDPay_res_number', apply_filters('gf_gateway_res_number', $entry_id, $entry, $form), $entry, $form);
-
         $Mobile = GFPersian_Payments::fix_mobile($Mobile);
 
         do_action('gf_gateway_request_2', $confirmation, $form, $entry, $ajax);
         do_action('gf_IDPay_request_2', $confirmation, $form, $entry, $ajax);
 
-        if ($confirmation !== 'custom') {
-            $Amount = GFPersian_Payments::amount($Amount, 'IRR', $form, $entry);
+		$Amount = GFPersian_Payments::amount($Amount, 'IRR', $form, $entry);
+		if (empty($Amount) || !$Amount || $Amount > 500000000 || $Amount < 1000) {
+            $Message = __('مبلغ ارسالی اشتباه است.', 'gravityformsIDPay');
         }
+		else {
+			$data = array(
+				'order_id' => $entry_id,
+				'amount' => $Amount,
+				'phone' => $Mobile,
+				'desc' => $Description,
+				'callback' => $ReturnPath,
+			);
+			$headers = array(
+				'Content-Type' => 'application/json',
+				'X-API-KEY'    => self::get_api_key(),
+				'X-SANDBOX'    => self::get_sandbox(),
+			);
+			$args    = array(
+				'body'    => json_encode( $data ),
+				'headers' => $headers,
+				'timeout' => 15,
+			);
 
-        $api_key = self::get_api_key();
-        $sandbox = self::get_sandbox();
-        $currency_type = self::get_currency_type();
+			$response = self::call_gateway_endpoint( 'https://api.idpay.ir/v1.1/payment', $args );
+			$http_status = wp_remote_retrieve_response_code( $response );
+			$result      = wp_remote_retrieve_body( $response );
+			$result      = json_decode( $result );
 
-        if (empty($Amount) || !$Amount) {
-            $Message = 'واحد پول انتخاب شده پشتیبانی نمی شود.';
-        }
-
-        $data = array(
-            'order_id' => $entry_id,
-            'amount' => $Amount,
-            'phone' => $Mobile,
-            'desc' => $Description,
-            'callback' => $ReturnPath,
-        );
-		$headers = array(
-			'Content-Type' => 'application/json',
-			'X-API-KEY'    => $api_key,
-			'X-SANDBOX'    => $sandbox,
-		);
-		$args    = array(
-			'body'    => json_encode( $data ),
-			'headers' => $headers,
-			'timeout' => 15,
-		);
-
-		$response = self::call_gateway_endpoint( 'https://api.idpay.ir/v1.1/payment', $args );
-
-		$http_status = wp_remote_retrieve_response_code( $response );
-		$result      = wp_remote_retrieve_body( $response );
-		$result      = json_decode( $result );
-
-		if ( is_wp_error( $response ) ) {
-			$error = $response->get_error_message();
-			$Message = sprintf(__('خطا هنگام ایجاد تراکنش. پیام خطا: %s', 'gravityformsIDPay'), $error);
+			if ( is_wp_error( $response ) ) {
+				$error = $response->get_error_message();
+				$Message = sprintf(__('خطا هنگام ایجاد تراکنش. پیام خطا: %s', 'gravityformsIDPay'), $error);
+			}
+			else if ($http_status != 201 || empty($result) || empty($result->id) || empty($result->link)) {
+				$Message = sprintf('خطا هنگام ایجاد تراکنش. : %s (کد خطا: %s)', $result->error_message, $result->error_code);
+			} else {
+				return self::redirect_confirmation($result->link, $ajax);
+			}
 		}
-        else if ($http_status != 201 || empty($result) || empty($result->id) || empty($result->link)) {
-            $Message = sprintf('خطا هنگام ایجاد تراکنش. وضعیت خطا: %s', $http_status);
-        } else {
-            return self::redirect_confirmation($result->link, $ajax);
-        }
 
         $Message = !empty($Message) ? $Message : __('خطایی رخ داده است.', 'gravityformsIDPay');
-
         $confirmation = __('متاسفانه نمیتوانیم به درگاه متصل شویم. علت : ', 'gravityformsIDPay') . $Message;
 
         $entry = GFPersian_Payments::get_entry($entry_id);
         $entry['payment_status'] = 'Failed';
         GFAPI::update_entry($entry);
 
-        RGFormsModel::add_note($entry_id, $user_id, $user_name, sprintf(__('خطا در اتصال به درگاه رخ داده است : %s', "gravityformsIDPay"), $Message));
+		global $current_user;
+		$user_id = 0;
+		$user_name = __('مهمان', 'gravityformsIDPay');
+		if ($current_user && $user_data = get_userdata($current_user->ID)) {
+			$user_id = $current_user->ID;
+			$user_name = $user_data->display_name;
+		}
 
-        if ($confirmation != 'custom') {
-            GFPersian_Payments::notification($form, $entry);
-        }
+		RGFormsModel::add_note($entry_id, $user_id, $user_name, sprintf(__('خطا در اتصال به درگاه رخ داده است : %s', "gravityformsIDPay"), $Message));
+		GFPersian_Payments::notification($form, $entry);
 
-        $default_anchor = 0;
-        $anchor = gf_apply_filters('gform_confirmation_anchor', $form['id'], $default_anchor) ? "<a id='gf_{$form['id']}' name='gf_{$form['id']}' class='gform_anchor' ></a>" : '';
+        $anchor = gf_apply_filters('gform_confirmation_anchor', $form['id'], 0) ? "<a id='gf_{$form['id']}' name='gf_{$form['id']}' class='gform_anchor' ></a>" : '';
         $nl2br = !empty($form['confirmation']) && rgar($form['confirmation'], 'disableAutoformat') ? false : true;
         $cssClass = rgar($form, 'cssClass');
 
-        return $confirmation = empty($confirmation) ? "{$anchor} " : "{$anchor}<div id='gform_confirmation_wrapper_{$form['id']}' class='gform_confirmation_wrapper {$cssClass}'><div id='gform_confirmation_message_{$form['id']}' class='gform_confirmation_message_{$form['id']} gform_confirmation_message'>" . GFCommon::replace_variables($confirmation, $form, $entry, false, true, $nl2br) . '</div></div>';
+		$output = "{$anchor} ";
+        if(!empty($confirmation)){
+			$output .= "
+                <div id='gform_confirmation_wrapper_{$form['id']}' class='gform_confirmation_wrapper {$cssClass}'>
+                    <div id='gform_confirmation_message_{$form['id']}' class='gform_confirmation_message_{$form['id']} gform_confirmation_message'>" .
+                        GFCommon::replace_variables($confirmation, $form, $entry, false, true, $nl2br) .
+                    '</div>
+                </div>';
+        }
+		$confirmation = $output;
+        return $confirmation;
     }
 
     public static function get_gname()
@@ -2032,13 +1982,6 @@ class GF_Gateway_IDPay
         return $settings["sandbox"] ? "true" : "false";
     }
 
-    private static function get_currency_type()
-    {
-        $settings = get_option('gf_IDPay_settings');
-        $currency_type = isset($settings['currency']) ? $settings['currency'] : '0';
-        return $currency_type;
-    }
-
     public static function Verify()
     {
         if (apply_filters('gf_gateway_IDPay_return', apply_filters('gf_gateway_verify_return', false))) {
@@ -2069,6 +2012,10 @@ class GF_Gateway_IDPay
             $payment_type = gform_get_meta($entry["id"], 'payment_type');
             gform_delete_meta($entry['id'], 'payment_type');
 
+			if (!empty($entry["payment_date"])) {
+				return;
+			}
+
             if ($payment_type != 'custom') {
                 $config = self::get_config_by_entry($entry);
                 if (empty($config)) {
@@ -2076,11 +2023,6 @@ class GF_Gateway_IDPay
                 }
             } else {
                 $config = apply_filters(self::$author . '_gf_IDPay_config', apply_filters(self::$author . '_gf_gateway_config', array(), $form, $entry), $form, $entry);
-            }
-
-
-            if (!empty($entry["payment_date"])) {
-                return;
             }
 
             global $current_user;
@@ -2100,15 +2042,12 @@ class GF_Gateway_IDPay
                 $Amount = $Total = gform_get_meta($entry["id"], 'IDPay_part_price_' . $form_id);
             } else {
                 $Amount = $Total = self::get_order_total($form, $entry);
+				$Amount = GFPersian_Payments::amount($Amount, 'IRR', $form, $entry);
             }
             $Total_Money = GFCommon::to_money($Total, $entry["currency"]);
 
             $free = false;
             if ((empty($_GET['no']) || $_GET['no'] != 'true') && (!empty($_POST['id']) && !empty($_POST['order_id']))) {
-
-                if ($payment_type != 'custom') {
-                    $Amount = GFPersian_Payments::amount($Amount, 'IRR', $form, $entry);
-                }
 
                 if ($_POST['status'] == 10) {
                     $pid = !empty($_POST['id']) ? $_POST['id'] : null;
@@ -2116,6 +2055,10 @@ class GF_Gateway_IDPay
 
                     if (!empty($pid) && !empty($porder_id) && $porder_id == $entry_id) {
 
+						$__params = $Amount . $pid;
+						if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
+							return;
+						}
                         $data = array(
                             'id' => $pid,
                             'order_id' => $entry_id
@@ -2130,24 +2073,13 @@ class GF_Gateway_IDPay
 							'headers' => $headers,
 							'timeout' => 15,
 						);
-
 						$response = self::call_gateway_endpoint( 'https://api.idpay.ir/v1.1/payment/verify', $args );
 
 						$http_status = wp_remote_retrieve_response_code( $response );
 						$result      = wp_remote_retrieve_body( $response );
 						$result      = json_decode( $result );
 
-						if ( is_wp_error( $response ) ) {
-							$error = $response->get_error_message();
-//							$Message = sprintf(__('خطا هنگام تایید تراکنش. پیام خطا: %s', 'gravityformsIDPay'), $error);
-							$Status = 'Failed';
-						}
-
-                        $__params = $Amount . $pid;
-                        if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
-                            return;
-                        }
-                        if ($http_status != 200) {
+						if ( is_wp_error( $response ) || $http_status != 200) {
                             $Status = 'Failed';
                         } else {
                             $verify_status = empty($result->status) ? null : $result->status;
@@ -2156,16 +2088,8 @@ class GF_Gateway_IDPay
 
                             $Transaction_ID = !empty($verify_track_id) ? $verify_track_id : '-';
 
-                            if (empty($verify_status) || empty($verify_track_id) || empty($verify_amount) || $verify_amount != $Amount) {
-                                if ($verify_status == 100) {
-
-                                    $Status = 'completed';
-
-
-                                } else {
-                                    $Status = 'Failed';
-                                }
-
+                            if (empty($verify_status) || $verify_status != 100 || empty($verify_track_id) || empty($verify_amount) || $verify_amount != $Amount) {
+                                $Status = 'Failed';
                             } else {
                                 $Status = 'completed';
                             }
@@ -2211,9 +2135,7 @@ class GF_Gateway_IDPay
                     gform_delete_meta($entry['id'], 'payment_gateway');
                     $Note = sprintf(__('وضعیت پرداخت : رایگان - بدون نیاز به درگاه پرداخت', "gravityformsIDPay"));
                 } else {
-
                     $Note = sprintf(__(' وضعیت تراکنش: %s - کد تراکنش: %s - شماره کارت: %s شماره کارت هش شده:%s', "gravityformsIDPay"), self::getStatus($result->status), $result->status, $result->payment->card_no, $result->payment->hashed_card_no);
-
                 }
 
                 GFAPI::update_entry($entry);
@@ -2302,7 +2224,6 @@ class GF_Gateway_IDPay
             if (apply_filters(self::$author . '_gf_IDPay_verify', apply_filters(self::$author . '_gf_gateway_verify', ($payment_type != 'custom'), $form, $entry), $form, $entry)) {
 
                 foreach ($form['confirmations'] as $key => $value) {
-
                     $form['confirmations'][$key]['message'] =self::_payment_entry_detail( $Note,$Status);
                 }
 
