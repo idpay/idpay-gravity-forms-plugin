@@ -1128,7 +1128,7 @@ class GF_Gateway_IDPay
                 gform_delete_meta($entry['id'], 'payment_gateway');
                 $message = $Note = sprintf(__('وضعیت پرداخت : رایگان - بدون نیاز به درگاه پرداخت', "gravityformsIDPay"));
             } else {
-                $message = sprintf(__(' پرداخت موفق. کد رهگیری: %s', "gravityformsIDPay"), $result->track_id);
+                $message = sprintf(__(' پرداخت شما با موفقیت انجام شد. شماره سفارش: %s - کد رهگیری: %s', "gravityformsIDPay"), $result->order_id, $result->track_id);
                 $Note = sprintf(__(' وضعیت تراکنش: %s - کد رهگیری: %s - شماره کارت: %s شماره کارت هش شده:%s', "gravityformsIDPay"), self::getStatus($result->status), $result->track_id, $result->payment->card_no, $result->payment->hashed_card_no);
             }
 
