@@ -1,5 +1,5 @@
 === IDPay Payment Gateway for Gravity Forms ===
-Contributors: jmdmahdi, vispa
+Contributors: jmdmahdi, vispa, meysamrazmi
 Tags: gravityforms, gravity-forms, payment, idpay, gateway, آیدی پی
 Stable tag: 1.0.0
 Tested up to: 5.2
