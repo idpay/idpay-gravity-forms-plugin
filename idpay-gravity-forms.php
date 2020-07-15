@@ -432,7 +432,7 @@ class GF_Gateway_IDPay
         check_ajax_referer('gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active');
         $id = absint(rgpost('feed_id'));
         $feed = IDPay_DB::get_feed($id);
-        IDPay_DB::update_feed($id, $feed["form_id"], rgpost( "is_active" ), $feed["meta"]);
+        IDPay_DB::update_feed($id, $feed["form_id"], sanitize_text_field(rgpost( "is_active" )), $feed["meta"]);
     }
 
     public static function payment_entry_detail($form_id, $entry)
@@ -606,14 +606,14 @@ class GF_Gateway_IDPay
             return;
         }
 
-        $payment_status = rgpost("payment_status");
+        $payment_status = sanitize_text_field(rgpost("payment_status"));
         if (empty($payment_status)) {
             $payment_status = rgar($entry, "payment_status");
         }
 
-        $payment_amount = rgpost("payment_amount");
-        $payment_transaction = rgpost("IDPay_transaction_id");
-        $payment_date_Checker = $payment_date = rgpost("payment_date");
+        $payment_amount         = sanitize_text_field( rgpost("payment_amount") );
+        $payment_transaction    = sanitize_text_field( rgpost("IDPay_transaction_id") );
+        $payment_date_Checker   = $payment_date = sanitize_text_field( rgpost("payment_date") );
 
         list($date, $time) = explode(" ", $payment_date);
         list($Y, $m, $d) = explode("-", $date);
@@ -995,8 +995,8 @@ class GF_Gateway_IDPay
             return;
         }
 
-        $form_id    = regget('id');
-        $entry_id   = regget('entry');
+        $form_id    = (int) sanitize_text_field(regget('id'));
+        $entry_id   = (int) sanitize_text_field(regget('entry'));
         $entry      = GFPersian_Payments::get_entry($entry_id);
 
         if (is_wp_error($entry) || !empty($entry["payment_date"])
