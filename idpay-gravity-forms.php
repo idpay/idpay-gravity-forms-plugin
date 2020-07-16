@@ -432,7 +432,7 @@ class GF_Gateway_IDPay
         check_ajax_referer('gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active');
         $id = absint(rgpost('feed_id'));
         $feed = IDPay_DB::get_feed($id);
-        IDPay_DB::update_feed($id, $feed["form_id"], $_POST["is_active"], $feed["meta"]);
+        IDPay_DB::update_feed($id, $feed["form_id"], sanitize_text_field(rgpost( "is_active" )), $feed["meta"]);
     }
 
     public static function payment_entry_detail($form_id, $entry)
@@ -606,14 +606,14 @@ class GF_Gateway_IDPay
             return;
         }
 
-        $payment_status = rgpost("payment_status");
+        $payment_status = sanitize_text_field(rgpost("payment_status"));
         if (empty($payment_status)) {
             $payment_status = rgar($entry, "payment_status");
         }
 
-        $payment_amount = rgpost("payment_amount");
-        $payment_transaction = rgpost("IDPay_transaction_id");
-        $payment_date_Checker = $payment_date = rgpost("payment_date");
+        $payment_amount         = sanitize_text_field( rgpost("payment_amount") );
+        $payment_transaction    = sanitize_text_field( rgpost("IDPay_transaction_id") );
+        $payment_date_Checker   = $payment_date = sanitize_text_field( rgpost("payment_date") );
 
         list($date, $time) = explode(" ", $payment_date);
         list($Y, $m, $d) = explode("-", $date);
@@ -991,12 +991,12 @@ class GF_Gateway_IDPay
         if (!self::is_gravityforms_supported()) {
             return;
         }
-        if (empty($_GET['id']) || empty($_GET['entry']) || !is_numeric(rgget('id')) || !is_numeric(rgget('entry'))) {
+        if (!is_numeric(rgget('id')) || !is_numeric(rgget('entry'))) {
             return;
         }
 
-        $form_id    = !empty($_GET['id']) ? $_GET['id'] : null;
-        $entry_id   = !empty($_GET['entry']) ? $_GET['entry'] : null;
+        $form_id    = (int) sanitize_text_field(regget('id'));
+        $entry_id   = (int) sanitize_text_field(regget('entry'));
         $entry      = GFPersian_Payments::get_entry($entry_id);
 
         if (is_wp_error($entry) || !empty($entry["payment_date"])
@@ -1040,17 +1040,17 @@ class GF_Gateway_IDPay
         $Total_Money = GFCommon::to_money($Total, $entry["currency"]);
 
         $free = false;
-        if (!empty($_GET['no']) && $_GET['no'] == 'true') {
+        if (sanitize_text_field(regget('no')) == 'true') {
             $Status         = 'completed';
             $free           = true;
             $Transaction_ID = apply_filters(self::$author . '_gf_rand_transaction_id', GFPersian_Payments::transaction_id($entry), $form, $entry);
         }
 
-        if (!$free && (!empty($_POST['id']) && !empty($_POST['order_id']))) {
+        if (!$free && ( !empty(rgpost( 'id') ) && !empty(regpost('order_id')) ) ) {
 
-            if ($_POST['status'] == 10) {
-                $pid        = !empty($_POST['id']) ? $_POST['id'] : null;
-                $porder_id  = !empty($_POST['order_id']) ? $_POST['order_id'] : null;
+            if ( regpost('status') == 10 ) {
+                $pid        = sanitize_text_field( rgpost( 'id' ) );
+                $porder_id  = sanitize_text_field( rgpost( 'order_id' ) );
 
                 if (!empty($pid) && !empty($porder_id) && $porder_id == $entry_id) {
 
@@ -1108,7 +1108,7 @@ class GF_Gateway_IDPay
         $entry["payment_date"]      = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]    = $transaction_id;
         $entry["transaction_type"]  = $transaction_type;
-        $status_code                = !empty($_POST['status']) ? $_POST['status'] : 0;
+        $status_code                = sanitize_text_field( rgpost( 'status' ) );
 
         if ($Status == 'completed') {
             $entry["is_fulfilled"]   = 1;
