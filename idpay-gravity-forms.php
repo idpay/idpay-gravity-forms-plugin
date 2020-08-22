@@ -995,8 +995,8 @@ class GF_Gateway_IDPay
             return;
         }
 
-        $form_id    = (int) sanitize_text_field(regget('id'));
-        $entry_id   = (int) sanitize_text_field(regget('entry'));
+        $form_id    = (int) sanitize_text_field(rgget('id'));
+        $entry_id   = (int) sanitize_text_field(rgget('entry'));
         $entry      = GFPersian_Payments::get_entry($entry_id);
 
         if (is_wp_error($entry) || !empty($entry["payment_date"])
@@ -1040,15 +1040,15 @@ class GF_Gateway_IDPay
         $Total_Money = GFCommon::to_money($Total, $entry["currency"]);
 
         $free = false;
-        if (sanitize_text_field(regget('no')) == 'true') {
+        if (sanitize_text_field(rgget('no')) == 'true') {
             $Status         = 'completed';
             $free           = true;
             $Transaction_ID = apply_filters(self::$author . '_gf_rand_transaction_id', GFPersian_Payments::transaction_id($entry), $form, $entry);
         }
 
-        if (!$free && ( !empty(rgpost( 'id') ) && !empty(regpost('order_id')) ) ) {
+        if (!$free && ( !empty(rgpost( 'id') ) && !empty(rgpost('order_id')) ) ) {
 
-            if ( regpost('status') == 10 ) {
+            if ( rgpost('status') == 10 ) {
                 $pid        = sanitize_text_field( rgpost( 'id' ) );
                 $porder_id  = sanitize_text_field( rgpost( 'order_id' ) );
 
