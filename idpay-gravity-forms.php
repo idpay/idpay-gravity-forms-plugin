@@ -4,7 +4,7 @@
  * Plugin Name: IDPay gateway - Gravity Forms
  * Author: IDPay
  * Description: <a href="https://idpay.ir">IDPay</a> secure payment gateway for Gravity Forms.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
@@ -21,7 +21,7 @@ require_once('lib/IDPay_Chart.php');
 class GF_Gateway_IDPay
 {
     public static $author = "IDPay";
-    private static $version = "1.0.1";
+    private static $version = "1.0.2";
     private static $min_gravityforms_version = "1.9.10";
     private static $config = null;
 
@@ -86,16 +86,31 @@ class GF_Gateway_IDPay
     }
 
     public static function alter_submit_button($button_input, $form){
-        $button_input .= sprintf(
-            '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;"><img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
-            $form['id'], plugins_url( '/assets/logo.svg', __FILE__ ), __( 'پرداخت امن با آیدی پی', 'gravityformsIDPay' )
-        );
-        $button_input .=
-            "<script>
+        $has_product = false;
+        if (isset($form["fields"])) {
+            foreach ($form["fields"] as $field) {
+                $shipping_field = GFAPI::get_fields_by_type($form, array('shipping'));
+                if ($field["type"] == "product" || !empty($shipping_field)) {
+                    $has_product = true;
+                    break;
+                }
+            }
+        }
+
+        $config = self::get_active_config($form);
+
+        if ($has_product && !empty($config)) {
+            $button_input .= sprintf(
+                '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;"><img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
+                $form['id'], plugins_url( '/assets/logo.svg', __FILE__ ), __( 'پرداخت امن با آیدی پی', 'gravityformsIDPay' )
+            );
+            $button_input .=
+                "<script>
                 gform.addAction('gform_post_conditional_logic_field_action', function (formId, action, targetId, defaultValues, isInit) {
                     gf_do_action(action, '#idpay-pay-id-'+ formId, true, defaultValues, isInit, null, formId);
                 });
             </script>";
+        }
 
         return $button_input;
     }
@@ -741,7 +756,6 @@ class GF_Gateway_IDPay
         if (apply_filters('gf_IDPay_request_return', apply_filters('gf_gateway_request_return', false, $confirmation, $form, $entry, $ajax), $confirmation, $form, $entry, $ajax)) {
             return $confirmation;
         }
-
         $entry_id = $entry['id'];
 
         if ($confirmation != 'custom') {
@@ -807,7 +821,8 @@ class GF_Gateway_IDPay
                     $Mobile = sanitize_text_field(rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_mobile"])));
                 }
             }
-        } else {
+        }
+        else {
             $Amount = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_price_' . $form['id']);
             $Amount = apply_filters(self::$author . "_gform_custom_gateway_price_{$form['id']}", apply_filters(self::$author . "_gform_custom_gateway_price", $Amount, $form, $entry), $form, $entry);
             $Amount = apply_filters(self::$author . "_gform_custom_IDPay_price_{$form['id']}", apply_filters(self::$author . "_gform_custom_IDPay_price", $Amount, $form, $entry), $form, $entry);
