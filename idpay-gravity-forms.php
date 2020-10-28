@@ -1065,6 +1065,7 @@ class GF_Gateway_IDPay
         $track_id  = !empty(rgpost('track_id'))? rgpost('track_id') : (!empty(rgget('track_id'))? rgget('track_id') : NULL);
         $id        = !empty(rgpost('id'))      ? rgpost('id')       : (!empty(rgget('id'))      ? rgget('id')       : NULL);
         $order_id  = !empty(rgpost('order_id'))? rgpost('order_id') : (!empty(rgget('order_id'))? rgget('order_id') : NULL);
+        $params    = !empty(rgpost('id')) ? $_POST : $_GET;
 
         $Transaction_ID = !empty($Transaction_ID) ? $Transaction_ID : (!empty($track_id) ? $track_id : '-');
 
@@ -1099,6 +1100,7 @@ class GF_Gateway_IDPay
                     $http_status = wp_remote_retrieve_response_code( $response );
                     $result      = wp_remote_retrieve_body( $response );
                     $result      = json_decode( $result );
+                    $Note        = print_r($result, true);
 
                     if ( is_wp_error( $response ) || $http_status != 200) {
                         $Status = 'Failed';
@@ -1152,6 +1154,7 @@ class GF_Gateway_IDPay
             } else {
                 $message = sprintf(__(' پرداخت شما با موفقیت انجام شد. شماره سفارش: %s - کد رهگیری: %s', "gravityformsIDPay"), $result->order_id, $result->track_id);
                 $Note = sprintf(__(' وضعیت تراکنش: %s - کد رهگیری: %s - شماره کارت: %s شماره کارت هش شده:%s', "gravityformsIDPay"), self::getStatus($result->status), $result->track_id, $result->payment->card_no, $result->payment->hashed_card_no);
+                $Note .= print_r($result, true);
             }
 
             GFAPI::update_entry($entry);
@@ -1219,6 +1222,7 @@ class GF_Gateway_IDPay
             GFAPI::update_entry($entry);
 
             $message = $Note = sprintf(__('وضعیت پرداخت :%s (کد خطا: %s) - مبلغ قابل پرداخت : %s', "gravityformsIDPay"), self::getStatus($status_code), $status_code, $Total_Money);
+            $Note .= print_r($params, true);
         }
 
         $entry = GFPersian_Payments::get_entry($entry_id);
