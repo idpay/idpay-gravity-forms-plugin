@@ -4,7 +4,7 @@
  * Plugin Name: IDPay gateway - Gravity Forms
  * Author: IDPay
  * Description: <a href="https://idpay.ir">IDPay</a> secure payment gateway for Gravity Forms.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
@@ -978,7 +978,7 @@ class GF_Gateway_IDPay
         $pageURL = esc_url(remove_query_arg($arr_params, $pageURL));
 
         $pageURL = str_replace('#038;', '&', add_query_arg(array(
-            'id' => $form_id,
+            'form_id' => $form_id,
             'entry' => $entry_id
         ), $pageURL));
 
@@ -1006,11 +1006,11 @@ class GF_Gateway_IDPay
         if (!self::is_gravityforms_supported()) {
             return;
         }
-        if (!is_numeric(rgget('id')) || !is_numeric(rgget('entry'))) {
+        if (!is_numeric(rgget('form_id')) || !is_numeric(rgget('entry'))) {
             return;
         }
 
-        $form_id    = (int) sanitize_text_field(rgget('id'));
+        $form_id    = (int) sanitize_text_field(rgget('form_id'));
         $entry_id   = (int) sanitize_text_field(rgget('entry'));
         $entry      = GFPersian_Payments::get_entry($entry_id);
 
@@ -1061,11 +1061,19 @@ class GF_Gateway_IDPay
             $Transaction_ID = apply_filters(self::$author . '_gf_rand_transaction_id', GFPersian_Payments::transaction_id($entry), $form, $entry);
         }
 
-        if (!$free && ( !empty(rgpost( 'id') ) && !empty(rgpost('order_id')) ) ) {
+        $status_id = !empty(rgpost('status'))  ? rgpost('status')   : (!empty(rgget('status'))  ? rgget('status')   : NULL);
+        $track_id  = !empty(rgpost('track_id'))? rgpost('track_id') : (!empty(rgget('track_id'))? rgget('track_id') : NULL);
+        $id        = !empty(rgpost('id'))      ? rgpost('id')       : (!empty(rgget('id'))      ? rgget('id')       : NULL);
+        $order_id  = !empty(rgpost('order_id'))? rgpost('order_id') : (!empty(rgget('order_id'))? rgget('order_id') : NULL);
+        $params    = !empty(rgpost('id')) ? $_POST : $_GET;
 
-            if ( rgpost('status') == 10 ) {
-                $pid        = sanitize_text_field( rgpost( 'id' ) );
-                $porder_id  = sanitize_text_field( rgpost( 'order_id' ) );
+        $Transaction_ID = !empty($Transaction_ID) ? $Transaction_ID : (!empty($track_id) ? $track_id : '-');
+
+        if (!$free && !empty($id) && !empty($order_id)) {
+
+            if ( $status_id == 10 ) {
+                $pid        = sanitize_text_field( $id );
+                $porder_id  = sanitize_text_field( $order_id );
 
                 if (!empty($pid) && !empty($porder_id) && $porder_id == $entry_id) {
 
@@ -1092,6 +1100,7 @@ class GF_Gateway_IDPay
                     $http_status = wp_remote_retrieve_response_code( $response );
                     $result      = wp_remote_retrieve_body( $response );
                     $result      = json_decode( $result );
+                    $Note        = print_r($result, true);
 
                     if ( is_wp_error( $response ) || $http_status != 200) {
                         $Status = 'Failed';
@@ -1123,7 +1132,7 @@ class GF_Gateway_IDPay
         $entry["payment_date"]      = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]    = $transaction_id;
         $entry["transaction_type"]  = $transaction_type;
-        $status_code                = sanitize_text_field( rgpost( 'status' ) );
+        $status_code                = sanitize_text_field( $status_id );
 
         if ($Status == 'completed') {
             $entry["is_fulfilled"]   = 1;
@@ -1145,6 +1154,7 @@ class GF_Gateway_IDPay
             } else {
                 $message = sprintf(__(' پرداخت شما با موفقیت انجام شد. شماره سفارش: %s - کد رهگیری: %s', "gravityformsIDPay"), $result->order_id, $result->track_id);
                 $Note = sprintf(__(' وضعیت تراکنش: %s - کد رهگیری: %s - شماره کارت: %s شماره کارت هش شده:%s', "gravityformsIDPay"), self::getStatus($result->status), $result->track_id, $result->payment->card_no, $result->payment->hashed_card_no);
+                $Note .= print_r($result, true);
             }
 
             GFAPI::update_entry($entry);
@@ -1212,6 +1222,7 @@ class GF_Gateway_IDPay
             GFAPI::update_entry($entry);
 
             $message = $Note = sprintf(__('وضعیت پرداخت :%s (کد خطا: %s) - مبلغ قابل پرداخت : %s', "gravityformsIDPay"), self::getStatus($status_code), $status_code, $Total_Money);
+            $Note .= print_r($params, true);
         }
 
         $entry = GFPersian_Payments::get_entry($entry_id);

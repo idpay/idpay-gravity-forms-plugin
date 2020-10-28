@@ -1,7 +1,7 @@
 === IDPay Payment Gateway for Gravity Forms ===
 Contributors: jmdmahdi, vispa, meysamrazmi
 Tags: gravityforms, gravity-forms, payment, idpay, gateway, آیدی پی
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 Tested up to: 5.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -31,6 +31,9 @@ Also there is a complete documentation [here](https://blog.idpay.ir/helps/) whic
 Thank you so much for using IDPay Payment Gateway.
 
 == Changelog ==
+
+= 1.0.3, October 11, 2020 =
+* check GET parameters if POST was empty in relation with IDPay webservices new update.
 
 = 1.0.2, October 6, 2020 =
 * Prevent IDPay logo applying in all forms.
