@@ -64,6 +64,7 @@ wp_print_styles(array('jquery-ui-styles', 'gform_admin_IDPay', 'wp-pointer'));
         $config["meta"]["customer_fields_desc"] = rgpost("IDPay_customer_field_desc");
         $config["meta"]["customer_fields_email"] = rgpost("IDPay_customer_field_email");
         $config["meta"]["customer_fields_mobile"] = rgpost("IDPay_customer_field_mobile");
+        $config["meta"]["customer_fields_name"] = rgpost("IDPay_customer_field_name");
         $safe_data = array();
         foreach ($config["meta"] as $key => $val) {
             if (!is_array($val)) {
@@ -247,6 +248,34 @@ wp_print_styles(array('jquery-ui-styles', 'gform_admin_IDPay', 'wp-pointer'));
                                                value="<?php echo rgar($config["meta"], "desc_pm") ?>"/>
                                         <span
                                                 class="description"><?php _e("شورت کد ها : {form_id} , {form_title} , {entry_id}", "gravityformsIDPay"); ?></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        <?php _e("نام پرداخت کننده", "gravityformsIDPay"); ?>
+                                    </th>
+                                    <td class="IDPay_customer_fields_name">
+                                        <?php
+                                        if (!empty($form)) {
+                                            $form_fields = self::get_form_fields($form);
+                                            $selected_field = !empty($config["meta"]["customer_fields_name"]) ? $config["meta"]["customer_fields_name"] : '';
+                                            echo self::get_mapped_field_list('IDPay_customer_field_name', $selected_field, $form_fields);
+                                        }
+                                        ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        <?php _e("ایمیل پرداخت کننده", "gravityformsIDPay"); ?>
+                                    </th>
+                                    <td class="IDPay_customer_fields_email">
+                                        <?php
+                                        if (!empty($form)) {
+                                            $form_fields = self::get_form_fields($form);
+                                            $selected_field = !empty($config["meta"]["customer_fields_email"]) ? $config["meta"]["customer_fields_email"] : '';
+                                            echo self::get_mapped_field_list('IDPay_customer_field_email', $selected_field, $form_fields);
+                                        }
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>

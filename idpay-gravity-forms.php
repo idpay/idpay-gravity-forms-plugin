@@ -4,7 +4,7 @@
  * Plugin Name: IDPay gateway - Gravity Forms
  * Author: IDPay
  * Description: <a href="https://idpay.ir">IDPay</a> secure payment gateway for Gravity Forms.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
@@ -155,7 +155,7 @@ class GF_Gateway_IDPay
     public static function admin_notice_persian_gf()
     {
         $class = 'notice notice-error';
-        $message = sprintf(__("برای استفاده از نسخه جدید درگاه های پرداخت گرویتی فرم نصب بسته فارسی ساز نسخه 2.3.1 به بالا الزامی است. برای نصب فارسی ساز %sکلیک کنید%s.", "gravityformsIDPay"), '<a href="' . admin_url("plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884") . '">', '</a>');
+        $message = sprintf(__("برای استفاده از نسخه جدید درگاه پرداخت آیدی پی برای گرویتی فرم، نصب بسته فارسی ساز نسخه 2.3.1 به بالا الزامی است. برای نصب فارسی ساز %sکلیک کنید%s.", "gravityformsIDPay"), '<a href="' . admin_url("plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884") . '">', '</a>');
         printf('<div class="%1$s"><p>%2$s</p></div>', $class, $message);
     }
 
@@ -820,6 +820,16 @@ class GF_Gateway_IDPay
                 if (!empty($config["meta"]["customer_fields_mobile"])) {
                     $Mobile = sanitize_text_field(rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_mobile"])));
                 }
+
+                $Name = '';
+                if (!empty($config["meta"]["customer_fields_name"])) {
+                    $Name = sanitize_text_field(rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_name"])));
+                }
+
+                $Mail = '';
+                if (!empty($config["meta"]["customer_fields_email"])) {
+                    $Mail = sanitize_text_field(rgpost('input_' . str_replace(".", "_", $config["meta"]["customer_fields_email"])));
+                }
             }
         }
         else {
@@ -832,7 +842,8 @@ class GF_Gateway_IDPay
             $Description = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_desc_' . $form['id']);
             $Description = apply_filters(self::$author . '_gform_IDPay_gateway_desc_', apply_filters(self::$author . '_gform_custom_gateway_desc_', $Description, $form, $entry), $form, $entry);
 
-            $Paymenter = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_name_' . $form['id']);
+            $Name = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_name_' . $form['id']);
+            $Mail = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_email_' . $form['id']);
             $Mobile = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_mobile_' . $form['id']);
 
             $entry_id = GFAPI::add_entry($entry);
@@ -872,6 +883,8 @@ class GF_Gateway_IDPay
             $data = array(
                 'order_id' => $entry_id,
                 'amount' => $Amount,
+                'name' => $Name,
+                'mail' => $Mail,
                 'phone' => $Mobile,
                 'desc' => $Description,
                 'callback' => $ReturnPath,
