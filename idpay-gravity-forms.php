@@ -4,7 +4,7 @@
  * Plugin Name: IDPay gateway - Gravity Forms
  * Author: IDPay
  * Description: <a href="https://idpay.ir">IDPay</a> secure payment gateway for Gravity Forms.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
@@ -13,6 +13,8 @@
 if (!defined('ABSPATH')) exit;
 
 register_activation_hook(__FILE__, array('GF_Gateway_IDPay', "add_permissions"));
+register_deactivation_hook( __FILE__, array('GF_Gateway_IDPay', "deactivation"));
+
 add_action('init', array('GF_Gateway_IDPay', 'init'));
 
 require_once('lib/IDPay_DB.php');
@@ -21,7 +23,7 @@ require_once('lib/IDPay_Chart.php');
 class GF_Gateway_IDPay
 {
     public static $author = "IDPay";
-    private static $version = "1.0.2";
+    private static $version = "1.0.5";
     private static $min_gravityforms_version = "1.9.10";
     private static $config = null;
 
@@ -150,6 +152,11 @@ class GF_Gateway_IDPay
             IDPay_DB::update_table();
             update_option("gf_IDPay_version", self::$version);
         }
+    }
+
+    private static function deactivation()
+    {
+        delete_option("gf_IDPay_version");
     }
 
     public static function admin_notice_persian_gf()

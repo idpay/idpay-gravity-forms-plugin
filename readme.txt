@@ -32,6 +32,9 @@ Thank you so much for using IDPay Payment Gateway.
 
 == Changelog ==
 
+= 1.0.5, January 4, 2021 =
+* add deactivation method.
+
 = 1.0.4, December 9, 2020 =
 * add name and email to gateway configuration.
 
