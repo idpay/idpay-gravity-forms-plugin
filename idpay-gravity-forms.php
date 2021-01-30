@@ -4,7 +4,7 @@
  * Plugin Name: IDPay gateway - Gravity Forms
  * Author: IDPay
  * Description: <a href="https://idpay.ir">IDPay</a> secure payment gateway for Gravity Forms.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
@@ -13,6 +13,8 @@
 if (!defined('ABSPATH')) exit;
 
 register_activation_hook(__FILE__, array('GF_Gateway_IDPay', "add_permissions"));
+register_deactivation_hook( __FILE__, array('GF_Gateway_IDPay', "deactivation"));
+
 add_action('init', array('GF_Gateway_IDPay', 'init'));
 
 require_once('lib/IDPay_DB.php');
@@ -21,7 +23,7 @@ require_once('lib/IDPay_Chart.php');
 class GF_Gateway_IDPay
 {
     public static $author = "IDPay";
-    private static $version = "1.0.2";
+    private static $version = "1.0.5";
     private static $min_gravityforms_version = "1.9.10";
     private static $config = null;
 
@@ -83,6 +85,7 @@ class GF_Gateway_IDPay
         do_action('gravityforms_gateways');
         do_action('gravityforms_IDPay');
 
+        add_filter( 'gform_admin_pre_render', array( __CLASS__, 'merge_tags_keys' ) );
     }
 
     public static function alter_submit_button($button_input, $form){
@@ -150,6 +153,11 @@ class GF_Gateway_IDPay
             IDPay_DB::update_table();
             update_option("gf_IDPay_version", self::$version);
         }
+    }
+
+    private static function deactivation()
+    {
+        delete_option("gf_IDPay_version");
     }
 
     public static function admin_notice_persian_gf()
@@ -1228,7 +1236,8 @@ class GF_Gateway_IDPay
             do_action("gform_IDPay_fulfillment", $entry, $config, $transaction_id, $Total);
             do_action("gform_gateway_fulfillment", $entry, $config, $transaction_id, $Total);
             do_action("gform_idpay_fulfillment", $entry, $idpay_config, $transaction_id, $Total);
-        } else {
+        }
+        else {
             $entry["payment_status"] = ($Status == 'cancelled')? "Cancelled" : "Failed";
             $entry["payment_amount"] = 0;
             $entry["is_fulfilled"]   = 0;
@@ -1247,7 +1256,7 @@ class GF_Gateway_IDPay
         if (apply_filters(self::$author . '_gf_IDPay_verify', apply_filters(self::$author . '_gf_gateway_verify', ($payment_type != 'custom'), $form, $entry), $form, $entry)) {
 
             foreach ($form['confirmations'] as $key => $value) {
-                $form['confirmations'][$key]['message'] = self::_payment_entry_detail( $message, $Status);
+                $form['confirmations'][$key]['message'] = self::_payment_entry_detail( $message, $Status, $config, $value['message']);
             }
 
             GFPersian_Payments::notification($form, $entry);
@@ -1318,7 +1327,7 @@ class GF_Gateway_IDPay
         }
     }
 
-    public static function _payment_entry_detail($messages, $payment_status)
+    public static function _payment_entry_detail($messages, $payment_status, $config, $text)
     {
         if ($payment_status == 'Paid' || $payment_status == 'completed' || $payment_status == 'Active') {
             $status = 'success';
@@ -1330,15 +1339,21 @@ class GF_Gateway_IDPay
             $status = 'info';
         }
 
+        $output = '';
         if ($status == 'Failed') {
-            return '<div  style=" direction:rtl;padding: 20px;background-color: #f44336;color: white;opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;">' .  $messages . '</div>';
+            $output = '<div  style=" direction:rtl;padding: 20px;background-color: #f44336;color: white;opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;">' .  $messages . '</div>';
         }
         if ($status == 'success') {
-            return '<div  style="direction:rtl;padding: 20px;background-color: #4CAF50;color: white;opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;">' .  $messages . '</div>';
+            $output = '<div  style="direction:rtl;padding: 20px;background-color: #4CAF50;color: white;opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;">' .  $messages . '</div>';
         }
         if ($status == 'info') {
-            return '<div  style="direction:rtl;padding: 20px;background-color: #2196F3;color: white;opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;">' .  $messages . '</div>';
+            $output = '<div  style="direction:rtl;padding: 20px;background-color: #2196F3;color: white;opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;">' .  $messages . '</div>';
         }
+
+        if (!empty($config["meta"]["confirmation"])) {
+            return str_replace('{idpay_payment_result}', $output, $text);
+        }
+        return $output;
     }
 
     public static function idpay_get_message($massage, $track_id, $order_id)
@@ -1357,4 +1372,27 @@ class GF_Gateway_IDPay
 
         return WP_PLUGIN_DIR . "/" . $folder;
     }
+
+    public static function merge_tags_keys( $form ) {
+
+        if ( GFCommon::is_entry_detail() ) {
+            return $form;
+        }
+        ?>
+
+        <script type="text/javascript">
+            gform.addFilter('gform_merge_tags', function (mergeTags, elementId, hideAllFields, excludeFieldTypes, isPrepop, option) {
+                mergeTags['gf_idpay'] = {
+                    label: 'آیدی پی',
+                    tags: [
+                        {tag: '{idpay_payment_result}',label: 'نتیجه پرداخت آیدی پی'}
+                    ]
+                };
+                return mergeTags;
+            });
+        </script>
+        <?php
+        return $form;
+    }
+
 }

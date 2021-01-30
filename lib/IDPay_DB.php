@@ -36,7 +36,7 @@ class IDPay_DB
               meta longtext,
               PRIMARY KEY  (id),
               KEY form_id (form_id)
-		)$charset_collate;";
+		) $charset_collate;";
 
         require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
         dbDelta($feed);
