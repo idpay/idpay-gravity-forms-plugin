@@ -4,7 +4,7 @@
  * Plugin Name: IDPay gateway - Gravity Forms
  * Author: IDPay
  * Description: <a href="https://idpay.ir">IDPay</a> secure payment gateway for Gravity Forms.
- * Version: 1.0.5
+ * Version: 1.1.0
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
@@ -1257,6 +1257,37 @@ class GF_Gateway_IDPay
 
             foreach ($form['confirmations'] as $key => $value) {
                 $form['confirmations'][$key]['message'] = self::_payment_entry_detail( $message, $Status, $config, $value['message']);
+            }
+
+            if(!empty($idpay_config['meta']))
+            {
+
+                if(in_array("delay_post-update-addon-gravity-forms", $idpay_config['meta']))
+                {
+                    $addon = call_user_func(array('ACGF_PostUpdateAddOn', 'get_instance'));
+                    $feeds = $addon->get_feeds($form_id);
+                    foreach ($feeds as $feed) {
+                        $addon->process_feed($feed, $entry, $form);
+                    }
+                }
+
+                if(in_array("delay_gravityformsadvancedpostcreation", $idpay_config['meta']))
+                {
+                    $addon = call_user_func(array('GF_Advanced_Post_Creation', 'get_instance'));
+                    $feeds = $addon->get_feeds($form_id);
+                    foreach ($feeds as $feed) {
+                        $addon->process_feed($feed, $entry, $form);
+                    }
+                }
+
+                if(in_array("delay_gravityformsuserregistration", $idpay_config['meta']))
+                {
+                    $addon = call_user_func(array('GF_User_Registration', 'get_instance'));
+                    $feeds = $addon->get_feeds($form_id);
+                    foreach ($feeds as $feed) {
+                        $addon->process_feed($feed, $entry, $form);
+                    }
+                }
             }
 
             GFPersian_Payments::notification($form, $entry);
