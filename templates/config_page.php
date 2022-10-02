@@ -3,7 +3,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
-wp_register_style('gform_admin_IDPay', GFCommon::get_base_url() . '/css/admin.css');
+wp_register_style('gform_admin_IDPay', GFCommon::get_base_url() . '/assets/css/dist/admin.css');
 wp_print_styles(array('jquery-ui-styles', 'gform_admin_IDPay', 'wp-pointer'));
 
 if (is_rtl()) { ?>
