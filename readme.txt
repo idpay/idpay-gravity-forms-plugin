@@ -32,6 +32,11 @@ Thank you so much for using IDPay Payment Gateway.
 
 == Changelog ==
 
+= 1.1.1, June 18, 2022 =
+* Tested Up With Wordpress 6.0 And GravityForm 2.6.3
+* Check Double Spending Correct
+* Check Does Not Xss Attack Correct
+
 = 1.0.5, January 30, 2021 =
 * add deactivation method.
 * add checkbox to use Gravity Forms confirmations.
