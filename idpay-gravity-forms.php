@@ -536,14 +536,14 @@ class GF_Gateway_IDPay
                 $payment_string .= '<option value="' . $payment_status . '" selected>' . $payment_status_persian . '</option>';
 
                 if ($transaction_type == 1) {
-                    if ($payment_status != "Paid") {
-                        $payment_string .= '<option value="Paid">' . __('موفق', 'gravityformsIDPay') . '</option>';
+                    if ($payment_status != "Active") {
+                        $payment_string .= '<option value="Active">' . __('موفق', 'gravityformsIDPay') . '</option>';
                     }
                 }
 
                 if ($transaction_type == 2) {
-                    if ($payment_status != "Active") {
-                        $payment_string .= '<option value="Active">' . __('موفق', 'gravityformsIDPay') . '</option>';
+                    if ($payment_status != "Paid") {
+                        $payment_string .= '<option value="Paid">' . __('موفق', 'gravityformsIDPay') . '</option>';
                     }
                 }
 
@@ -1173,10 +1173,10 @@ class GF_Gateway_IDPay
             $entry["payment_amount"] = $Total;
 
             if ($transaction_type == 2) {
-                $entry["payment_status"] = "Active";
+                $entry["payment_status"] = "Paid";
                 RGFormsModel::add_note($entry["id"], $user_id, $user_name, __("تغییرات اطلاعات فیلدها فقط در همین پیام ورودی اعمال خواهد شد و بر روی وضعیت کاربر تاثیری نخواهد داشت .", "gravityformsIDPay"));
             } else {
-                $entry["payment_status"] = "Paid";
+                $entry["payment_status"] = "Active";
             }
 
             if ($free == true) {
