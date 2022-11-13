@@ -1,36 +1,33 @@
-=== IDPay Payment Gateway for Gravity Forms ===
-Contributors: jmdmahdi, vispa, meysamrazmi, MimDeveloper.Tv
+=== Title & Descriptions ===
+
+title : IDPay for WP Gravity Forms
 Tags: gravityforms, gravity-forms, payment, idpay, gateway, آیدی پی
-Stable tag: 1.1.0
-Tested up to: 6.0.2
+Stable tag: 1.1.2
+Tested up to: 6.1
+Contributors: MimDeveloper.Tv (Mohammad-Malek), imikiani, meysamrazmi, vispa
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-[IDPay](https://idpay.ir) payment method for [Gravity Forms](https://www.gravityforms.com/).
-
 == Description ==
 
-[IDPay](https://idpay.ir) is one of the Financial Technology providers in Iran.
-
-IDPay provides some payment services and this plugin enables the IDPay's payment gateway for Gravity Forms.
+After installing and enabling this plugin, your customers can pay through IDPay gateway.
+For doing a transaction through IDPay gateway, you must have an API Key. You can obtain the API Key by going to your [dashboard](https://idpay.ir/dashboard/web-services) in your IDPay [account](https://idpay.ir/user).
 
 == Installation ==
 
-After creating a web service on https://idpay.ir and getting an API Key, follow this instruction:
-
+0. After creating a Web Service on https://idpay.ir and getting an API Key, follow this instruction:
 1. Activate plugin IDPay for Gravity Forms.
 2. Go tho Gravity Forms > Settings > Payments.
 3. Enable IDPay payment gateway.
 4. Go to Manage.
 5. Enter the API Key.
 
-If you need to use this plugin in Test mode, check the "Sandbox".
-
-Also there is a complete documentation [here](https://blog.idpay.ir/helps/) which helps you to install the plugin step by step.
-
-Thank you so much for using IDPay Payment Gateway.
+* If you need to use this plugin in Test mode, Select the "Sandbox" checkbox.
 
 == Changelog ==
+
+== 1.1.2, Nov 13, 2022 ==
+* Tested Up With Wordpress 6.1 And GravityForm 2.6.3
 
 = 1.1.1, June 18, 2022 =
 * Tested Up With Wordpress 6.0 And GravityForm 2.6.3
@@ -54,4 +51,4 @@ Thank you so much for using IDPay Payment Gateway.
 * Fix a typo bug.
 
 = 1.0.0, Jul 08, 2020 =
-* First oficial release.
+* Develope release.
