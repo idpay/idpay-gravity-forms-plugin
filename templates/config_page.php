@@ -1,218 +1,135 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
-}
+if ( ! defined( 'ABSPATH' ) ) {exit;}
+if (is_rtl()) {  echo '<style type="text/css">table.gforms_form_settings th {text-align: right !important}</style>';}
 wp_register_style('gform_admin_IDPay', GFCommon::get_base_url() . '/assets/css/dist/admin.css');
 wp_print_styles(array('jquery-ui-styles', 'gform_admin_IDPay', 'wp-pointer'));
-
-if (is_rtl()) { ?>
-    <style type="text/css">
-        table.gforms_form_settings th {
-            text-align: right !important
-        }
-    </style>
-<?php } ?>
-<div class="wrap gforms_edit_form gf_browser_gecko"></div>
-<?php
 $id = !rgempty("IDPay_setting_id") ? rgpost("IDPay_setting_id") : absint(rgget("id"));
 $config = empty($id) ? array(
-    "meta" => array(),
-    "is_active" => true
+	"meta" => array(),
+	"is_active" => true
 ) : IDPay_DB::get_feed($id);
 $get_feeds = IDPay_DB::get_feeds();
 $form_name = '';
-
 $_get_form_id = rgget('fid') ? rgget('fid') : (!empty($config["form_id"]) ? $config["form_id"] : '');
 
-foreach ((array)$get_feeds as $get_feed) {
-    if ($get_feed['id'] == $id) {
-        $form_name = $get_feed['form_title'];
+    foreach ((array)$get_feeds as $get_feed) {
+        if ($get_feed['id'] == $id) {
+            $form_name = $get_feed['form_title'];
+        }
     }
-}
-?>
-<h2 class="gf_admin_page_title"><?php _e("پیکربندی درگاه IDPay", "gravityformsIDPay") ?>
-    <?php if (!empty($_get_form_id)) { ?>
-        <span class="gf_admin_page_subtitle">
-            <span
-                    class="gf_admin_page_formid"><?php echo sprintf(__("فید: %s", "gravityformsIDPay"), $id) ?></span>
-            <span
-                    class="gf_admin_page_formname"><?php echo sprintf(__("فرم: %s", "gravityformsIDPay"), $form_name) ?></span>
-        </span>
-    <?php } ?>
-</h2>
-<a class="button add-new-h2" href="admin.php?page=gf_settings&subview=gf_IDPay"
-   style="margin:8px 9px;"><?php _e("تنظیمات IDPay", "gravityformsIDPay") ?></a>
-<?php
-if (!rgempty("gf_IDPay_submit")) {
-    check_admin_referer("update", "gf_IDPay_feed");
-    $config["form_id"] = absint(rgpost("gf_IDPay_form"));
-    $config["meta"]["type"] = rgpost("gf_IDPay_type");
-    $config["meta"]["addon"] = rgpost("gf_IDPay_addon");
-    $config["meta"]["update_post_action1"] = rgpost('gf_IDPay_update_action1');
-    $config["meta"]["update_post_action2"] = rgpost('gf_IDPay_update_action2');
-    $config["meta"]["IDPay_conditional_enabled"] = rgpost('gf_IDPay_conditional_enabled');
-    $config["meta"]["IDPay_conditional_field_id"] = rgpost('gf_IDPay_conditional_field_id');
-    $config["meta"]["IDPay_conditional_operator"] = rgpost('gf_IDPay_conditional_operator');
-    $config["meta"]["IDPay_conditional_value"] = rgpost('gf_IDPay_conditional_value');
-    $config["meta"]["IDPay_conditional_type"] = rgpost('gf_IDPay_conditional_type');
-    $config["meta"]["desc_pm"] = rgpost("gf_IDPay_desc_pm");
-    $config["meta"]["customer_fields_desc"] = rgpost("IDPay_customer_field_desc");
-    $config["meta"]["customer_fields_email"] = rgpost("IDPay_customer_field_email");
-    $config["meta"]["customer_fields_mobile"] = rgpost("IDPay_customer_field_mobile");
-    $config["meta"]["customer_fields_name"] = rgpost("IDPay_customer_field_name");
-    $config["meta"]["confirmation"] = rgpost("gf_IDPay_confirmation");
-    $safe_data = array();
-    foreach ($config["meta"] as $key => $val) {
-        if (!is_array($val)) {
-            $safe_data[$key] = sanitize_text_field($val);
+
+$isUpdatedSubmitData = false;
+    if (!rgempty("gf_IDPay_submit")) {
+        check_admin_referer("update", "gf_IDPay_feed");
+        $config["form_id"] = absint(rgpost("gf_IDPay_form"));
+        $config["meta"]["type"] = rgpost("gf_IDPay_type");
+        $config["meta"]["addon"] = rgpost("gf_IDPay_addon");
+        $config["meta"]["update_post_action1"] = rgpost('gf_IDPay_update_action1');
+        $config["meta"]["update_post_action2"] = rgpost('gf_IDPay_update_action2');
+        $config["meta"]["IDPay_conditional_enabled"] = rgpost('gf_IDPay_conditional_enabled');
+        $config["meta"]["IDPay_conditional_field_id"] = rgpost('gf_IDPay_conditional_field_id');
+        $config["meta"]["IDPay_conditional_operator"] = rgpost('gf_IDPay_conditional_operator');
+        $config["meta"]["IDPay_conditional_value"] = rgpost('gf_IDPay_conditional_value');
+        $config["meta"]["IDPay_conditional_type"] = rgpost('gf_IDPay_conditional_type');
+        $config["meta"]["desc_pm"] = rgpost("gf_IDPay_desc_pm");
+        $config["meta"]["customer_fields_desc"] = rgpost("IDPay_customer_field_desc");
+        $config["meta"]["customer_fields_email"] = rgpost("IDPay_customer_field_email");
+        $config["meta"]["customer_fields_mobile"] = rgpost("IDPay_customer_field_mobile");
+        $config["meta"]["customer_fields_name"] = rgpost("IDPay_customer_field_name");
+        $config["meta"]["confirmation"] = rgpost("gf_IDPay_confirmation");
+        $safe_data = array();
+        foreach ($config["meta"] as $key => $val) {
+            if (!is_array($val)) {
+                $safe_data[$key] = sanitize_text_field($val);
+            }
+            else {
+                $safe_data[$key] = array_map('sanitize_text_field', $val);
+            }
+        }
+        $config["meta"] = $safe_data;
+
+        $config = apply_filters(self::$author . '_gform_gateway_save_config', $config);
+        $config = apply_filters(self::$author . '_gform_IDPay_save_config', $config);
+
+        $id = IDPay_DB::update_feed($id, $config["form_id"], $config["is_active"], $config["meta"]);
+        if (!headers_sent()) {
+            wp_redirect(admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $id . '&updated=true'));
+            exit;
         }
         else {
-            $safe_data[$key] = array_map('sanitize_text_field', $val);
+            echo "<script type='text/javascript'>window.onload = function () { top.location.href = '" . admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $id . '&updated=true') . "'; };</script>";
+            exit;
         }
+        $isUpdatedSubmitData = true ;
     }
-    $config["meta"] = $safe_data;
-
-    $config = apply_filters(self::$author . '_gform_gateway_save_config', $config);
-    $config = apply_filters(self::$author . '_gform_IDPay_save_config', $config);
-
-    $id = IDPay_DB::update_feed($id, $config["form_id"], $config["is_active"], $config["meta"]);
-    if (!headers_sent()) {
-        wp_redirect(admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $id . '&updated=true'));
-        exit;
-    }
-    else {
-        echo "<script type='text/javascript'>window.onload = function () { top.location.href = '" . admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $id . '&updated=true') . "'; };</script>";
-        exit;
-    }
-    ?>
-    <div class="updated fade"
-         style="padding:6px"><?php echo sprintf(__("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay"), "<a href='?page=gf_IDPay'>", "</a>") ?></div>
-    <?php
-}
 
 $_get_form_id = rgget('fid') ? rgget('fid') : (!empty($config["form_id"]) ? $config["form_id"] : '');
-$form = array();
+$form = !empty($_get_form_id) ? RGFormsModel::get_form_meta($_get_form_id) : [] ;
 
-if (!empty($_get_form_id)) {
-    $form = RGFormsModel::get_form_meta($_get_form_id);
-}
+    if (rgget('updated') == 'true') {
+        $id = absint(empty($id) && isset($_GET['id']) ? rgget('id') : $id);
+        $updatedLabel = sprintf(__("فید به روز شد . %sبازگشت به لیست%s . ", "gravityformsIDPay"),"<a href='?page=gf_IDPay'>", "</a>");
+        echo '<div class="updated fade" style="padding:6px">' .$updatedLabel . '</div>';
+    }
 
-if (rgget('updated') == 'true') {
-    $id = empty($id) && isset($_GET['id']) ? rgget('id') : $id;
-    $id = absint($id); ?>
-    <div class="updated fade"
-         style="padding:6px"><?php echo sprintf(__("فید به روز شد . %sبازگشت به لیست%s . ", "gravityformsIDPay"), "<a href='?page=gf_IDPay'>", "</a>") ?></div>
-<?php
-}
-if (!empty($_get_form_id)) { ?>
-    <div id="gf_form_toolbar">
-        <ul id="gf_form_toolbar_links">
-            <?php
-            $menu_items = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($_get_form_id), $_get_form_id);
-            echo GFForms::format_toolbar_menu_items($menu_items); ?>
-
-            <li class="gf_form_switcher">
-                <label for="export_form"><?php _e('یک فید انتخاب کنید', 'gravityformsIDPay') ?></label>
-                <?php
-                $feeds = IDPay_DB::get_feeds();
-                if (RG_CURRENT_VIEW != 'entry') { ?>
-                    <select name="form_switcher" id="form_switcher"
-                            onchange="GF_SwitchForm(jQuery(this).val());">
-                        <option value=""><?php _e('تغییر فید IDPay', 'gravityformsIDPay') ?></option>
-                        <?php foreach ($feeds as $feed) {
-                            $selected = $feed["id"] == $id ? "selected='selected'" : ""; ?>
-                            <option
-                                    value="<?php echo $feed["id"] ?>" <?php echo $selected ?> ><?php echo sprintf(__('فرم: %s (فید: %s)', 'gravityformsIDPay'), $feed["form_title"], $feed["id"]) ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php
-                }
-                ?>
-            </li>
-        </ul>
-    </div>
-<?php } ?>
-<?php
+$menu_items = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($_get_form_id), $_get_form_id);
 $condition_field_ids = array('1' => '');
 $condition_values = array('1' => '');
 $condition_operators = array('1' => 'is');
+$title = '';
+$get_form = GFFormsModel::get_form_meta($_get_form_id);
+$current_tab = rgempty('subview', $_GET) ? 'settings' : rgget('subview');
+$current_tab = !empty($current_tab) ? $current_tab : ' ';
+$setting_tabs = GFFormSettings::get_tabs($get_form['id']);
+$has_product = self::checkSetPriceForForm($form);
+$isCheckedSubscription = rgar( $config['meta'], 'type' ) == "subscription" ? "checked='checked'" : "";
+$desc_pm = !empty(rgar($config["meta"], "desc_pm")) ? rgar($config["meta"], "desc_pm") : "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
+
 ?>
-<div id="gform_tab_group" class="gform_tab_group vertical_tabs">
+
+<div class="wrap gforms_edit_form gf_browser_gecko"></div>
+<h2 class="gf_admin_page_title"><?php _e("پیکربندی درگاه IDPay", "gravityformsIDPay") ?>
     <?php if (!empty($_get_form_id)) { ?>
-        <ul id="gform_tabs" class="gform_tabs">
-            <?php
-            $title = '';
-            $get_form = GFFormsModel::get_form_meta($_get_form_id);
-            $current_tab = rgempty('subview', $_GET) ? 'settings' : rgget('subview');
-            $current_tab = !empty($current_tab) ? $current_tab : ' ';
-            $setting_tabs = GFFormSettings::get_tabs($get_form['id']);
-            if (!$title) {
-                foreach ($setting_tabs as $tab) {
-                    $query = array(
-                        'page' => 'gf_edit_forms',
-                        'view' => 'settings',
-                        'subview' => $tab['name'],
-                        'id' => $get_form['id']
-                    );
-                    $url = add_query_arg($query, admin_url('admin.php'));
-                    echo $tab['name'] == 'IDPay' ? '<li class="active">' : '<li>';
-                    ?>
-                    <a href="<?php echo esc_url($url); ?>"><?php echo esc_html($tab['label']) ?></a>
-                    <span></span>
-                    </li>
-                    <?php
-                }
-            }
-            ?>
-        </ul>
-    <?php }
-    $has_product = false;
-    if (isset($form["fields"])) {
-        foreach ($form["fields"] as $field) {
-            $shipping_field = GFAPI::get_fields_by_type($form, array('shipping'));
-            if ($field["type"] == "product" || !empty($shipping_field)) {
-                $has_product = true;
-                break;
-            }
-        }
-    }
-    else if (empty($_get_form_id)) {
-        $has_product = true;
-    }
-    ?>
-    <div id="gform_tab_container_<?php echo $_get_form_id ? $_get_form_id : 1 ?>"
-         class="gform_tab_container">
+        <span class="gf_admin_page_subtitle">
+            <span class="gf_admin_page_formid"><?php echo sprintf(__("فید: %s", "gravityformsIDPay"), $id) ?></span>
+            <span class="gf_admin_page_formname"><?php echo sprintf(__("فرم: %s", "gravityformsIDPay"), $form_name) ?></span>
+        </span>
+    <?php } ?>
+</h2>
+
+<a class="button add-new-h2" href="admin.php?page=gf_settings&subview=gf_IDPay" style="margin:8px 9px;">
+<?php _e("تنظیمات کلی", "gravityformsIDPay") ?>
+</a>
+
+<?php
+if ($isUpdatedSubmitData) {
+    echo  '<div class="updated fade" style="padding:6px">' .
+    sprintf(__("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay"), "<a href='?page=gf_IDPay'>", "</a>") . '</div>';}
+?>
+
+<div id="gform_tab_group" class="gform_tab_group vertical_tabs">
+    <div id="gform_tab_container_<?php echo $_get_form_id ? $_get_form_id : 1 ?>" class="gform_tab_container">
         <div class="gform_tab_content" id="tab_<?php echo !empty($current_tab) ? $current_tab : '' ?>">
             <div id="form_settings" class="gform_panel gform_panel_form_settings">
-                <h3>
-                        <span>
-                            <i class="fa fa-credit-card"></i>
-                            <?php _e("پیکربندی درگاه IDPay", "gravityformsIDPay"); ?>
-                        </span>
-                </h3>
+
                 <form method="post" action="" id="gform_form_settings">
                     <?php wp_nonce_field("update", "gf_IDPay_feed") ?>
                     <input type="hidden" name="IDPay_setting_id" value="<?php echo $id ?>"/>
-                    <table class="form-table gforms_form_settings" cellspacing="0" cellpadding="0">
+                    <table class="form-table gforms_form_settings">
                         <tbody>
                         <tr style="<?php echo rgget('id') || rgget('fid') ? 'display:none !important' : ''; ?>">
-                            <th>
-                                <?php _e("انتخاب فرم", "gravityformsIDPay"); ?>
-                            </th>
+                            <th><?php _e("انتخاب فرم", "gravityformsIDPay"); ?></th>
                             <td>
                                 <select id="gf_IDPay_form" name="gf_IDPay_form" onchange="GF_SwitchFid(jQuery(this).val());">
-                                    <option value=""><?php _e("یک فرم انتخاب نمایید", "gravityformsIDPay"); ?> </option>
+                                    <option value=""><?php _e("یک فرم انتخاب نمایید", "gravityformsIDPay"); ?></option>
                                     <?php
                                     $available_forms = IDPay_DB::get_available_forms();
                                     foreach ($available_forms as $current_form) {
                                         $selected = absint($current_form->id) == $_get_form_id ? 'selected="selected"' : ''; ?>
                                         <option value="<?php echo absint($current_form->id) ?>" <?php echo $selected; ?>><?php echo esc_html($current_form->title) ?></option>
-                                        <?php
-                                    }
-                                    ?>
+                                        <?php } ?>
                                 </select>
-                                <img src="<?php echo esc_url(GFCommon::get_base_url()) ?>/images/spinner.gif" id="IDPay_wait" style="display: none;"/>
                             </td>
                         </tr>
                         </tbody>
@@ -223,39 +140,28 @@ $condition_operators = array('1' => 'is');
                             <?php _e("فرم انتخاب شده هیچ گونه فیلد قیمت گذاری ندارد، لطفا پس از افزودن این فیلدها مجددا اقدام نمایید.", "gravityformsIDPay") ?>
                         </div>
                     <?php } else { ?>
-                        <table class="form-table gforms_form_settings"
-                               id="IDPay_field_group" <?php echo empty($_get_form_id) ? "style='display:none;'" : "" ?>
-                               cellspacing="0" cellpadding="0">
+                        <table class="form-table gforms_form_settings" id="IDPay_field_group" <?php echo empty($_get_form_id) ? "style='display:none;'" : "" ?> >
                             <tbody>
+
                             <tr>
-                                <th>
-                                    <?php _e("فرم ثبت نام", "gravityformsIDPay"); ?>
-                                </th>
+                                <th><?php _e("User_Registration ثبت نام با", "gravityformsIDPay"); ?></th>
                                 <td>
-                                    <input type="checkbox" name="gf_IDPay_type"
-                                           id="gf_IDPay_type_subscription"
-                                           value="subscription" <?php echo rgar($config['meta'], 'type') == "subscription" ? "checked='checked'" : "" ?>/>
+                                    <input name="gf_IDPay_type" value="subscription" type="checkbox" id="gf_IDPay_type_subscription" <?php echo $isCheckedSubscription ?> />
                                     <label for="gf_IDPay_type"></label>
-                                    <span
-                                            class="description"><?php _e('در صورتی که تیک بزنید عملیات ثبت نام که توسط افزونه User Registration انجام خواهد شد تنها برای پرداخت های موفق عمل خواهد کرد'); ?></span>
+                                    <span class="description"><?php _e(' اگر فرم جاری وظیفه ثبت نام کاربر با افزونه ذکر شده را دارد فقط برای پرداخت های موفق انجام دهد'); ?></span>
                                 </td>
                             </tr>
+
                             <tr>
-                                <th>
-                                    <?php _e("توضیحات پرداخت", "gravityformsIDPay"); ?>
-                                </th>
+                                <th><?php _e("توضیحات پرداخت", "gravityformsIDPay"); ?></th>
                                 <td>
-                                    <input type="text" name="gf_IDPay_desc_pm" id="gf_IDPay_desc_pm"
-                                           class="fieldwidth-1"
-                                           value="<?php echo rgar($config["meta"], "desc_pm") ?>"/>
+                                    <input name="gf_IDPay_desc_pm" value="<?php echo $desc_pm ?>" type="text" id="gf_IDPay_desc_pm" class="fieldwidth-1"/>
                                     <span class="description"><?php _e("متنی که به عنوان توضیحات به آیدی پی ارسال می شود و میتوانید در داشبورد خود در سایت آیدی پی مشاهده کنید.", "gravityformsIDPay"); ?></span>
-                                    <span class="description"><?php _e("از این متغیر ها هم میتوانید استفاده کنید : {form_id} , {form_title} , {entry_id}", "gravityformsIDPay"); ?></span>
                                 </td>
                             </tr>
+
                             <tr>
-                                <th>
-                                    <?php _e("نام پرداخت کننده", "gravityformsIDPay"); ?>
-                                </th>
+                                <th><?php _e("نام پرداخت کننده", "gravityformsIDPay"); ?></th>
                                 <td class="IDPay_customer_fields_name">
                                     <?php
                                     if (!empty($form)) {
@@ -266,10 +172,9 @@ $condition_operators = array('1' => 'is');
                                     ?>
                                 </td>
                             </tr>
+
                             <tr>
-                                <th>
-                                    <?php _e("ایمیل پرداخت کننده", "gravityformsIDPay"); ?>
-                                </th>
+                                <th><?php _e("ایمیل پرداخت کننده", "gravityformsIDPay"); ?></th>
                                 <td class="IDPay_customer_fields_email">
                                     <?php
                                     if (!empty($form)) {
@@ -280,6 +185,7 @@ $condition_operators = array('1' => 'is');
                                     ?>
                                 </td>
                             </tr>
+
                             <tr>
                                 <th>
                                     <?php _e("توضیح تکمیلی", "gravityformsIDPay"); ?>
@@ -537,12 +443,6 @@ $condition_operators = array('1' => 'is');
     function GF_SwitchFid(fid) {
         jQuery("#IDPay_wait").show();
         document.location = "?page=gf_IDPay&view=edit&fid=" + fid;
-    }
-
-    function GF_SwitchForm(id) {
-        if (id.length > 0) {
-            document.location = "?page=gf_IDPay&view=edit&id=" + id;
-        }
     }
 
     var form = [];
