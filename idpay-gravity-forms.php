@@ -805,22 +805,6 @@ class GF_Gateway_IDPay
             gform_update_meta($entry_id, 'payment_gateway', self::get_gname());
 
             $transaction_type = $config["meta"]["type"]  == "subscription"  ? 2 : 1;
-
-            if (GFCommon::has_post_field($form["fields"])) {
-                if (!empty($config["meta"]["update_post_action2"])) {
-                    if ($config["meta"]["update_post_action2"] != 'dont') {
-                        if ($config["meta"]["update_post_action2"] != 'default') {
-                            $form['postStatus'] = $config["meta"]["update_post_action2"];
-                        }
-                    } else {
-                        $dont_create = true;
-                    }
-                }
-                if (empty($dont_create)) {
-                    RGFormsModel::create_post($form, $entry);
-                }
-            }
-
             $Amount = self::get_order_total($form, $entry);
             $Amount = apply_filters(self::$author . "_gform_form_gateway_price_{$form['id']}", apply_filters(self::$author . "_gform_form_gateway_price", $Amount, $form, $entry), $form, $entry);
             $Amount = apply_filters(self::$author . "_gform_form_IDPay_price_{$form['id']}", apply_filters(self::$author . "_gform_form_IDPay_price", $Amount, $form, $entry), $form, $entry);
@@ -1194,34 +1178,7 @@ class GF_Gateway_IDPay
             }
 
             GFAPI::update_entry($entry);
-
-            if (apply_filters(self::$author . '_gf_IDPay_post', apply_filters(self::$author . '_gf_gateway_post', ($payment_type != 'custom'), $form, $entry), $form, $entry)) {
-
-                $has_post = GFCommon::has_post_field($form["fields"]) ? true : false;
-
-                if (!empty($config["meta"]["update_post_action1"]) && $config["meta"]["update_post_action1"] != 'default') {
-                    $new_status = $config["meta"]["update_post_action1"];
-                } else {
-                    $new_status = rgar($form, 'postStatus');
-                }
-
-                if (empty($entry["post_id"]) && $has_post) {
-                    $form['postStatus'] = $new_status;
-                    RGFormsModel::create_post($form, $entry);
-                    $entry = GFPersian_Payments::get_entry($entry_id);
-                }
-
-                if (!empty($entry["post_id"]) && $has_post) {
-                    $post = get_post($entry["post_id"]);
-                    if (is_object($post)) {
-                        if ($new_status != $post->post_status) {
-                            $post->post_status = $new_status;
-                            wp_update_post($post);
-                        }
-                    }
-                }
-            }
-
+            
             if (!empty($__params)) {
                 GFPersian_Payments::set_verification($entry, __CLASS__, $__params);
             }
