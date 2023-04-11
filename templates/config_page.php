@@ -11,86 +11,34 @@
 </style>
 
 <?php
-/* style page */
-if (is_rtl()) {
-    echo '<style type="text/css">table.gforms_form_settings th {text-align: right !important}</style>';
-}
-if (! defined('ABSPATH')) {
-    exit;
-}
-wp_register_style('gform_admin_IDPay', GFCommon::get_base_url() . '/assets/css/dist/admin.css');
-wp_print_styles(array('jquery-ui-styles', 'gform_admin_IDPay', 'wp-pointer'));
-/* style page */
-
+self::setStylePage();
 $feedId = !rgempty("IDPay_setting_id") ? rgpost("IDPay_setting_id") : absint(rgget("id"));
 $idpayConfig = !empty($feedId) ? IDPay_DB::get_feed($feedId) : null ;
 $formId = !empty(rgget('fid')) ? rgget('fid') : (!empty($idpayConfig) ? $idpayConfig["form_id"] : null);
 $validForm = !empty($formId) ? true : false;
 
 if ($validForm) {
-    $dbFeeds = IDPay_DB::get_feeds();
-    $formName = '';
-    foreach ((array)$dbFeeds as $dbFeed) {
-        if ($dbFeed['id'] == $feedId) {
-            $formName = $dbFeed['form_title'];
-        }
-    }
-
+    $formName = self::SearchFormName($feedId);
     $isUpdatedSubmitData = false;
+
     if (!rgempty("gf_IDPay_submit")) {
         check_admin_referer("update", "gf_IDPay_feed");
-        $idpayConfig["form_id"] = absint(rgpost("gf_IDPay_form"));
-        $idpayConfig["meta"]["type"] = rgpost("gf_IDPay_type");
-        $idpayConfig["meta"]["addon"] = rgpost("gf_IDPay_addon");
-        $idpayConfig["meta"]["desc_pm"] = rgpost("gf_IDPay_desc_pm");
-        $idpayConfig["meta"]["customer_fields_desc"] = rgpost("IDPay_customer_field_desc");
-        $idpayConfig["meta"]["customer_fields_email"] = rgpost("IDPay_customer_field_email");
-        $idpayConfig["meta"]["customer_fields_mobile"] = rgpost("IDPay_customer_field_mobile");
-        $idpayConfig["meta"]["customer_fields_name"] = rgpost("IDPay_customer_field_name");
-        $idpayConfig["meta"]["confirmation"] = rgpost("gf_IDPay_confirmation");
-        $safe_data = array();
-        foreach ($idpayConfig["meta"] as $key => $val) {
-            if (!is_array($val)) {
-                $safe_data[$key] = sanitize_text_field($val);
-            } else {
-                $safe_data[$key] = array_map('sanitize_text_field', $val);
-            }
-        }
-        $idpayConfig["meta"] = $safe_data;
-
-        $idpayConfig = apply_filters(self::$author . '_gform_gateway_save_config', $idpayConfig);
-        $idpayConfig = apply_filters(self::$author . '_gform_IDPay_save_config', $idpayConfig);
-
-        $feedId = IDPay_DB::update_feed($feedId, $idpayConfig["form_id"], $idpayConfig["is_active"], $idpayConfig["meta"]);
+        $idpayConfig = self::readDataFromRequest($idpayConfig);
+        $idpayConfig["meta"] = self::makeSafeDataForDb($idpayConfig);
         $isUpdatedSubmitData = true ;
-
-        if (!headers_sent()) {
-            wp_redirect(admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $feedId . '&updated=true'));
-            exit;
-        } else {
-            echo "<script type='text/javascript'>window.onload = function () { top.location.href = '" . admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $feedId . '&updated=true') . "'; };</script>";
-            exit;
-        }
+        self::updateConfigAndRedirectPage($feedId, $idpayConfig["meta"]);
     }
 
     $form = !empty($formId) ? RGFormsModel::get_form_meta($formId) : [] ;
-
-    if (rgget('updated') == 'true') {
-        $feedId = absint(empty($feedId) && isset($_GET['id']) ? rgget('id') : $feedId);
-        $updatedLabel = sprintf(__("فید به روز شد . %sبازگشت به لیست%s . ", "gravityformsIDPay"), "<a href='?page=gf_IDPay'>", "</a>");
-        echo '<div class="updated fade" style="padding:6px">' .$updatedLabel . '</div>';
-    }
-
+    $setUpdatedMessage = rgget('updated') == 'true' ? self::makeUpdateMessageBar($feedId)  :false;
     $menu_items = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($formId), $formId);
-    $condition_field_ids = array('1' => '');
-    $condition_values = array('1' => '');
-    $condition_operators = array('1' => 'is');
-    $title = '';
-    $get_form = GFFormsModel::get_form_meta($formId);
-    $current_tab = rgempty('subview', $_GET) ? 'settings' : rgget('subview');
-    $current_tab = !empty($current_tab) ? $current_tab : ' ';
-    $setting_tabs = GFFormSettings::get_tabs($get_form['id']);
-    $has_product = self::checkSetPriceForForm($form);
+    $formMeta = GFFormsModel::get_form_meta($formId);
+	$hasPriceFieldInForm = self::checkSetPriceForForm($form);
+
+  //  $current_tab = rgempty('subview', $_GET) ? 'settings' : rgget('subview');
+  //  $current_tab = !empty($current_tab) ? $current_tab : ' ';
+
+
     $isCheckedSubscription = rgar($idpayConfig['meta'], 'type') == "subscription" ? "checked='checked'" : "";
     $desc_pm = !empty(rgar($idpayConfig["meta"], "desc_pm")) ? rgar($idpayConfig["meta"], "desc_pm") : "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
 
@@ -191,7 +139,8 @@ if ($validForm) {
 
 <div id="gform_tab_group" class="gform_tab_group vertical_tabs">
     <div id="gform_tab_container_<?php echo $formId ?: 1 ?>" class="gform_tab_container">
-        <div class="gform_tab_content" id="tab_<?php echo !empty($current_tab) ? $current_tab : '' ?>">
+<!--        <div class="gform_tab_content" id="tab_--><?php //echo !empty($current_tab) ? $current_tab : '' ?><!--">-->
+        <div class="gform_tab_content" id="tab_settings">
             <div id="form_settings" class="gform_panel gform_panel_form_settings">
 
                 <form method="post" action="" id="gform_form_settings">
@@ -211,7 +160,7 @@ if ($validForm) {
                         </tr>
                         </tbody>
                     </table>
-                    <?php if (empty($has_product)) { ?>
+                    <?php if (empty($hasPriceFieldInForm)) { ?>
                         <div id="gf_IDPay_invalid_product_form" class="gf_IDPay_invalid_form gfIDPayInvalidProduct"><?php echo $label7 ?></div>
                     <?php } else { ?>
                         <table class="form-table gforms_form_settings" <?php echo $getFormId ?> id="IDPay_field_group">
