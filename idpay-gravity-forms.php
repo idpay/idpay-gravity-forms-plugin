@@ -1440,6 +1440,7 @@ class GF_Gateway_IDPay
     private static function readDataFromRequest($idpayConfig)
     {
         $idpayConfig["form_id"] = absint(rgpost("gf_IDPay_form"));
+        $idpayConfig["is_active"] = true;
         $idpayConfig["meta"]["type"] = rgpost("gf_IDPay_type");
         $idpayConfig["meta"]["addon"] = rgpost("gf_IDPay_addon");
         $idpayConfig["meta"]["desc_pm"] = rgpost("gf_IDPay_desc_pm");

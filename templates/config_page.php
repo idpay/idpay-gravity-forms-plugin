@@ -15,18 +15,15 @@ self::setStylePage();
 $feedId = !rgempty("IDPay_setting_id") ? rgpost("IDPay_setting_id") : absint(rgget("id"));
 $idpayConfig = !empty($feedId) ? IDPay_DB::get_feed($feedId) : null ;
 $formId = !empty(rgget('fid')) ? rgget('fid') : (!empty($idpayConfig) ? $idpayConfig["form_id"] : null);
-$validForm = !empty($formId) ? true : false;
-
-if ($validForm) {
-    $formName = self::SearchFormName($feedId);
-    $isUpdatedSubmitData = false;
+$formName = self::SearchFormName($feedId);
+$isSubmitDataForUpdate = false;
 
     if (!rgempty("gf_IDPay_submit")) {
         check_admin_referer("update", "gf_IDPay_feed");
         $idpayConfig = self::readDataFromRequest($idpayConfig);
         $idpayConfig["meta"] = self::makeSafeDataForDb($idpayConfig);
-        $isUpdatedSubmitData = true ;
-        self::updateConfigAndRedirectPage($feedId, $idpayConfig["meta"]);
+        $isSubmitDataForUpdate = true ;
+        self::updateConfigAndRedirectPage($feedId, $idpayConfig);
     }
 
     $form = !empty($formId) ? RGFormsModel::get_form_meta($formId) : [] ;
@@ -35,10 +32,11 @@ if ($validForm) {
     $formMeta = GFFormsModel::get_form_meta($formId);
 	$hasPriceFieldInForm = self::checkSetPriceForForm($form);
 
-  //  $current_tab = rgempty('subview', $_GET) ? 'settings' : rgget('subview');
-  //  $current_tab = !empty($current_tab) ? $current_tab : ' ';
 
 
+
+    // until line cleaned
+    
     $isCheckedSubscription = rgar($idpayConfig['meta'], 'type') == "subscription" ? "checked='checked'" : "";
     $desc_pm = !empty(rgar($idpayConfig["meta"], "desc_pm")) ? rgar($idpayConfig["meta"], "desc_pm") : "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
 
@@ -71,15 +69,14 @@ if ($validForm) {
     }
 
     $selectedAddon = rgar($idpayConfig['meta'], 'addon') == "true" ? "checked='checked'" : "";
-
-    do_action(self::$author . '_gform_gateway_config', $idpayConfig, $form);
-    do_action(self::$author . '_gform_IDPay_config', $idpayConfig, $form);
-
     $selectedConfirmation = rgar($idpayConfig['meta'], 'confirmation') == "true" ? "checked='checked'" : "";
 
     $updateFeedLabel = __("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay");
     $updatedFeed = sprintf($updateFeedLabel, "<a href='?page=gf_IDPay'>", "</a>");
     $feedHtml =  '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
+
+    do_action(self::$author . '_gform_gateway_config', $idpayConfig, $form);
+    do_action(self::$author . '_gform_IDPay_config', $idpayConfig, $form);
 
     $available_forms = IDPay_DB::get_available_forms();
     $options_forms = '';
@@ -91,6 +88,7 @@ if ($validForm) {
     }
 
     $getFormId = empty($formId) ? "style='display:none;'" : "";
+    $isVisibleForm = rgget('id') || rgget('fid') ? 'display:none !important' : '';
 
 /* label And translate Section */
     $domain = "gravityformsIDPay";
@@ -117,11 +115,9 @@ if ($validForm) {
     $label21 = translate("ذخیره", $domain);
 /* label And translate Section */
 
-    $isVisibleForm = rgget('id') || rgget('fid') ? 'display:none !important' : '';
-}
 ?>
 
-<?php if ($validForm) { ?>
+
 <div class="wrap gforms_edit_form gf_browser_gecko"></div>
 <h2 class="gf_admin_page_title"><?php echo $label1 ?>
     <?php if (!empty($formId)) { ?>
@@ -133,13 +129,12 @@ if ($validForm) {
 </h2>
 
 <a class="button add-new-h2" href="admin.php?page=gf_settings&subview=gf_IDPay" style="margin:8px 9px;"><?php echo $label4 ?></a>
-    <?php if ($isUpdatedSubmitData) {
+    <?php if ($isSubmitDataForUpdate) {
         echo $feedHtml;
     } ?>
 
 <div id="gform_tab_group" class="gform_tab_group vertical_tabs">
     <div id="gform_tab_container_<?php echo $formId ?: 1 ?>" class="gform_tab_container">
-<!--        <div class="gform_tab_content" id="tab_--><?php //echo !empty($current_tab) ? $current_tab : '' ?><!--">-->
         <div class="gform_tab_content" id="tab_settings">
             <div id="form_settings" class="gform_panel gform_panel_form_settings">
 
@@ -161,7 +156,8 @@ if ($validForm) {
                         </tbody>
                     </table>
                     <?php if (empty($hasPriceFieldInForm)) { ?>
-                        <div id="gf_IDPay_invalid_product_form" class="gf_IDPay_invalid_form gfIDPayInvalidProduct"><?php echo $label7 ?></div>
+                        <div id="gf_IDPay_invalid_product_form"
+                             class="gf_IDPay_invalid_form gfIDPayInvalidProduct"><?php echo $label7 ?></div>
                     <?php } else { ?>
                         <table class="form-table gforms_form_settings" <?php echo $getFormId ?> id="IDPay_field_group">
                             <tbody>
@@ -247,4 +243,3 @@ if ($validForm) {
         </div>
     </div>
 </div>
-<?php } ?>
