@@ -18,77 +18,82 @@ $formId = !empty(rgget('fid')) ? rgget('fid') : (!empty($idpayConfig) ? $idpayCo
 $formName = self::SearchFormName($feedId);
 $isSubmitDataForUpdate = false;
 
-    if (!rgempty("gf_IDPay_submit")) {
-        check_admin_referer("update", "gf_IDPay_feed");
-        $idpayConfig = self::readDataFromRequest($idpayConfig);
-        $idpayConfig["meta"] = self::makeSafeDataForDb($idpayConfig);
-        $isSubmitDataForUpdate = true ;
-        self::updateConfigAndRedirectPage($feedId, $idpayConfig);
-    }
+if (!rgempty("gf_IDPay_submit")) {
+    check_admin_referer("update", "gf_IDPay_feed");
+    $idpayConfig = self::readDataFromRequest($idpayConfig);
+    $idpayConfig["meta"] = self::makeSafeDataForDb($idpayConfig);
+    $isSubmitDataForUpdate = true ;
+    self::updateConfigAndRedirectPage($feedId, $idpayConfig);
+}
 
     $form = !empty($formId) ? RGFormsModel::get_form_meta($formId) : [] ;
     $setUpdatedMessage = rgget('updated') == 'true' ? self::makeUpdateMessageBar($feedId)  :false;
     $menu_items = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($formId), $formId);
     $formMeta = GFFormsModel::get_form_meta($formId);
-	$hasPriceFieldInForm = self::checkSetPriceForForm($form);
+    $hasPriceFieldInForm = self::checkSetPriceForForm($form);
 
+    // LoadConfigValues
+    $isSubscription = rgar($idpayConfig['meta'], 'type');
+    $isCheckedSubscription = $isSubscription == "subscription" ? "checked='checked'" : "";
 
+    $isCompatibilityAddon = rgar($idpayConfig['meta'], 'addon');
+    $isCheckedCompatibilityAddon = $isCompatibilityAddon == "true" ? "checked='checked'" : "";
 
+    $isUseCustomConfirmation = rgar($idpayConfig['meta'], 'confirmation');
+    $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
 
-    // until line cleaned
-    
-    $isCheckedSubscription = rgar($idpayConfig['meta'], 'type') == "subscription" ? "checked='checked'" : "";
-    $desc_pm = !empty(rgar($idpayConfig["meta"], "desc_pm")) ? rgar($idpayConfig["meta"], "desc_pm") : "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
+    $description = rgar($idpayConfig["meta"], "desc_pm");
+    $defaultDescription = "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
+    $descriptionText = !empty($description) ? $description : $defaultDescription;
 
-    $customerName = '';
-    if (!empty($form)) {
-        $form_fields = self::get_form_fields($form);
-        $selected_field = !empty($idpayConfig["meta"]["customer_fields_name"]) ? $idpayConfig["meta"]["customer_fields_name"] : '';
-        $customerName = self::get_mapped_field_list('IDPay_customer_field_name', $selected_field, $form_fields);
-    }
+    $gfSysFieldName_CustomerName = 'IDPay_customer_field_name';
+    $selectedCustomerName = $idpayConfig["meta"]["customer_fields_name"] ?? '';
+    $customerName = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerName, $selectedCustomerName);
 
-    $customerEmail = '';
-    if (!empty($form)) {
-        $form_fields = self::get_form_fields($form);
-        $selected_field = !empty($idpayConfig["meta"]["customer_fields_email"]) ? $idpayConfig["meta"]["customer_fields_email"] : '';
-        $customerEmail = self::get_mapped_field_list('IDPay_customer_field_email', $selected_field, $form_fields);
-    }
+    $gfSysFieldName_CustomerEmail = 'IDPay_customer_field_email';
+    $selectedCustomerEmail = $idpayConfig["meta"]["customer_fields_email"] ?? '';
+    $customerEmail = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerEmail, $selectedCustomerEmail);
 
-    $customerDesc = '';
-    if (!empty($form)) {
-        $form_fields = self::get_form_fields($form);
-        $selected_field = !empty($idpayConfig["meta"]["customer_fields_desc"]) ? $idpayConfig["meta"]["customer_fields_desc"] : '';
-        $customerDesc = self::get_mapped_field_list('IDPay_customer_field_desc', $selected_field, $form_fields);
-    }
+    $gfSysFieldName_CustomerDesc = 'IDPay_customer_field_desc';
+    $selectedCustomerDesc = $idpayConfig["meta"]["customer_fields_desc"] ?? '';
+    $customerDesc = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerDesc, $selectedCustomerDesc);
 
-    $customerMobile = '';
-    if (!empty($form)) {
-        $form_fields = self::get_form_fields($form);
-        $selected_field = !empty($idpayConfig["meta"]["customer_fields_mobile"]) ? $idpayConfig["meta"]["customer_fields_mobile"] : '';
-        $customerMobile = self::get_mapped_field_list('IDPay_customer_field_mobile', $selected_field, $form_fields);
-    }
-
-    $selectedAddon = rgar($idpayConfig['meta'], 'addon') == "true" ? "checked='checked'" : "";
-    $selectedConfirmation = rgar($idpayConfig['meta'], 'confirmation') == "true" ? "checked='checked'" : "";
-
-    $updateFeedLabel = __("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay");
-    $updatedFeed = sprintf($updateFeedLabel, "<a href='?page=gf_IDPay'>", "</a>");
-    $feedHtml =  '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
+    $gfSysFieldName_CustomerMobile = 'IDPay_customer_field_mobile';
+    $selectedCustomerMobile = $idpayConfig["meta"]["customer_fields_mobile"] ?? '';
+    $customerMobile = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerMobile, $selectedCustomerMobile);
 
     do_action(self::$author . '_gform_gateway_config', $idpayConfig, $form);
     do_action(self::$author . '_gform_IDPay_config', $idpayConfig, $form);
 
-    $available_forms = IDPay_DB::get_available_forms();
-    $options_forms = '';
-    foreach ($available_forms as $current_form) {
-        $selected = absint($current_form->id) == $formId ? 'selected="selected"' : '';
-        $val = absint($current_form->id);
-        $title = esc_html($current_form->title);
-        $options_forms = $options_forms . "<option value={$val} {$selected}>{$title}</option>" ;
-    }
+    // End : LoadConfigValues
+
+
+
+    // clean until line
+
+  // this section :
+    // - load all forms to select for define or update this feed
+    // - And Manage show or hide for display in form for user
+    $optionsForms = '';
+$gfAllForms = IDPay_DB::get_available_forms();
+foreach ($gfAllForms as $current_form) {
+    $title = esc_html($current_form->title);
+    $val = absint($current_form->id);
+    $isSelected = absint($current_form->id) == $formId ? 'selected="selected"' : '';
+    $optionsForms = $optionsForms . "<option value={$val} {$isSelected}>{$title}</option>" ;
+}
+    $VisibleFieldFormSelect = rgget('id') || rgget('fid') ? 'display:none !important' : '';
+
+ //End section
+
+    // manage show or hide sections //
+    $updateFeedLabel = __("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay");
+    $updatedFeed = sprintf($updateFeedLabel, "<a href='?page=gf_IDPay'>", "</a>");
+    $feedHtml =  '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
 
     $getFormId = empty($formId) ? "style='display:none;'" : "";
-    $isVisibleForm = rgget('id') || rgget('fid') ? 'display:none !important' : '';
+
+    // manage show or hide sections //
 
 /* label And translate Section */
     $domain = "gravityformsIDPay";
@@ -143,13 +148,13 @@ $isSubmitDataForUpdate = false;
                     <input type="hidden" value="<?php echo $feedId ?>" name="IDPay_setting_id" />
                     <table class="form-table gforms_form_settings">
                         <tbody>
-                        <tr style="<?php echo $isVisibleForm ?>">
+                        <tr style="<?php echo $VisibleFieldFormSelect ?>">
                             <th><?php echo $label5 ?></th>
                             <td>
                                 <select id="gf_IDPay_form" name="gf_IDPay_form"
                                         onchange="GF_SwitchFid(jQuery(this).val());">
                                     <option value=""><?php echo $label6 ?></option>
-                                    <?php echo $options_forms ?>
+                                    <?php echo $optionsForms ?>
                                 </select>
                             </td>
                         </tr>
@@ -175,7 +180,7 @@ $isSubmitDataForUpdate = false;
                             <tr>
                                 <th><?php echo $label10 ?></th>
                                 <td>
-                                    <input name="gf_IDPay_desc_pm" value="<?php echo $desc_pm ?>"
+                                    <input name="gf_IDPay_desc_pm" value="<?php echo $descriptionText ?>"
                                            type="text" id="gf_IDPay_desc_pm" class="fieldwidth-1"/>
 
                                     <span class="description"><?php echo $label11 ?></span>
@@ -205,7 +210,7 @@ $isSubmitDataForUpdate = false;
                             <tr>
                                 <th><?php echo $label16 ?></th>
                                 <td>
-                                    <input type="checkbox" <?php echo $selectedAddon; ?>
+                                    <input type="checkbox" <?php echo $isCheckedCompatibilityAddon; ?>
                                            name="gf_IDPay_addon" id="gf_IDPay_addon_true"
                                            value="true" />
 
@@ -217,7 +222,7 @@ $isSubmitDataForUpdate = false;
                             <tr>
                                 <th><?php echo $label18 ?></th>
                                 <td>
-                                    <input type="checkbox"  <?php echo $selectedConfirmation ?>
+                                    <input type="checkbox"  <?php echo $isCheckedUseCustomConfirmation ?>
                                            name="gf_IDPay_confirmation"
                                            id="gf_IDPay_confirmation_true" value="true"/>
 

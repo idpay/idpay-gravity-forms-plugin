@@ -1400,9 +1400,11 @@ class GF_Gateway_IDPay
         $idpayConfig = apply_filters(self::$author . '_gform_gateway_save_config', $data);
         $idpayConfig = apply_filters(self::$author . '_gform_IDPay_save_config', $idpayConfig);
         $feedId = IDPay_DB::update_feed(
-                                        $feedId, $idpayConfig["form_id"],
-                                        $idpayConfig["is_active"], $idpayConfig["meta"]
-                                        );
+            $feedId,
+            $idpayConfig["form_id"],
+            $idpayConfig["is_active"],
+            $idpayConfig["meta"]
+        );
         if (!headers_sent()) {
             wp_redirect(admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $feedId . '&updated=true'));
             exit;
@@ -1452,14 +1454,24 @@ class GF_Gateway_IDPay
         return $idpayConfig;
     }
 
-	private static function makeUpdateMessageBar($oldFeedId)
-	{
-		$feedId = (int) rgget('id') ?? $oldFeedId;
-		$message = __("فید به روز شد . %sبازگشت به لیست%s . ", "gravityformsIDPay");
-		$updatedLabel = sprintf($message,"<a href='?page=gf_IDPay'>", "</a>");
-		echo '<div class="updated fade" style="padding:6px">' .$updatedLabel . '</div>';
+    private static function makeUpdateMessageBar($oldFeedId)
+    {
+        $feedId = (int) rgget('id') ?? $oldFeedId;
+        $message = __("فید به روز شد . %sبازگشت به لیست%s . ", "gravityformsIDPay");
+        $updatedLabel = sprintf($message, "<a href='?page=gf_IDPay'>", "</a>");
+        echo '<div class="updated fade" style="padding:6px">' .$updatedLabel . '</div>';
         return true;
-	}
+    }
+
+    private static function loadSavedOrDefaultValue($form, $fieldName, $selectedValue)
+    {
+        $gravityFormFields = !empty($form) ? self::get_form_fields($form) : null;
+        if ($gravityFormFields != null) {
+            return self::get_mapped_field_list($fieldName, $selectedValue, $gravityFormFields);
+        }
+        return '';
+    }
+
 
     private static function template($feedId, $data)
     {
