@@ -30,7 +30,7 @@ if (!rgempty("gf_IDPay_submit")) {
     $setUpdatedMessage = rgget('updated') == 'true' ? self::makeUpdateMessageBar($feedId)  :false;
     $menu_items = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($formId), $formId);
     $formMeta = GFFormsModel::get_form_meta($formId);
-    $hasPriceFieldInForm = self::checkSetPriceForForm($form);
+    $hasPriceFieldInForm = self::checkSetPriceForForm($form,$formId);
 
     // LoadConfigValues
     $isSubscription = rgar($idpayConfig['meta'], 'type');
@@ -67,32 +67,23 @@ if (!rgempty("gf_IDPay_submit")) {
 
     // End : LoadConfigValues
 
+   /* FeedFormSelect section :
+     - load all forms to select for define or update this feed
+     - And Manage show or hide for display in form for user
+   */
+    $gfFormFeedSelect = self::generateFeedSelectForm($formId,$domain);
+    $VisibleFieldFormSelect = $gfFormFeedSelect->visible;
+    $optionsForms = $gfFormFeedSelect->options;
 
 
-    // clean until line
 
-  // this section :
-    // - load all forms to select for define or update this feed
-    // - And Manage show or hide for display in form for user
-    $optionsForms = '';
-$gfAllForms = IDPay_DB::get_available_forms();
-foreach ($gfAllForms as $current_form) {
-    $title = esc_html($current_form->title);
-    $val = absint($current_form->id);
-    $isSelected = absint($current_form->id) == $formId ? 'selected="selected"' : '';
-    $optionsForms = $optionsForms . "<option value={$val} {$isSelected}>{$title}</option>" ;
-}
-    $VisibleFieldFormSelect = rgget('id') || rgget('fid') ? 'display:none !important' : '';
-
- //End section
+    // clean until this line
 
     // manage show or hide sections //
     $updateFeedLabel = __("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay");
     $updatedFeed = sprintf($updateFeedLabel, "<a href='?page=gf_IDPay'>", "</a>");
     $feedHtml =  '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
-
     $getFormId = empty($formId) ? "style='display:none;'" : "";
-
     // manage show or hide sections //
 
 /* label And translate Section */
@@ -146,32 +137,36 @@ foreach ($gfAllForms as $current_form) {
                 <form method="post" action="" id="gform_form_settings">
                     <?php wp_nonce_field("update", "gf_IDPay_feed") ?>
                     <input type="hidden" value="<?php echo $feedId ?>" name="IDPay_setting_id" />
-                    <table class="form-table gforms_form_settings">
+
+                    <!-- Form Select Form For Feed -->
+                    <table <?php echo $VisibleFieldFormSelect ?> class="form-table gforms_form_settings">
                         <tbody>
-                        <tr style="<?php echo $VisibleFieldFormSelect ?>">
+                        <tr style="">
                             <th><?php echo $label5 ?></th>
                             <td>
                                 <select id="gf_IDPay_form" name="gf_IDPay_form"
                                         onchange="GF_SwitchFid(jQuery(this).val());">
-                                    <option value=""><?php echo $label6 ?></option>
-                                    <?php echo $optionsForms ?>
+                                    <!-- Options --><?php echo $optionsForms ?><!-- Options -->
                                 </select>
                             </td>
                         </tr>
                         </tbody>
                     </table>
+                    <!-- Form Select Form For Feed -->
+
+                    <!-- Form Other Configs Fields -->
                     <?php if (empty($hasPriceFieldInForm)) { ?>
-                        <div id="gf_IDPay_invalid_product_form"
-                             class="gf_IDPay_invalid_form gfIDPayInvalidProduct"><?php echo $label7 ?></div>
+                        <div class="gf_IDPay_invalid_form gfIDPayInvalidProduct"
+                             id="gf_IDPay_invalid_product_form"><?php echo $label7 ?></div>
                     <?php } else { ?>
                         <table class="form-table gforms_form_settings" <?php echo $getFormId ?> id="IDPay_field_group">
                             <tbody>
+
                             <tr>
                                 <th><?php echo $label8 ?></th>
                                 <td>
                                     <input name="gf_IDPay_type" <?php echo $isCheckedSubscription ?>
                                            value="subscription" type="checkbox" id="gf_IDPay_type_subscription"/>
-
                                     <label for="gf_IDPay_type"></label>
                                     <span class="description"><?php echo $label9 ?></span>
                                 </td>
@@ -242,6 +237,8 @@ foreach ($gfAllForms as $current_form) {
 
                             </tbody>
                         </table>
+                        <!-- Form Other Configs Fields -->
+
                     <?php } ?>
                 </form>
             </div>
