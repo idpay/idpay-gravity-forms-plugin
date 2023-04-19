@@ -17,11 +17,12 @@ $idpayConfig = !empty($feedId) ? IDPay_DB::get_feed($feedId) : null ;
 $formId = !empty(rgget('fid')) ? rgget('fid') : (!empty($idpayConfig) ? $idpayConfig["form_id"] : null);
 $formName = self::SearchFormName($feedId);
 $isSubmitDataForUpdate = false;
-
+$gfStatusBarMessage = '';
 if (!rgempty("gf_IDPay_submit")) {
     check_admin_referer("update", "gf_IDPay_feed");
     $idpayConfig = self::readDataFromRequest($idpayConfig);
     $idpayConfig["meta"] = self::makeSafeDataForDb($idpayConfig);
+    $gfStatusBarMessage = self::generateStatusBarMessage($formId);
     $isSubmitDataForUpdate = true ;
     self::updateConfigAndRedirectPage($feedId, $idpayConfig);
 }
@@ -30,7 +31,7 @@ if (!rgempty("gf_IDPay_submit")) {
     $setUpdatedMessage = rgget('updated') == 'true' ? self::makeUpdateMessageBar($feedId)  :false;
     $menu_items = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($formId), $formId);
     $formMeta = GFFormsModel::get_form_meta($formId);
-    $hasPriceFieldInForm = self::checkSetPriceForForm($form,$formId);
+    $hasPriceFieldInForm = self::checkSetPriceForForm($form, $formId);
 
     // LoadConfigValues
     $isSubscription = rgar($idpayConfig['meta'], 'type');
@@ -71,20 +72,13 @@ if (!rgempty("gf_IDPay_submit")) {
      - load all forms to select for define or update this feed
      - And Manage show or hide for display in form for user
    */
-    $gfFormFeedSelect = self::generateFeedSelectForm($formId,$domain);
+    $gfFormFeedSelect = self::generateFeedSelectForm($formId);
     $VisibleFieldFormSelect = $gfFormFeedSelect->visible;
     $optionsForms = $gfFormFeedSelect->options;
 
 
-
     // clean until this line
 
-    // manage show or hide sections //
-    $updateFeedLabel = __("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay");
-    $updatedFeed = sprintf($updateFeedLabel, "<a href='?page=gf_IDPay'>", "</a>");
-    $feedHtml =  '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
-    $getFormId = empty($formId) ? "style='display:none;'" : "";
-    // manage show or hide sections //
 
 /* label And translate Section */
     $domain = "gravityformsIDPay";
@@ -126,7 +120,7 @@ if (!rgempty("gf_IDPay_submit")) {
 
 <a class="button add-new-h2" href="admin.php?page=gf_settings&subview=gf_IDPay" style="margin:8px 9px;"><?php echo $label4 ?></a>
     <?php if ($isSubmitDataForUpdate) {
-        echo $feedHtml;
+        echo $gfStatusBarMessage;
     } ?>
 
 <div id="gform_tab_group" class="gform_tab_group vertical_tabs">
@@ -159,7 +153,7 @@ if (!rgempty("gf_IDPay_submit")) {
                         <div class="gf_IDPay_invalid_form gfIDPayInvalidProduct"
                              id="gf_IDPay_invalid_product_form"><?php echo $label7 ?></div>
                     <?php } else { ?>
-                        <table class="form-table gforms_form_settings" <?php echo $getFormId ?> id="IDPay_field_group">
+                        <table <?php echo $styleStatusBarMessage ?> class="form-table gforms_form_settings"  id="IDPay_field_group">
                             <tbody>
 
                             <tr>

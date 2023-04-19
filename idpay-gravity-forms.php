@@ -404,7 +404,7 @@ class GF_Gateway_IDPay
         return $is_delayed;
     }
 
-    public static function checkSetPriceForForm($form,$formId): bool
+    public static function checkSetPriceForForm($form, $formId): bool
     {
         $check = false;
         if (isset($form["fields"])) {
@@ -1472,11 +1472,12 @@ class GF_Gateway_IDPay
         return '';
     }
 
-    private static function generateFeedSelectForm($formId,$domain): object {
+    private static function generateFeedSelectForm($formId): object
+    {
         $gfAllForms = IDPay_DB::get_available_forms();
         $visibleFieldFormSelect = rgget('id') || rgget('fid') ? 'style="display:none !important"' : '';
         $label = 'یک فرم انتخاب نمایید';
-	    $optionsForms = "<option value=''>{$label}</option>";
+        $optionsForms = "<option value=''>{$label}</option>";
         foreach ($gfAllForms as $current_form) {
             $title = esc_html($current_form->title);
             $val = absint($current_form->id);
@@ -1489,6 +1490,21 @@ class GF_Gateway_IDPay
           'visible'  => $visibleFieldFormSelect
         ];
     }
+
+    private static function generateStatusBarMessage($formId)
+    {
+        $updateFeedLabel = __("فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay");
+        $updatedFeed = sprintf($updateFeedLabel, "<a href='?page=gf_IDPay'>", "</a>");
+        $feedHtml =  '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
+        return $feedHtml;
+    }
+
+
+
+
+
+
+
 
     private static function template($feedId, $data)
     {
