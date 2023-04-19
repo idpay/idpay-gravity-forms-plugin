@@ -28,6 +28,7 @@ class GF_Gateway_IDPay
     private static $version = "1.0.5";
     private static $min_gravityforms_version = "1.9.10";
     private static $config = null;
+    private static $domain = "gravityformsIDPay";
 
     public static function init()
     {
@@ -1498,6 +1499,37 @@ class GF_Gateway_IDPay
         $feedHtml =  '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
         return $feedHtml;
     }
+
+    private static function loadDictionary($feedId, $formName) : object
+    {
+        return (object) [
+        'label1' => translate("پیکربندی درگاه IDPay", self::$domain),
+        'label2' => sprintf(__("فید: %s", self::$domain), $feedId),
+        'label3' => sprintf(__("فرم: %s", self::$domain), $formName),
+        'label4' => translate("تنظیمات کلی", self::$domain),
+        'label5' => translate("انتخاب فرم", self::$domain),
+        'label6' => translate("یک فرم انتخاب نمایید", self::$domain),
+        'label7' => translate("فرم انتخاب شده هیچ گونه فیلد قیمت گذاری ندارد، لطفا پس از افزودن این فیلدها مجددا اقدام نمایید.", self::$domain),
+        'label8' => translate("User_Registration تنظیمات", self::$domain),
+        'label9' => translate(' اگر این فرم وظیفه ثبت نام کاربر تنها در صورت پرداخت موفق باید داشته باشد تیک بزنید', self::$domain),
+        'label10' => translate("توضیحات پرداخت", self::$domain),
+        'label11' => translate("توضیحاتی که میتوانید در داشبورد سایت آیدی ببینید . می توانید از", self::$domain),
+        'label11_2' => translate("{{form_title}}  و  {{form_id}}", self::$domain),
+        'label11_3' => translate("نیز برای نشانه گذاری استفاده کنید", self::$domain),
+        'label12' => translate("نام پرداخت کننده", self::$domain),
+        'label13' => translate("ایمیل پرداخت کننده", self::$domain),
+        'label14' => translate("توضیح تکمیلی", self::$domain),
+        'label15' => translate("تلفن همراه پرداخت کننده", self::$domain),
+        'label16' => translate("سازگاری با افزودنی ها", self::$domain),
+        'label17' => translate("برخی افزودنی های گرویتی فرم دارای متد add_delayed_payment_support هستند. در صورتی که میخواهید این افزودنی ها تنها در صورت تراکنش موفق عمل کنند این گزینه را تیک بزنید.", self::$domain),
+        'label18' => translate("استفاده از تاییدیه های فرم", self::$domain),
+        'label19' => translate("به صورت پیش فرض آیدی پی از تاییدیه های گرویتی فرم استفاده نمیکند و پیام خود پلاگین را به عنوان نتیجه پرداخت به کاربر نمایش میدهد.", self::$domain),
+        'label20' => translate("در این صورت شما می توانید از متغیر idpay_payment_result به عنوان نتیجه پرداخت در تاییدیه های گرویتی فرم استفاده کنید.", self::$domain),
+        'label21' => translate("ذخیره", self::$domain),
+        'labelSelectGravity' => translate("از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain),
+        ];
+    }
+
 
 
 
