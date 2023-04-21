@@ -425,7 +425,7 @@ class GF_Gateway_IDPay
     {
         $view = rgget("view");
         if ($view == "edit") {
-            require_once(self::get_base_path() . '/templates/config_page.php');
+            require_once(self::get_base_path() . '/pages/FeedConfig.php');
         } elseif ($view == "stats") {
             IDPay_Chart::stats_page();
         } else {
