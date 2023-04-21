@@ -123,127 +123,126 @@ class IDPay_Chart
             <div class="clear"></div>
             <?php
             switch (rgget("tab")) {
-
-                case "spring" :
+                case "spring":
                     $chart_info = self::season_chart_info($form_id, 1, 1);
                     $chart_info_gateways = self::season_chart_info($form_id, 2, 1);
                     $chart_info_hannan = self::season_chart_info($form_id, 3, 1);
                     $chart_info_site = self::season_chart_info($form_id, 4, 1);
                     break;
 
-                case "summer" :
+                case "summer":
                     $chart_info = self::season_chart_info($form_id, 1, 2);
                     $chart_info_gateways = self::season_chart_info($form_id, 2, 2);
                     $chart_info_hannan = self::season_chart_info($form_id, 3, 2);
                     $chart_info_site = self::season_chart_info($form_id, 4, 2);
                     break;
 
-                case "fall" :
+                case "fall":
                     $chart_info = self::season_chart_info($form_id, 1, 3);
                     $chart_info_gateways = self::season_chart_info($form_id, 2, 3);
                     $chart_info_hannan = self::season_chart_info($form_id, 3, 3);
                     $chart_info_site = self::season_chart_info($form_id, 4, 3);
                     break;
 
-                case "winter" :
+                case "winter":
                     $chart_info = self::season_chart_info($form_id, 1, 4);
                     $chart_info_gateways = self::season_chart_info($form_id, 2, 4);
                     $chart_info_hannan = self::season_chart_info($form_id, 3, 4);
                     $chart_info_site = self::season_chart_info($form_id, 4, 4);
                     break;
 
-                case "thisyear" :
+                case "thisyear":
                     $chart_info = self::yearly_chart_info($form_id, 1);
                     $chart_info_gateways = self::yearly_chart_info($form_id, 2);
                     $chart_info_hannan = self::yearly_chart_info($form_id, 3);
                     $chart_info_site = self::yearly_chart_info($form_id, 4);
                     break;
 
-                case "last7days" :
+                case "last7days":
                     $chart_info = self::lastxdays_chart_info($form_id, 1, 7);
                     $chart_info_gateways = self::lastxdays_chart_info($form_id, 2, 7);
                     $chart_info_hannan = self::lastxdays_chart_info($form_id, 3, 7);
                     $chart_info_site = self::lastxdays_chart_info($form_id, 4, 7);
                     break;
 
-                case "thisweek" :
+                case "thisweek":
                     $chart_info = self::thisweek_chart_info($form_id, 1);
                     $chart_info_gateways = self::thisweek_chart_info($form_id, 2);
                     $chart_info_hannan = self::thisweek_chart_info($form_id, 3);
                     $chart_info_site = self::thisweek_chart_info($form_id, 4);
                     break;
 
-                case "last30days" :
+                case "last30days":
                     $chart_info = self::lastxdays_chart_info($form_id, 1, 30);
                     $chart_info_gateways = self::lastxdays_chart_info($form_id, 2, 30);
                     $chart_info_hannan = self::lastxdays_chart_info($form_id, 3, 30);
                     $chart_info_site = self::lastxdays_chart_info($form_id, 4, 30);
                     break;
 
-                case "thismonth" :
+                case "thismonth":
                     $chart_info = self::targetmdays_chart_info($form_id, 1, 1);
                     $chart_info_gateways = self::targetmdays_chart_info($form_id, 2, 1);
                     $chart_info_hannan = self::targetmdays_chart_info($form_id, 3, 1);
                     $chart_info_site = self::targetmdays_chart_info($form_id, 4, 1);
                     break;
 
-                case "lastmonth" :
+                case "lastmonth":
                     $chart_info = self::targetmdays_chart_info($form_id, 1, 2);
                     $chart_info_gateways = self::targetmdays_chart_info($form_id, 2, 2);
                     $chart_info_hannan = self::targetmdays_chart_info($form_id, 3, 2);
                     $chart_info_site = self::targetmdays_chart_info($form_id, 4, 2);
                     break;
 
-                case "last2month" :
+                case "last2month":
                     $chart_info = self::targetmdays_chart_info($form_id, 1, 60);
                     $chart_info_gateways = self::targetmdays_chart_info($form_id, 2, 60);
                     $chart_info_hannan = self::targetmdays_chart_info($form_id, 3, 60);
                     $chart_info_site = self::targetmdays_chart_info($form_id, 4, 60);
                     break;
 
-                case "last3month" :
+                case "last3month":
                     $chart_info = self::targetmdays_chart_info($form_id, 1, 3);
                     $chart_info_gateways = self::targetmdays_chart_info($form_id, 2, 3);
                     $chart_info_hannan = self::targetmdays_chart_info($form_id, 3, 3);
                     $chart_info_site = self::targetmdays_chart_info($form_id, 4, 3);
                     break;
 
-                case "last6month" :
+                case "last6month":
                     $chart_info = self::targetmdays_chart_info($form_id, 1, 6);
                     $chart_info_gateways = self::targetmdays_chart_info($form_id, 2, 6);
                     $chart_info_hannan = self::targetmdays_chart_info($form_id, 3, 6);
                     $chart_info_site = self::targetmdays_chart_info($form_id, 4, 6);
                     break;
 
-                case "last9month" :
+                case "last9month":
                     $chart_info = self::targetmdays_chart_info($form_id, 1, 9);
                     $chart_info_gateways = self::targetmdays_chart_info($form_id, 2, 9);
                     $chart_info_hannan = self::targetmdays_chart_info($form_id, 3, 9);
                     $chart_info_site = self::targetmdays_chart_info($form_id, 4, 9);
                     break;
 
-                case "last12month" :
+                case "last12month":
                     $chart_info = self::targetmdays_chart_info($form_id, 1, 12);
                     $chart_info_gateways = self::targetmdays_chart_info($form_id, 2, 12);
                     $chart_info_hannan = self::targetmdays_chart_info($form_id, 3, 12);
                     $chart_info_site = self::targetmdays_chart_info($form_id, 4, 12);
                     break;
 
-                case "selection" :
+                case "selection":
                     $chart_info = self::selection_chart_info($form_id, 1, sanitize_text_field(rgpost('min')), sanitize_text_field(rgpost('max')));
                     $chart_info_gateways = self::selection_chart_info($form_id, 2, sanitize_text_field(rgpost('min')), sanitize_text_field(rgpost('max')));
                     $chart_info_hannan = self::selection_chart_info($form_id, 3, sanitize_text_field(rgpost('min')), sanitize_text_field(rgpost('max')));
                     $chart_info_site = self::selection_chart_info($form_id, 4, sanitize_text_field(rgpost('min')), sanitize_text_field(rgpost('max')));
                     break;
 
-                case "yesterday" :
+                case "yesterday":
                     $chart_info = self::tyday_chart_info($form_id, 1, 2);
                     $chart_info_gateways = self::tyday_chart_info($form_id, 2, 2);
                     $chart_info_hannan = self::tyday_chart_info($form_id, 3, 2);
                     $chart_info_site = self::tyday_chart_info($form_id, 4, 2);
                     break;
 
-                default :
+                default:
                     $chart_info = self::tyday_chart_info($form_id, 1, 1);
                     $chart_info_gateways = self::tyday_chart_info($form_id, 2, 1);
                     $chart_info_hannan = self::tyday_chart_info($form_id, 3, 1);
@@ -575,8 +574,8 @@ class IDPay_Chart
 
             function getCurrentCurrency() {
                 <?php if (!class_exists("RGCurrency")) {
-                require_once(ABSPATH . "/" . PLUGINDIR . "/gravityforms/currency.php");
-            }
+                    require_once(ABSPATH . "/" . PLUGINDIR . "/gravityforms/currency.php");
+                }
                 $current_currency = RGCurrency::get_currency(GFCommon::get_currency());
                 ?>
                 var currency = new Currency(<?php echo GFCommon::json_encode($current_currency)?>);
@@ -726,10 +725,8 @@ class IDPay_Chart
         $targetdb = $today_n;
 
         if (!empty($results)) {
-
             $data = "[";
             foreach ($results as $result) {
-
                 $timeX_tooltips = GF_jdate('l - d F', strtotime($result->date), '', date_default_timezone_get(), 'fa');
                 $timeX = self::get_graph_timestamp($result->date);
 
@@ -874,12 +871,12 @@ class IDPay_Chart
         $today_w = date('w', $tday);
         if ($today_w < 6) {
             $today_w = $today_w + 1;
-        } else if ($today_w == 6) {
+        } elseif ($today_w == 6) {
             $today_w = 0;
         }
 
         switch ($today_w) {
-            case "0" :
+            case "0":
                 $date = new DateTime($today_n);
                 $date->sub(new DateInterval('P0DT0H0M'));
                 $abz = $date->format('m d, Y');
@@ -890,7 +887,7 @@ class IDPay_Chart
                 $ebz_t = $date->format('Ymd');
                 break;
 
-            case "1" :
+            case "1":
                 $date = new DateTime($today_n);
                 $date->sub(new DateInterval('P1DT0H0M'));
                 $abz = $date->format('m d, Y');
@@ -901,7 +898,7 @@ class IDPay_Chart
                 $ebz_t = $date->format('Ymd');
                 break;
 
-            case "2" :
+            case "2":
                 $date = new DateTime($today_n);
                 $date->sub(new DateInterval('P2DT0H0M'));
                 $abz = $date->format('m d, Y');
@@ -912,7 +909,7 @@ class IDPay_Chart
                 $ebz_t = $date->format('Ymd');
                 break;
 
-            case "3" :
+            case "3":
                 $date = new DateTime($today_n);
                 $date->sub(new DateInterval('P3DT0H0M'));
                 $abz = $date->format('m d, Y');
@@ -923,7 +920,7 @@ class IDPay_Chart
                 $ebz_t = $date->format('Ymd');
                 break;
 
-            case "4" :
+            case "4":
                 $date = new DateTime($today_n);
                 $date->sub(new DateInterval('P4DT0H0M'));
                 $abz = $date->format('m d, Y');
@@ -934,7 +931,7 @@ class IDPay_Chart
                 $ebz_t = $date->format('Ymd');
                 break;
 
-            case "5" :
+            case "5":
                 $date = new DateTime($today_n);
                 $date->sub(new DateInterval('P5DT0H0M'));
                 $abz = $date->format('m d, Y');
@@ -945,7 +942,7 @@ class IDPay_Chart
                 $ebz_t = $date->format('Ymd');
                 break;
 
-            case "6" :
+            case "6":
                 $date = new DateTime($today_n);
                 $date->sub(new DateInterval('P6DT0H0M'));
                 $abz = $date->format('m d, Y');
@@ -958,10 +955,8 @@ class IDPay_Chart
         }
 
         if (!empty($results)) {
-
             $data = "[";
             foreach ($results as $result) {
-
                 $timeX_tooltips = GF_jdate('l - d F Y', strtotime($result->date), '', date_default_timezone_get(), 'fa');
                 $timeX = self::get_graph_timestamp($result->date);
 
@@ -1154,7 +1149,6 @@ class IDPay_Chart
             $data = "[";
 
             foreach ($results as $result) {
-
                 $timeX_tooltips = GF_jdate('l - d F Y', strtotime($result->date), '', date_default_timezone_get(), 'fa');
                 $timeX = self::get_graph_timestamp($result->date);
 
@@ -1219,7 +1213,6 @@ class IDPay_Chart
         }
 
         if ($xmonth == 60 || $xmonth == 3 || $xmonth == 6 || $xmonth == 9 || $xmonth == 12) {
-
             $n = $xmonth;
 
             if ($xmonth == 60) {
@@ -1327,7 +1320,7 @@ class IDPay_Chart
             $n = __("امروز", 'gravityformsIDPay');
             $baze = date('m d , Y', $tday);
             $ty = date('Ymd', $tday);
-        } else if ($day == 2) {
+        } elseif ($day == 2) {
             $n = __("دیروز", 'gravityformsIDPay');
             $date->sub(new DateInterval('P1DT0H0M'));
             $baze = $date->format('m d , Y');
@@ -1335,10 +1328,8 @@ class IDPay_Chart
         }
 
         if (!empty($results)) {
-
             $data = "[";
             foreach ($results as $result) {
-
                 $h = GF_jdate('H', strtotime($result->date), '', date_default_timezone_get(), 'en');
                 $h = intval($h) + 1;
                 if ($h < 10) {
@@ -1672,10 +1663,8 @@ class IDPay_Chart
         }
 
         if (!empty($results)) {
-
             $data = "[";
             foreach ($results as $result) {
-
                 $timeX_tooltips = GF_jdate('l - d F Y', strtotime($result->date), '', date_default_timezone_get(), 'fa');
                 $timeX = self::get_graph_timestamp($result->date);
 
@@ -1823,7 +1812,6 @@ class IDPay_Chart
             $strd = $date->format('Y-m-d');
             $data = "[";
             foreach ($results as $result) {
-
                 $timeX_tooltips = GF_jdate('l - d F Y', strtotime($result->date), '', date_default_timezone_get(), 'fa');
                 $timeX = self::get_graph_timestamp($result->date);
 
@@ -1898,6 +1886,4 @@ class IDPay_Chart
             "midt" => $midt
         );
     }
-
-
 }

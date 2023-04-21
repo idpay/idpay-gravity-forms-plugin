@@ -28,11 +28,49 @@ class GF_Gateway_IDPay
     private static $version = "1.0.5";
     private static $min_gravityforms_version = "1.9.10";
     private static $config = null;
+
+    public static function alter_submit_button($button_input, $form)
+    {
+        $has_product = false;
+        if (isset($form["fields"])) {
+            foreach ($form["fields"] as $field) {
+                $shipping_field = GFAPI::get_fields_by_type($form, array('shipping'));
+                if ($field["type"] == "product" || !empty($shipping_field)) {
+                    $has_product = true;
+                    break;
+                }
+            }
+        }
+
+        $config = self::get_active_config($form);
+
+        if ($has_product && !empty($config)) {
+            $button_input .= sprintf(
+                '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;"><img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
+                $form['id'],
+                plugins_url('/assets/logo.svg', __FILE__),
+                __('پرداخت امن با آیدی پی', 'gravityformsIDPay')
+            );
+            $button_input .=
+                "<script>
+                gform.addAction('gform_post_conditional_logic_field_action', function (formId, action, targetId, defaultValues, isInit) {
+                    gf_do_action(action, '#idpay-pay-id-'+ formId, true, defaultValues, isInit, null, formId);
+                });
+            </script>";
+        }
+
+        return $button_input;
+    }
+
     private static $domain = "gravityformsIDPay";
 
     public static function init()
     {
-        if (!class_exists("GFPersian_Payments") || !defined('GF_PERSIAN_VERSION') || version_compare(GF_PERSIAN_VERSION, '2.3.1', '<')) {
+        $condition1 = !class_exists("GFPersian_Payments");
+        $condition2 = !defined('GF_PERSIAN_VERSION');
+        $condition3 = version_compare(GF_PERSIAN_VERSION, '2.3.1', '<');
+
+        if ($condition1 || $condition2 || $condition3) {
             add_action('admin_notices', array(__CLASS__, 'admin_notice_persian_gf'));
             return false;
         }
@@ -74,63 +112,24 @@ class GF_Gateway_IDPay
         if (get_option("gf_IDPay_configured")) {
             add_filter("gform_disable_post_creation", array(__CLASS__, "delay_posts"), 10, 3);
             add_filter("gform_is_delayed_pre_process_feed", array(__CLASS__, "delay_addons"), 10, 4);
-
             add_filter("gform_confirmation", array(__CLASS__, "Request"), 1000, 4);
             add_action('wp', array(__CLASS__, 'Verify'), 5);
             add_filter("gform_submit_button", array(__CLASS__, "alter_submit_button"), 10, 2);
         }
 
         add_filter("gform_logging_supported", array(__CLASS__, "set_logging_supported"));
-
         add_filter('gf_payment_gateways', array(__CLASS__, 'gravityformsIDPay'), 2);
         do_action('gravityforms_gateways');
         do_action('gravityforms_IDPay');
-
         add_filter('gform_admin_pre_render', array(__CLASS__, 'merge_tags_keys'));
+        return 'completed';
     }
 
-    public static function alter_submit_button($button_input, $form)
+    private static function is_gravityforms_supported(): bool|int
     {
-        $has_product = false;
-        if (isset($form["fields"])) {
-            foreach ($form["fields"] as $field) {
-                $shipping_field = GFAPI::get_fields_by_type($form, array('shipping'));
-                if ($field["type"] == "product" || !empty($shipping_field)) {
-                    $has_product = true;
-                    break;
-                }
-            }
-        }
-
-        $config = self::get_active_config($form);
-
-        if ($has_product && !empty($config)) {
-            $button_input .= sprintf(
-                '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;"><img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
-                $form['id'],
-                plugins_url('/assets/logo.svg', __FILE__),
-                __('پرداخت امن با آیدی پی', 'gravityformsIDPay')
-            );
-            $button_input .=
-                "<script>
-                gform.addAction('gform_post_conditional_logic_field_action', function (formId, action, targetId, defaultValues, isInit) {
-                    gf_do_action(action, '#idpay-pay-id-'+ formId, true, defaultValues, isInit, null, formId);
-                });
-            </script>";
-        }
-
-        return $button_input;
-    }
-
-    private static function is_gravityforms_supported()
-    {
-        if (class_exists("GFCommon")) {
-            $is_correct_version = version_compare(GFCommon::$version, self::$min_gravityforms_version, ">=");
-
-            return $is_correct_version;
-        } else {
-            return false;
-        }
+        return class_exists("GFCommon")
+            ? version_compare(GFCommon::$version, self::$min_gravityforms_version, ">=")
+            : false;
     }
 
     protected static function has_access($required_permission = 'gravityforms_IDPay')
@@ -1539,12 +1538,7 @@ class GF_Gateway_IDPay
 
 
 
-
-
-
-
-
-
+    //Template New Function
     private static function template($feedId, $data)
     {
         return [];
