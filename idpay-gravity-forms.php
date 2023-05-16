@@ -248,25 +248,6 @@ class GF_Gateway_IDPay
         return $plugins;
     }
 
-    public static function feed_page()
-    {
-        GFFormSettings::page_header(); ?>
-        <h3>
-            <span><i class="fa fa-credit-card"></i> <?php esc_html_e('IDPay', 'gravityformsIDPay') ?>
-                <a id="add-new-confirmation" class="add-new-h2"
-                   href="<?php echo esc_url(admin_url('admin.php?page=gf_IDPay&view=edit&fid=' . absint(rgget("id")))) ?>"><?php esc_html_e('افزودن فید جدید', 'gravityformsIDPay') ?></a></span>
-            <a class="add-new-h2"
-               href="admin.php?page=gf_IDPay&view=stats&id=<?php echo absint(rgget("id")) ?>"><?php _e("نمودار ها", "gravityformsIDPay") ?></a>
-        </h3>
-        <?php self::list_page('per-form'); ?>
-        <?php GFFormSettings::page_footer();
-    }
-
-    private static function list_page($arg)
-    {
-        require_once(self::get_base_path() . '/templates/list_page.php');
-    }
-
     public static function delay_posts($is_disabled, $form, $entry)
     {
 
@@ -1532,10 +1513,95 @@ class GF_Gateway_IDPay
         'label19_5' => translate("idpay_payment_result", self::$domain),
         'label19_6' => translate("استفاده کنید", self::$domain),
         'label21' => translate("ذخیره تنظیمات", self::$domain),
+        'label22' => translate("فرم های IDPay", self::$domain),
+        'label23' => translate("اقدام دسته جمعی", self::$domain),
+        'label24' => translate("اقدامات دسته جمعی", self::$domain),
+        'label25' => translate("حذف", self::$domain),
+        'label26' => translate('تنظیمات IDPay', self::$domain),
+        'label27' => translate('وضعیت', self::$domain),
+        'label28' => translate(" آیدی فید", self::$domain),
+        'label29' => translate("نوع تراکنش", self::$domain),
+        'label30' => translate("فرم متصل به درگاه", self::$domain),
+        'label31' => translate("برای شروع باید درگاه را فعال نمایید . به تنظیمات IDPay بروید .", self::$domain),
+        'label32' => translate("عملیات", self::$domain),
         'labelSelectGravity' => translate("از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain),
+        'labelNotSupprt' => sprintf(__("درگاه IDPay نیاز به گرویتی فرم نسخه %s دارد. برای بروز رسانی هسته گرویتی فرم به %s مراجعه نمایید.", self::$domain), $feedId, $formName),
         ];
     }
 
+    public static function checkSupportedGravityVersion()
+    {
+        $label1 = self::$min_gravityforms_version;
+        $label2 = "<a href='http://gravityforms.ir' target='_blank'>سایت گرویتی فرم فارسی</a>";
+        if (!self::is_gravityforms_supported()) {
+            return self::loadDictionary($label1, $label2)->labelNotSupprt;
+        }
+        return true;
+    }
+
+    public static function getStatusFeedImage($setting)
+    {
+        $val1 = esc_url(GFCommon::get_base_url()) ;
+        $val2 = "/images/active";
+        $val3 = intval($setting["is_active"]);
+        $val4 = ".png";
+        $image =  $val1 . $val2 . $val3 . $val4;
+        $active =  $setting["is_active"] ? "درگاه فعال است" : "درگاه غیر فعال است";
+
+        return (object) [
+           'image' => $image,
+           'active' => $active
+        ];
+    }
+
+    public static function getTypeFeed($setting)
+    {
+        if (isset($setting["meta"]["type"]) && $setting["meta"]["type"] == 'subscription') {
+            return "عضویت";
+        } else {
+            return "محصول معمولی یا فرم ارسال پست";
+        }
+    }
+
+    public static function checkSubmittedOperation()
+    {
+        if (rgpost('action') == "delete") {
+            check_admin_referer("list_action", "gf_IDPay_list");
+            $id = absint(rgpost("action_argument"));
+            IDPay_DB::delete_feed($id);
+            return "<div class='updated fade' style='padding:6px'>فید حذف شد</div>";
+        } elseif (!empty($_POST["bulk_action"])) {
+            check_admin_referer("list_action", "gf_IDPay_list");
+            $selected_feeds = rgpost("feed");
+            if (is_array($selected_feeds)) {
+                foreach ($selected_feeds as $feed_id) {
+                    IDPay_DB::delete_feed($feed_id);
+                    return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
+                }
+            }
+        }
+        return '';
+    }
+
+    public static function feed_page()
+    {
+        GFFormSettings::page_header(); ?>
+        <h3>
+            <span><i class="fa fa-credit-card"></i> <?php esc_html_e('IDPay', 'gravityformsIDPay') ?>
+                <a id="add-new-confirmation" class="add-new-h2"
+                   href="<?php echo esc_url(admin_url('admin.php?page=gf_IDPay&view=edit&fid=' . absint(rgget("id")))) ?>"><?php esc_html_e('افزودن فید جدید', 'gravityformsIDPay') ?></a></span>
+            <a class="add-new-h2"
+               href="admin.php?page=gf_IDPay&view=stats&id=<?php echo absint(rgget("id")) ?>"><?php _e("نمودار ها", "gravityformsIDPay") ?></a>
+        </h3>
+        <?php self::list_page(); ?>
+        <?php GFFormSettings::page_footer();
+    }
+
+    private static function list_page()
+    {
+      //  require_once(self::get_base_path() . '/templates/list_page.php');
+        require_once(self::get_base_path() . '/pages/FeedList.php');
+    }
 
 
     //Template New Function
