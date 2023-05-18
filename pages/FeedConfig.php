@@ -1,16 +1,6 @@
-<script type="text/javascript">
-    function GF_SwitchFid(fid) {
-        jQuery("#IDPay_wait").show();
-        document.location = "?page=gf_IDPay&view=edit&fid=" + fid;
-    }
-</script>
-<style>
-    .gforms_form_settings select {width: 180px !important}
-    table.gforms_form_settings th { font-weight: 600;line-height: 1.3;font-size: 14px}
-    .gfIDPayInvalidProduct{background-color:#FFDFDF; margin-top:4px; margin-bottom:6px;padding:18px; border:1px dotted #C89797;}
-</style>
-
 <?php
+include_once self::get_base_path() . '/lib/scripts.php';
+include_once self::get_base_path() . '/lib/styles.php';
     //Section Load Necessary Variables
     self::setStylePage();
     $feedId = !rgempty("IDPay_setting_id") ? rgpost("IDPay_setting_id") : absint(rgget("id"));
@@ -126,7 +116,9 @@
                      <div class="gf_IDPay_invalid_form gfIDPayInvalidProduct" id="gf_IDPay_invalid_product_form">
                          <?php echo $dictionary->label7 ?></div>
                     <?php } else { ?>
-                        <table <?php echo $VisibleConfigForm?> class="form-table gforms_form_settings"  id="IDPay_field_group">
+                        <table <?php echo $VisibleConfigForm?>
+                                class="form-table gforms_form_settings"
+                                id="IDPay_field_group">
                             <tbody>
 
                             <tr>
