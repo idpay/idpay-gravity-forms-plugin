@@ -1,16 +1,16 @@
 <?php
 include_once self::get_base_path() . '/lib/scripts.php';
 include_once self::get_base_path() . '/lib/styles.php';
-self::checkSupportedGravityVersion();
-$operation = self::checkSubmittedOperation();
-$dictionary = self::loadDictionary('', '');
-$addNewHtml =  "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
-$addOption = get_option("gf_IDPay_configured") == true ? $addNewHtml : '';
-$list_action = wp_nonce_field('list_action', 'gf_IDPay_list');
-$settings = IDPay_DB::get_feeds();
-$addFeedOption = !get_option("gf_IDPay_configured") ? "<tr><td colspan='5' style='padding:20px;'>{$dictionary->label31}</td></tr>" : '';
-$checkSettingsExits = is_array($settings) && sizeof($settings) > 0 ? true : false;
-$checkSettingsNotExits = is_array($settings) && sizeof($settings) > 0 ? '' :"<tr><td colspan='5' style='padding:20px;'>شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید</td></tr>";
+    self::checkSupportedGravityVersion();
+    $operation = self::checkSubmittedOperation();
+    $dictionary = self::loadDictionary('', '');
+    $addNewHtml =  "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
+    $addOption = get_option("gf_IDPay_configured") == true ? $addNewHtml : '';
+    $list_action = wp_nonce_field('list_action', 'gf_IDPay_list');
+    $settings = IDPayDB::get_feeds();
+    $addFeedOption = !get_option("gf_IDPay_configured") ? "<tr><td colspan='5' style='padding:20px;'>{$dictionary->label31}</td></tr>" : '';
+    $checkSettingsExits = is_array($settings) && sizeof($settings) > 0 ? true : false;
+    $checkSettingsNotExits = is_array($settings) && sizeof($settings) > 0 ? '' :"<tr><td colspan='5' style='padding:20px;'>شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید</td></tr>";
 ?>
 
 <?php echo $operation ?>

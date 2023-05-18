@@ -19,7 +19,7 @@ register_deactivation_hook(__FILE__, array( 'GF_Gateway_IDPay', "deactivation" )
 
 add_action('init', array( 'GF_Gateway_IDPay', 'init' ));
 
-require_once('lib/IDPay_DB.php');
+require_once('lib/IDPayDB.php');
 require_once('lib/IDPay_Chart.php');
 
 class GF_Gateway_IDPay
@@ -48,7 +48,7 @@ class GF_Gateway_IDPay
             $button_input .= sprintf(
                 '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;"><img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
                 $form['id'],
-                plugins_url('/assets/logo.svg', __FILE__),
+                plugins_url('/lib/logo.svg', __FILE__),
                 __('پرداخت امن با آیدی پی', 'gravityformsIDPay')
             );
             $button_input .=
@@ -157,7 +157,7 @@ class GF_Gateway_IDPay
     private static function setup()
     {
         if (get_option("gf_IDPay_version") != self::$version) {
-            IDPay_DB::update_table();
+            IDPayDB::update_table();
             update_option("gf_IDPay_version", self::$version);
         }
     }
@@ -271,7 +271,7 @@ class GF_Gateway_IDPay
             return self::$config;
         }
 
-        $configs = IDPay_DB::get_feed_by_form($form["id"], true);
+        $configs = IDPayDB::get_feed_by_form($form["id"], true);
 
         $configs = apply_filters(self::$author . '_gf_IDPay_get_active_configs', apply_filters(self::$author . '_gf_gateway_get_active_configs', $configs, $form), $form);
 
@@ -446,8 +446,8 @@ class GF_Gateway_IDPay
     {
         check_ajax_referer('gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active');
         $id   = absint(rgpost('feed_id'));
-        $feed = IDPay_DB::get_feed($id);
-        IDPay_DB::update_feed($id, $feed["form_id"], sanitize_text_field(rgpost("is_active")), $feed["meta"]);
+        $feed = IDPayDB::get_feed($id);
+        IDPayDB::update_feed($id, $feed["form_id"], sanitize_text_field(rgpost("is_active")), $feed["meta"]);
     }
 
     public static function payment_entry_detail($form_id, $entry)
@@ -707,7 +707,7 @@ class GF_Gateway_IDPay
         if (! self::has_access("gravityforms_IDPay_uninstall")) {
             die(__("شما مجوز کافی برای این کار را ندارید . سطح دسترسی شما پایین تر از حد مجاز است . ", "gravityformsIDPay"));
         }
-        IDPay_DB::drop_tables();
+        IDPayDB::drop_tables();
         delete_option("gf_IDPay_settings");
         delete_option("gf_IDPay_configured");
         delete_option("gf_IDPay_version");
@@ -1243,7 +1243,7 @@ class GF_Gateway_IDPay
     public static function get_config_by_entry($entry)
     {
         $feed_id = gform_get_meta($entry["id"], "IDPay_feed_id");
-        $feed    = ! empty($feed_id) ? IDPay_DB::get_feed($feed_id) : '';
+        $feed    = ! empty($feed_id) ? IDPayDB::get_feed($feed_id) : '';
         $return  = ! empty($feed) ? $feed : false;
 
         return apply_filters(self::$author . '_gf_IDPay_get_config_by_entry', apply_filters(self::$author . '_gf_gateway_get_config_by_entry', $return, $entry), $entry);
@@ -1382,7 +1382,7 @@ class GF_Gateway_IDPay
     {
         $idpayConfig = apply_filters(self::$author . '_gform_gateway_save_config', $data);
         $idpayConfig = apply_filters(self::$author . '_gform_IDPay_save_config', $idpayConfig);
-        $feedId      = IDPay_DB::update_feed(
+        $feedId      = IDPayDB::update_feed(
             $feedId,
             $idpayConfig["form_id"],
             $idpayConfig["is_active"],
@@ -1413,7 +1413,7 @@ class GF_Gateway_IDPay
 
     private static function SearchFormName($feedId)
     {
-        $dbFeeds  = IDPay_DB::get_feeds();
+        $dbFeeds  = IDPayDB::get_feeds();
         $formName = '';
         foreach ((array) $dbFeeds as $dbFeed) {
             if ($dbFeed['id'] == $feedId) {
@@ -1462,7 +1462,7 @@ class GF_Gateway_IDPay
 
     private static function generateFeedSelectForm($formId): object
     {
-        $gfAllForms             = IDPay_DB::get_available_forms();
+        $gfAllForms             = IDPayDB::get_available_forms();
         $visibleFieldFormSelect = rgget('id') || rgget('fid') ? 'style="display:none !important"' : '';
         $label                  = 'یک فرم انتخاب نمایید';
         $optionsForms           = "<option value=''>{$label}</option>";
@@ -1539,6 +1539,20 @@ class GF_Gateway_IDPay
             'label37'            => translate("نمودارهای فرم", self::$domain),
             'label38'            => translate("افزودن فید جدید", self::$domain),
             'label39'            => translate("نمودار ها", self::$domain),
+            'label40'            => translate("درگاه با موفقیت غیرفعال شد و اطلاعات مربوط به آن نیز از بین رفت برای فعالسازی مجدد میتوانید از طریق افزونه های وردپرس اقدام نمایید ", self::$domain),
+            'label41'            => translate("تنظیمات ذخیره شدند", self::$domain),
+            'label42'            => translate("تنظیمات IDPay", self::$domain),
+            'label43'            => translate("فعالسازی", self::$domain),
+            'label44'            => translate("بله", self::$domain),
+            'label45'            => translate("عنوان", self::$domain),
+            'label46'            => translate("API KEY", self::$domain),
+            'label47'            => translate("آزمایشگاه", self::$domain),
+            'label48'            => translate("بله", self::$domain),
+            'label49'            => translate("ذخیره تنظیمات", self::$domain),
+            'label50'            => translate("غیر فعالسازی افزونه دروازه پرداخت IDPay", self::$domain),
+            'label51'            => translate("تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد", self::$domain),
+            'label52'            => translate("غیر فعال سازی درگاه IDPay", self::$domain),
+            'label53'            => translate("تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد . آیا همچنان مایل به غیر فعالسازی میباشید؟", self::$domain),
             'labelSelectGravity' => translate("از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain),
             'labelNotSupprt'     => sprintf(__("درگاه IDPay نیاز به گرویتی فرم نسخه %s دارد. برای بروز رسانی هسته گرویتی فرم به %s مراجعه نمایید.", self::$domain), $feedId, $formName),
         ];
@@ -1584,7 +1598,7 @@ class GF_Gateway_IDPay
         if (rgpost('action') == "delete") {
             check_admin_referer("list_action", "gf_IDPay_list");
             $id = absint(rgpost("action_argument"));
-            IDPay_DB::delete_feed($id);
+            IDPayDB::delete_feed($id);
 
             return "<div class='updated fade' style='padding:6px'>فید حذف شد</div>";
         } elseif (! empty($_POST["bulk_action"])) {
@@ -1592,7 +1606,7 @@ class GF_Gateway_IDPay
             $selected_feeds = rgpost("feed");
             if (is_array($selected_feeds)) {
                 foreach ($selected_feeds as $feed_id) {
-                    IDPay_DB::delete_feed($feed_id);
+                    IDPayDB::delete_feed($feed_id);
 
                     return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
                 }
@@ -1623,7 +1637,41 @@ class GF_Gateway_IDPay
 
     public static function settings_page()
     {
-        require_once(self::get_base_path() . '/templates/settings_page.php');
+        require_once(self::get_base_path() . '/pages/Setting.php');
+    }
+
+    public static function checkSubmittedUnistall()
+    {
+        $dictionary = self::loadDictionary('', '');
+        if (rgpost("uninstall")) {
+            check_admin_referer("uninstall", "gf_IDPay_uninstall");
+            self::uninstall();
+            echo '<div class="updated fade" style="padding:20px;">' . $dictionary->label34 . '</div>';
+
+            return;
+        }
+    }
+
+    public static function checkSubmittedConfigDataAndLoadSetting()
+    {
+        if (isset($_POST["gf_IDPay_submit"])) {
+            check_admin_referer("update", "gf_IDPay_update");
+            $settings = [
+                "gname" => rgpost('gf_IDPay_gname'),
+                "api_key" => rgpost('gf_IDPay_api_key'),
+                "sandbox" => rgpost('gf_IDPay_sandbox'),
+            ];
+            update_option("gf_IDPay_settings", array_map('sanitize_text_field', $settings));
+            if (isset($_POST["gf_IDPay_configured"])) {
+                update_option("gf_IDPay_configured", sanitize_text_field($_POST["gf_IDPay_configured"]));
+            } else {
+                delete_option("gf_IDPay_configured");
+            }
+            return $settings;
+        } else {
+            $settings = get_option("gf_IDPay_settings");
+            return $settings;
+        }
     }
 
 

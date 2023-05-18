@@ -1,10 +1,6 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
-
-class IDPay_DB
+class IDPayDB
 {
 
     private static $method = 'IDPay';
