@@ -2,7 +2,6 @@
 
 class IDPayDB
 {
-
     private static $method = 'IDPay';
 
     public static function update_table()
@@ -241,4 +240,12 @@ class IDPayDB
         return $totals;
     }
 
+    /* ------------------ New Section And Refactored Functions ****************** */
+
+    public static function getActiveFeed($form)
+    {
+        $configs = IDPayDB::get_feed_by_form($form["id"], true);
+        $configs = apply_filters(self::$author . '_gf_IDPay_get_active_configs', apply_filters(self::$author . '_gf_gateway_get_active_configs', $configs, $form), $form);
+        return $configs;
+    }
 }
