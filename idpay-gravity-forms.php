@@ -19,9 +19,11 @@ register_deactivation_hook(__FILE__, array( 'GF_Gateway_IDPay', "deactivation" )
 
 add_action('init', array( 'GF_Gateway_IDPay', 'init' ));
 
+require_once('lib/Helpers.php');
 require_once('lib/IDPayDB.php');
 require_once('lib/IDPayPayment.php');
 require_once('lib/IDPay_Chart.php');
+
 
 class GF_Gateway_IDPay
 {
@@ -80,7 +82,7 @@ class GF_Gateway_IDPay
         if (get_option("gf_IDPay_configured")) {
             add_filter("gform_disable_post_creation", array( __CLASS__, "delay_posts" ), 10, 3);
             add_filter("gform_is_delayed_pre_process_feed", array( __CLASS__, "delay_addons" ), 10, 4);
-            add_filter("gform_confirmation", array( __CLASS__, "Request" ), 1000, 4);
+            add_filter("gform_confirmation", array( __CLASS__, "doPayment" ), 1000, 4);
             add_action('wp', array( __CLASS__, 'Verify' ), 5);
             add_filter("gform_submit_button", array( __CLASS__, "alter_submit_button" ), 10, 2);
         }
@@ -135,9 +137,8 @@ class GF_Gateway_IDPay
     }
 
 
-    protected static function hasPermission($permission)
+    protected static function hasPermission($permission = 'gravityforms_IDPay')
     {
-        $permission = empty($permission) ? 'gravityforms_IDPay' : $permission ;
         if (! function_exists('wp_get_current_user')) {
             include(ABSPATH . "wp-includes/pluggable.php");
         }
@@ -493,24 +494,9 @@ class GF_Gateway_IDPay
         }
     }
 
-    public static function getOrderTotal($form, $entry)
-    {
-        $total = GFCommon::get_order_total($form, $entry);
-        $total = ( ! empty($total) && $total > 0 ) ? $total : 0;
 
-        return apply_filters(self::$author . '_IDPay_get_order_total', apply_filters(self::$author . '_gateway_get_order_total', $total, $form, $entry), $form, $entry);
-    }
 
-    public static function processOrderCheckout($form, $entry){
 
-	    $formId = $form['id'];
-	    $Amount = self::getOrderTotal($form, $entry);
-	    $Amount           = apply_filters(self::$author . "_gform_form_gateway_price_{$formId}", apply_filters(self::$author . "_gform_form_gateway_price", $Amount, $form, $entry), $form, $entry);
-	    $Amount           = apply_filters(self::$author . "_gform_form_IDPay_price_{$formId}", apply_filters(self::$author . "_gform_form_IDPay_price", $Amount, $form, $entry), $form, $entry);
-	    $Amount           = apply_filters(self::$author . "_gform_gateway_price_{$formId}", apply_filters(self::$author . "_gform_gateway_price", $Amount, $form, $entry), $form, $entry);
-	    $Amount           = apply_filters(self::$author . "_gform_IDPay_price_{$formId}", apply_filters(self::$author . "_gform_IDPay_price", $Amount, $form, $entry), $form, $entry);
-        return $Amount ;
-    }
 
     public static function update_payment_entry($form, $entry_id)
     {
@@ -628,14 +614,7 @@ class GF_Gateway_IDPay
         update_option('recently_activated', array( $plugin => time() ) + (array) get_option('recently_activated'));
     }
 
-    public static function checkOneConfirmationExists($confirmation, $form, $entry, $ajax)
-    {
-        if (apply_filters('gf_IDPay_request_return', apply_filters('gf_gateway_request_return', false, $confirmation, $form, $entry, $ajax), $confirmation, $form, $entry, $ajax)) {
-            return false;
-        }
 
-        return true;
-    }
 
     public static function checkSubmittedForIDPay($formId)
     {
@@ -646,10 +625,7 @@ class GF_Gateway_IDPay
         return true;
     }
 
-    public static function checkConfigExists($form)
-    {
-        return ! empty(IDPayDB::getActiveFeed($form));
-    }
+
 
     private static function call_gateway_endpoint($url, $args)
     {
@@ -669,17 +645,7 @@ class GF_Gateway_IDPay
 
     /* Request Func Moved */
 
-    public static function getGatewayName()
-    {
-        $settings = get_option("gf_IDPay_settings");
-        if (isset($settings["gname"])) {
-            $gname = $settings["gname"];
-        } else {
-            $gname = __('IDPay', 'gravityformsIDPay');
-        }
 
-        return $gname;
-    }
 
     private static function redirect_confirmation($url, $ajax)
     {

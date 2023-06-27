@@ -2,39 +2,115 @@
 
 class IDPayPayment
 {
-    public static function getGravityTransactionTypeCode($type)
+    public static function getGravityTransactionTypeCode($type): int
     {
-        return $type == "subscription" ? 2 : 1 ;
+        return $type == "subscription" ? 2 : 1;
     }
 
-    public static function Request($confirmation, $form, $entry, $ajax)
+    public static function checkOneConfirmationExists($confirmation, $form, $entry, $ajax): bool
     {
-        // do_action('gf_gateway_request_1', $confirmation, $form, $entry, $ajax);
-        //  do_action('gf_IDPay_request_1', $confirmation, $form, $entry, $ajax);
+        if (apply_filters(
+            'gf_IDPay_request_return',
+            apply_filters('gf_gateway_request_return', false, $confirmation, $form, $entry, $ajax),
+            $confirmation,
+            $form,
+            $entry,
+            $ajax
+        )) {
+            return false;
+        }
 
-        $entryId = $entry['id'];
+        return true;
+    }
+
+    public static function checkSubmittedForIDPay($formId): bool
+    {
+        if (RGForms::post("gform_submit") != $formId) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function checkFeedExists($form): bool
+    {
+        return ! empty(IDPayDB::getActiveFeed($form));
+    }
+
+    public static function getFeed($form)
+    {
+        return IDPayDB::getActiveFeed($form);
+    }
+
+    public static function dataGet($target, $key, $default = null)
+    {
+        return Helpers::dataGet($target, $key, $default);
+    }
+
+    public static function getGatewayName() : string
+    {
+        $settings = get_option("gf_IDPay_settings");
+        return isset($settings['gname']) ? $settings["gname"] : __('IDPay', 'gravityformsIDPay');
+    }
+
+    public static function processOrderCheckout($form, $entry)
+    {
         $formId = $form['id'];
+        $Amount = self::getOrderTotal($form, $entry);
+        $applyFilters = [
+        ['_gform_form_gateway_price_','_gform_form_gateway_price'],
+        ['_gform_form_IDPay_price_','_gform_form_IDPay_price'],
+        ['_gform_gateway_price_','_gform_gateway_price'],
+        ['_gform_IDPay_price_','_gform_IDPay_price'],
+        ];
+        foreach ($applyFilters as $apply) {
+            apply_filters(
+                self::$author . "{$apply[0]}{$formId}",
+                apply_filters(self::$author . $apply[1], $Amount, $form, $entry),
+                $form,
+                $entry
+            );
+        }
+        return $Amount ;
+    }
+
+    public static function getOrderTotal($form, $entry)
+    {
+        $total = GFCommon::get_order_total($form, $entry);
+        $total = ( ! empty($total) && $total > 0 ) ? $total : 0;
+
+        return apply_filters(
+            self::$author . '_IDPay_get_order_total',
+            apply_filters(self::$author . '_gateway_get_order_total', $total, $form, $entry),
+            $form,
+            $entry
+        );
+    }
+
+    public static function doPayment($confirmation, $form, $entry, $ajax)
+    {
+        $entryId = $entry['id'];
+        $formId  = $form['id'];
 
         if (! self::checkOneConfirmationExists($confirmation, $form, $entry, $ajax)) {
             return $confirmation;
         }
 
         if ($confirmation != 'custom') {
-            if (! self::checkSubmittedForIDPay($formId) || ! self::checkConfigExists($form)) {
+            if (! self::checkSubmittedForIDPay($formId) || ! self::checkFeedExists($form)) {
                 return $confirmation;
             }
 
-            $feed = IDPayDB::getActiveFeed($form);
+            $feed = self::getFeed($form);
             $feedId = $feed['id'];
-            $feedType = $feed["meta"]["type"] == "subscription" ? "subscription" : "payment";
-            $gatewayName = self::getGatewayName();
+            $feedType = self::dataGet($feed, 'meta.type') == "subscription" ? "subscription" : "payment";
             $transactionType = self::getGravityTransactionTypeCode($feedType);
+            $gatewayName = self::getGatewayName();
             $amount = self::processOrderCheckout($form, $entry);
 
             gform_update_meta($entryId, 'IDPay_feed_id', $feedId);
             gform_update_meta($entryId, 'payment_type', 'form');
             gform_update_meta($entryId, 'payment_gateway', $gatewayName);
-
 
             if (empty($amount) || ! $amount || $amount == 0) {
                 unset(
