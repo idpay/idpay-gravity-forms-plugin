@@ -78,7 +78,7 @@ class Helpers {
 		return $target;
 	}
 
-	private static function Return_URL( $form_id, $entry_id ) {
+	public static function Return_URL( $form_id, $entry_id ) {
 		$pageURL = GFCommon::is_ssl() ? 'https://' : 'http://';
 
 		if ( $_SERVER['SERVER_PORT'] != '80' ) {
@@ -98,7 +98,7 @@ class Helpers {
 		return apply_filters( self::$author . '_IDPay_return_url', apply_filters( self::$author . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__ ), $form_id, $entry_id, __CLASS__ );
 	}
 
-	private static function redirect_confirmation( $url, $ajax ) {
+	public static function redirect_confirmation( $url, $ajax ) {
 		if ( headers_sent() || $ajax ) {
 			$confirmation = "<script type=\"text/javascript\">" . apply_filters( 'gform_cdata_open', '' ) . " function gformRedirect(){document.location.href='$url';}";
 			if ( ! $ajax ) {
@@ -161,20 +161,20 @@ class Helpers {
 		return empty( $amount ) || $amount > 500000000 || $amount < 1000;
 	}
 
-	private static function getApiKey() {
+	public static function getApiKey() {
 		$settings = get_option( "gf_IDPay_settings" );
 		$api_key  = $settings["api_key"] ?? '';
 
 		return trim( $api_key );
 	}
 
-	private static function getSandbox() {
+	public static function getSandbox() {
 		$settings = get_option( "gf_IDPay_settings" );
 
 		return $settings["sandbox"] ? "true" : "false";
 	}
 
-	private static function httpRequest( $url, $data ) {
+	public static function httpRequest( $url, $data ) {
 		$args = [
 			'body'    => json_encode( $data ),
 			'headers' => [

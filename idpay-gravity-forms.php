@@ -19,11 +19,10 @@ register_deactivation_hook(__FILE__, array( 'GF_Gateway_IDPay', "deactivation" )
 
 add_action('init', array( 'GF_Gateway_IDPay', 'init' ));
 
-require_once('lib/Helpers.php');
 require_once('lib/IDPayDB.php');
+require_once('lib/Helpers.php');
 require_once('lib/IDPayPayment.php');
 require_once('lib/IDPay_Chart.php');
-
 
 class GF_Gateway_IDPay
 {
@@ -73,7 +72,7 @@ class GF_Gateway_IDPay
             }
 
             if (self::is_IDPay_page()) {
-                wp_enqueue_script(array( "sack" ));
+                wp_enqueue_script('sack');
                 self::setup();
             }
 
@@ -95,6 +94,10 @@ class GF_Gateway_IDPay
 
         return 'completed';
     }
+
+	public static function doPayment( $confirmation, $form, $entry, $ajax ) {
+		return IDPayPayment::doPayment($confirmation, $form, $entry, $ajax);
+	}
 
     private static function is_gravityforms_supported(): bool {
         $condition1 = class_exists( "GFCommon" );
@@ -135,7 +138,6 @@ class GF_Gateway_IDPay
         return $button_input;
     }
 
-
     protected static function hasPermission($permission = 'gravityforms_IDPay')
     {
         if (! function_exists('wp_get_current_user')) {
@@ -147,7 +149,6 @@ class GF_Gateway_IDPay
 
     private static function is_IDPay_page()
     {
-
         $current_page    = in_array(trim(rgget("page")), array( 'gf_IDPay', 'IDPay' ));
         $current_view    = in_array(trim(rgget("view")), array( 'gf_IDPay', 'IDPay' ));
         $current_subview = in_array(trim(rgget("subview")), array( 'gf_IDPay', 'IDPay' ));
@@ -493,10 +494,6 @@ class GF_Gateway_IDPay
         }
     }
 
-
-
-
-
     public static function update_payment_entry($form, $entry_id)
     {
 
@@ -575,15 +572,12 @@ class GF_Gateway_IDPay
 
         $new_status = '';
         switch (rgar($entry, "payment_status")) {
-            case "Active":
+	        case "Paid":
+	        case "Active":
                 $new_status = __('موفق', 'gravityformsIDPay');
                 break;
 
-            case "Paid":
-                $new_status = __('موفق', 'gravityformsIDPay');
-                break;
-
-            case "Cancelled":
+	        case "Cancelled":
                 $new_status = __('منصرف شده', 'gravityformsIDPay');
                 break;
 
@@ -613,8 +607,6 @@ class GF_Gateway_IDPay
         update_option('recently_activated', array( $plugin => time() ) + (array) get_option('recently_activated'));
     }
 
-
-
     public static function checkSubmittedForIDPay($formId)
     {
         if (RGForms::post("gform_submit") != $formId) {
@@ -623,18 +615,6 @@ class GF_Gateway_IDPay
 
         return true;
     }
-
-
-
-
-
-    /* Request Func Moved */
-
-
-
-
-
-
 
     public static function isNotDoubleSpending($reference_id, $order_id, $transaction_id)
     {

@@ -1,6 +1,6 @@
 <?php
 
-class IDPayPayment {
+class IDPayPayment extends Helpers {
 
 	public static $author = "IDPay";
 
@@ -61,7 +61,6 @@ class IDPayPayment {
 
 		return self::processPayment($amount,$gravityType,$feed,$entry,$form,$ajax);
 	}
-
 
 	public static function processPayment($amount,$gravityType,$feed,$entry,$form,$ajax){
 		$formId = $form['id'];
@@ -130,14 +129,12 @@ class IDPayPayment {
 	}
 
 	public static function processFreePayment( $entry, $formId, $ajax ) {
-		unset(
-			$entry["payment_status"],
-			$entry["is_fulfilled"],
-			$entry["transaction_type"],
-			$entry["payment_amount"],
-			$entry["payment_date"]
-		);
 
+		$entry["payment_status"] = null;
+		$entry["is_fulfilled"] = null;
+		$entry["transaction_type"] = null;
+		$entry["payment_amount"] = null;
+		$entry["payment_date"] = null;
 		$entry["payment_method"] = "IDPay";
 		GFAPI::update_entry( $entry );
 
@@ -177,7 +174,7 @@ class IDPayPayment {
 
 	}
 
-	public static function rejectTransaction( $entry, $form, $Message = '' ): string {
+	public static function rejectTransaction( $entry, $form, $Message = '' ) {
 		$entryId      = $entry['id'];
 		$formId       = $form['id'];
 		$Message      = ! empty( $Message ) ? $Message : __( 'خطایی رخ داده است. به نظر میرسد این خطا به علت مبلغ ارسالی اشتباه باشد', 'gravityformsIDPay' );
@@ -232,7 +229,6 @@ class IDPayPayment {
 		return false;
 	}
 
-
 	public static function doPayment( $confirmation, $form, $entry, $ajax ) {
 		$entryId = $entry['id'];
 		$formId  = $form['id'];
@@ -255,11 +251,9 @@ class IDPayPayment {
 			$data   = self::dataGet( $resp, 'data' );
 			$amount = self::dataGet( $data, 'amount' );
 
-			unset( $entry["transaction_type"] );
-			unset( $entry["payment_amount"] );
-			unset( $entry["payment_date"] );
-			unset( $entry["transaction_id"] );
-
+			$entry["payment_amount"]   = null;
+			$entry["payment_date"]   = null;
+			$entry["transaction_id"]   = null;
 			$entry["payment_status"]   = "Processing";
 			$entry["payment_method"]   = "IDPay";
 			$entry["is_fulfilled"]     = 0;
