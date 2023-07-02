@@ -2,6 +2,8 @@
 
 class IDPay_Chart
 {
+	public static $author = "IDPay";
+
     public static function stats_page()
     {
         if (!empty($_POST)) {

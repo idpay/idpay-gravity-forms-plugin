@@ -2,6 +2,7 @@
 
 class IDPayDB
 {
+	public static $author = "IDPay";
     private static $method = 'IDPay';
 
     public static function update_table()

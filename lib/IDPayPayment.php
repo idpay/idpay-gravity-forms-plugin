@@ -1,272 +1,305 @@
 <?php
 
-class IDPayPayment
-{
-    public static function getGravityTransactionTypeCode($type): int
-    {
-        return $type == "subscription" ? 2 : 1;
-    }
+class IDPayPayment {
 
-    public static function checkOneConfirmationExists($confirmation, $form, $entry, $ajax): bool
-    {
-        if (apply_filters(
-            'gf_IDPay_request_return',
-            apply_filters('gf_gateway_request_return', false, $confirmation, $form, $entry, $ajax),
-            $confirmation,
-            $form,
-            $entry,
-            $ajax
-        )) {
-            return false;
-        }
+	public static $author = "IDPay";
 
-        return true;
-    }
+	public static function dataGet( $target, $key, $default = null ) {
+		return Helpers::dataGet( $target, $key, $default );
+	}
 
-    public static function checkSubmittedForIDPay($formId): bool
-    {
-        if (RGForms::post("gform_submit") != $formId) {
-            return false;
-        }
+	public static function processOrderCheckout( $form, $entry ) {
+		$formId       = $form['id'];
+		$Amount       = self::getOrderTotal( $form, $entry );
+		$applyFilters = [
+			[ '_gform_form_gateway_price_', '_gform_form_gateway_price' ],
+			[ '_gform_form_IDPay_price_', '_gform_form_IDPay_price' ],
+			[ '_gform_gateway_price_', '_gform_gateway_price' ],
+			[ '_gform_IDPay_price_', '_gform_IDPay_price' ],
+		];
+		foreach ( $applyFilters as $apply ) {
+			apply_filters(
+				self::$author . "{$apply[0]}{$formId}",
+				apply_filters( self::$author . $apply[1], $Amount, $form, $entry ),
+				$form,
+				$entry
+			);
+		}
 
-        return true;
-    }
+		return $Amount;
+	}
 
-    public static function checkFeedExists($form): bool
-    {
-        return ! empty(IDPayDB::getActiveFeed($form));
-    }
+	public static function getOrderTotal( $form, $entry ) {
+		$total = GFCommon::get_order_total( $form, $entry );
+		$total = ( ! empty( $total ) && $total > 0 ) ? $total : 0;
 
-    public static function getFeed($form)
-    {
-        return IDPayDB::getActiveFeed($form);
-    }
+		return apply_filters(
+			self::$author . '_IDPay_get_order_total',
+			apply_filters( self::$author . '_gateway_get_order_total', $total, $form, $entry ),
+			$form,
+			$entry
+		);
+	}
 
-    public static function dataGet($target, $key, $default = null)
-    {
-        return Helpers::dataGet($target, $key, $default);
-    }
+	public static function doPaymentByAutoConfirmation( $confirmation, $form, $entry, $ajax ) {
+		$formId  = $form['id'];
+		$entryId = $entry['id'];
 
-    public static function getGatewayName() : string
-    {
-        $settings = get_option("gf_IDPay_settings");
-        return isset($settings['gname']) ? $settings["gname"] : __('IDPay', 'gravityformsIDPay');
-    }
+		if ( ! self::checkSubmittedForIDPay( $formId ) || ! self::checkFeedExists( $form ) ) {
+			return $confirmation;
+		}
+		$feed        = self::getFeed( $form );
+		$feedId      = $feed['id'];
+		$feedType    = self::dataGet( $feed, 'meta.type' ) == "subscription" ? "subscription" : "payment";
+		$gravityType = self::getGravityTransactionTypeCode( $feedType );
+		$gatewayName = self::getGatewayName();
+		$amount      = self::processOrderCheckout( $form, $entry );
 
-    public static function processOrderCheckout($form, $entry)
-    {
-        $formId = $form['id'];
-        $Amount = self::getOrderTotal($form, $entry);
-        $applyFilters = [
-        ['_gform_form_gateway_price_','_gform_form_gateway_price'],
-        ['_gform_form_IDPay_price_','_gform_form_IDPay_price'],
-        ['_gform_gateway_price_','_gform_gateway_price'],
-        ['_gform_IDPay_price_','_gform_IDPay_price'],
-        ];
-        foreach ($applyFilters as $apply) {
-            apply_filters(
-                self::$author . "{$apply[0]}{$formId}",
-                apply_filters(self::$author . $apply[1], $Amount, $form, $entry),
-                $form,
-                $entry
-            );
-        }
-        return $Amount ;
-    }
+		gform_update_meta( $entryId, 'IDPay_feed_id', $feedId );
+		gform_update_meta( $entryId, 'payment_type', 'form' );
+		gform_update_meta( $entryId, 'payment_gateway', $gatewayName );
 
-    public static function getOrderTotal($form, $entry)
-    {
-        $total = GFCommon::get_order_total($form, $entry);
-        $total = ( ! empty($total) && $total > 0 ) ? $total : 0;
-
-        return apply_filters(
-            self::$author . '_IDPay_get_order_total',
-            apply_filters(self::$author . '_gateway_get_order_total', $total, $form, $entry),
-            $form,
-            $entry
-        );
-    }
-
-    public static function doPayment($confirmation, $form, $entry, $ajax)
-    {
-        $entryId = $entry['id'];
-        $formId  = $form['id'];
-
-        if (! self::checkOneConfirmationExists($confirmation, $form, $entry, $ajax)) {
-            return $confirmation;
-        }
-
-        if ($confirmation != 'custom') {
-            if (! self::checkSubmittedForIDPay($formId) || ! self::checkFeedExists($form)) {
-                return $confirmation;
-            }
-
-            $feed = self::getFeed($form);
-            $feedId = $feed['id'];
-            $feedType = self::dataGet($feed, 'meta.type') == "subscription" ? "subscription" : "payment";
-            $transactionType = self::getGravityTransactionTypeCode($feedType);
-            $gatewayName = self::getGatewayName();
-            $amount = self::processOrderCheckout($form, $entry);
-
-            gform_update_meta($entryId, 'IDPay_feed_id', $feedId);
-            gform_update_meta($entryId, 'payment_type', 'form');
-            gform_update_meta($entryId, 'payment_gateway', $gatewayName);
-
-            if (empty($amount) || ! $amount || $amount == 0) {
-                unset(
-                    $entry["payment_status"],
-                    $entry["is_fulfilled"],
-                    $entry["transaction_type"],
-                    $entry["payment_amount"],
-                    $entry["payment_date"]
-                );
-
-                $entry["payment_method"] = "IDPay";
-                GFAPI::update_entry($entry);
-
-                $queryArgs1 = ['no' => 'true'];
-                $queryArgs2 = self::Return_URL($formId, $entry['id']);
-                $queryParams = add_query_arg($queryArgs1, $queryArgs2);
-                $redirectConfirmation = self::redirect_confirmation($queryParams, $ajax);
-
-                return $redirectConfirmation;
-            } else {
-                $desc_pm = $feed["meta"]["desc_pm"];
-                $desc    = $feed["meta"]["customer_fields_desc"];
-                $mobile  = $feed["meta"]["customer_fields_mobile"];
-                $name    = $feed["meta"]["customer_fields_name"];
-                $email   = $feed["meta"]["customer_fields_email"];
-
-                $Desc1       = ! empty($desc_pm) ? str_replace([
-                    '{entry_id}',
-                    '{form_title}',
-                    '{form_id}'
-                ], [ $entry['id'], $form['title'], $formId ], $desc_pm) : '';
-                $Desc2       = ! empty($desc) ? rgpost('input_' . str_replace(".", "_", $desc)) : '';
-                $Description = sanitize_text_field($Desc1 . ( ! empty($Desc1) && ! empty($Desc2) ? ' - ' : '' ) . $Desc2 . ' ');
-                $Mobile      = ! empty($mobile) ? sanitize_text_field(rgpost('input_' . str_replace(".", "_", $mobile))) : '';
-                $Name        = ! empty($name) ? sanitize_text_field(rgpost('input_' . str_replace(".", "_", $name))) : '';
-                $Mail        = ! empty($email) ? sanitize_text_field(rgpost('input_' . str_replace(".", "_", $email))) : '';
-            }
-        } else {
-            $amount = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_price_' . $formId);
-            $amount = apply_filters(self::$author . "_gform_custom_gateway_price_{$formId}", apply_filters(self::$author . "_gform_custom_gateway_price", $amount, $form, $entry), $form, $entry);
-            $amount = apply_filters(self::$author . "_gform_custom_IDPay_price_{$formId}", apply_filters(self::$author . "_gform_custom_IDPay_price", $amount, $form, $entry), $form, $entry);
-            $amount = apply_filters(self::$author . "_gform_gateway_price_{$formId}", apply_filters(self::$author . "_gform_gateway_price", $amount, $form, $entry), $form, $entry);
-            $amount = apply_filters(self::$author . "_gform_IDPay_price_{$formId}", apply_filters(self::$author . "_gform_IDPay_price", $amount, $form, $entry), $form, $entry);
-
-            $Description = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_desc_' . $formId);
-            $Description = apply_filters(self::$author . '_gform_IDPay_gateway_desc_', apply_filters(self::$author . '_gform_custom_gateway_desc_', $Description, $form, $entry), $form, $entry);
-
-            $Name   = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_name_' . $formId);
-            $Mail   = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_email_' . $formId);
-            $Mobile = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_mobile_' . $formId);
-
-            $entryId = GFAPI::add_entry($entry);
-            $entry    = GFPersian_Payments::get_entry($entryId);
-
-            do_action('gf_gateway_request_add_entry', $confirmation, $form, $entry, $ajax);
-            do_action('gf_IDPay_request_add_entry', $confirmation, $form, $entry, $ajax);
-
-            gform_update_meta($entryId, 'payment_gateway', self::getGatewayName());
-            gform_update_meta($entryId, 'payment_type', 'custom');
-        }
-
-        unset($entry["transaction_type"]);
-        unset($entry["payment_amount"]);
-        unset($entry["payment_date"]);
-        unset($entry["transaction_id"]);
+		return self::processPayment($amount,$gravityType,$feed,$entry,$form,$ajax);
+	}
 
 
+	public static function processPayment($amount,$gravityType,$feed,$entry,$form,$ajax){
+		$formId = $form['id'];
 
-        $entry["payment_status"]   = "Processing";
-        $entry["payment_method"]   = "IDPay";
-        $entry["is_fulfilled"]     = 0;
-        $entry["transaction_type"] = $transactionType;
-        GFAPI::update_entry($entry);
+		if ( self::checkTypePayment( $amount ) == 'Free' ) {
+			$confirmation = self::processFreePayment( $entry, $formId, $ajax );
 
-        $entry      = GFPersian_Payments::get_entry($entryId);
-        $ReturnPath = self::Return_URL($formId, $entryId);
-        $Mobile     = GFPersian_Payments::fix_mobile($Mobile);
+			return [
+				'transactionType' => 'Free',
+				'data'            => [
+					'confirmation' => $confirmation
+				]
+			];
+		} elseif ( self::checkTypePayment( $amount ) == 'Purchase' ) {
+			$data = self::processPurchasePayment( $feed, $entry, $form );
 
-        do_action('gf_gateway_request_2', $confirmation, $form, $entry, $ajax);
-        do_action('gf_IDPay_request_2', $confirmation, $form, $entry, $ajax);
+			return [
+				'transactionType' => 'Purchase',
+				'data'            => [
+					'amount'      => self::fixPrice( $amount, $form, $entry ),
+					'gravityType' => $gravityType,
+					'mobile'      => self::dataGet( $data, 'mobile' ),
+					'name'        => self::dataGet( $data, 'name' ),
+					'mail'        => self::dataGet( $data, 'mail' ),
+					'description' => self::dataGet( $data, 'description' ),
+				]
+			];
+		}
 
-        $amount = GFPersian_Payments::amount($amount, 'IRR', $form, $entry);
-        if (empty($amount) || ! $amount || $amount > 500000000 || $amount < 1000) {
-            $Message = __('مبلغ ارسالی اشتباه است.', 'gravityformsIDPay');
-        } else {
-            $data    = array(
-                'order_id' => $entryId,
-                'amount'   => $amount,
-                'name'     => $Name,
-                'mail'     => $Mail,
-                'phone'    => $Mobile,
-                'desc'     => $Description,
-                'callback' => $ReturnPath,
-            );
-            $headers = array(
-                'Content-Type' => 'application/json',
-                'X-API-KEY'    => self::get_api_key(),
-                'X-SANDBOX'    => self::get_sandbox(),
-            );
-            $args    = array(
-                'body'    => json_encode($data),
-                'headers' => $headers,
-                'timeout' => 15,
-            );
+	}
 
-            $response    = self::call_gateway_endpoint('https://api.idpay.ir/v1.1/payment', $args);
-            $http_status = wp_remote_retrieve_response_code($response);
-            $result      = wp_remote_retrieve_body($response);
-            $result      = json_decode($result);
+	public static function checkTypePayment( $amount ): string {
+		return empty( $amount ) || $amount == 0 ? 'Free' : 'Purchase';
+	}
 
-            if (is_wp_error($response)) {
-                $error   = $response->get_error_message();
-                $Message = sprintf(__('خطا هنگام ایجاد تراکنش. پیام خطا: %s', 'gravityformsIDPay'), $error);
-            } elseif ($http_status != 201 || empty($result) || empty($result->id) || empty($result->link)) {
-                $Message = sprintf('خطا هنگام ایجاد تراکنش. : %s (کد خطا: %s)', $result->error_message, $result->error_code);
-            } else {
-                // save Transaction ID to Order
-                gform_update_meta($entryId, "IdpayTransactionId:$entryId", $result->id);
+	public static function doPaymentByCustomConfirmation( $confirmation, $form, $entry, $ajax ) {
+		$formId      = $form['id'];
+		$feed        = self::getFeed( $form );
+		$feedType    = self::dataGet( $feed, 'meta.type' ) == "subscription" ? "subscription" : "payment";
+		$gravityType = self::getGravityTransactionTypeCode( $feedType );
 
-                return self::redirect_confirmation($result->link, $ajax);
-            }
-        }
+		$amount = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_price_' . $formId );
+		$amount = apply_filters( self::$author . "_gform_custom_gateway_price_{$formId}", apply_filters( self::$author . "_gform_custom_gateway_price", $amount, $form, $entry ), $form, $entry );
+		$amount = apply_filters( self::$author . "_gform_custom_IDPay_price_{$formId}", apply_filters( self::$author . "_gform_custom_IDPay_price", $amount, $form, $entry ), $form, $entry );
+		$amount = apply_filters( self::$author . "_gform_gateway_price_{$formId}", apply_filters( self::$author . "_gform_gateway_price", $amount, $form, $entry ), $form, $entry );
+		$amount = apply_filters( self::$author . "_gform_IDPay_price_{$formId}", apply_filters( self::$author . "_gform_IDPay_price", $amount, $form, $entry ), $form, $entry );
 
-        $Message      = ! empty($Message) ? $Message : __('خطایی رخ داده است.', 'gravityformsIDPay');
-        $confirmation = __('متاسفانه نمیتوانیم به درگاه متصل شویم. علت : ', 'gravityformsIDPay') . $Message;
+		$Description = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_desc_' . $formId );
+		$Description = apply_filters( self::$author . '_gform_IDPay_gateway_desc_', apply_filters( self::$author . '_gform_custom_gateway_desc_', $Description, $form, $entry ), $form, $entry );
 
-        $entry                   = GFPersian_Payments::get_entry($entryId);
-        $entry['payment_status'] = 'Failed';
-        GFAPI::update_entry($entry);
+		$Name   = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_name_' . $formId );
+		$Mail   = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_email_' . $formId );
+		$Mobile = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_mobile_' . $formId );
 
-        global $current_user;
-        $user_id   = 0;
-        $user_name = __('مهمان', 'gravityformsIDPay');
-        if ($current_user && $user_data = get_userdata($current_user->ID)) {
-            $user_id   = $current_user->ID;
-            $user_name = $user_data->display_name;
-        }
+		$entryId = GFAPI::add_entry( $entry );
+		$entry   = GFPersian_Payments::get_entry( $entryId );
 
-        RGFormsModel::add_note($entryId, $user_id, $user_name, sprintf(__('خطا در اتصال به درگاه رخ داده است : %s', "gravityformsIDPay"), $Message));
-        GFPersian_Payments::notification($form, $entry);
+		do_action( 'gf_gateway_request_add_entry', $confirmation, $form, $entry, $ajax );
+		do_action( 'gf_IDPay_request_add_entry', $confirmation, $form, $entry, $ajax );
 
-        $anchor   = gf_apply_filters('gform_confirmation_anchor', $formId, 0) ? "<a id='gf_{$formId}' name='gf_{$formId}' class='gform_anchor' ></a>" : '';
-        $nl2br    = ! empty($form['confirmation']) && rgar($form['confirmation'], 'disableAutoformat') ? false : true;
-        $cssClass = rgar($form, 'cssClass');
+		gform_update_meta( $entryId, 'payment_gateway', self::getGatewayName() );
+		gform_update_meta( $entryId, 'payment_type', 'custom' );
 
-        $output = "{$anchor} ";
-        if (! empty($confirmation)) {
-            $output .= "
+		return self::processPayment($amount,$gravityType,$feed,$entry,$form,$ajax);
+
+	}
+
+	public static function processFreePayment( $entry, $formId, $ajax ) {
+		unset(
+			$entry["payment_status"],
+			$entry["is_fulfilled"],
+			$entry["transaction_type"],
+			$entry["payment_amount"],
+			$entry["payment_date"]
+		);
+
+		$entry["payment_method"] = "IDPay";
+		GFAPI::update_entry( $entry );
+
+		$queryArgs1  = [ 'no' => 'true' ];
+		$queryArgs2  = self::Return_URL( $formId, $entry['id'] );
+		$queryParams = add_query_arg( $queryArgs1, $queryArgs2 );
+
+		return self::redirect_confirmation( $queryParams, $ajax );
+	}
+
+	public static function processPurchasePayment( $feed, $entry, $form ) {
+
+		$formId  = $form['id'];
+		$desc_pm = $feed["meta"]["desc_pm"];
+		$desc    = $feed["meta"]["customer_fields_desc"];
+		$mobile  = $feed["meta"]["customer_fields_mobile"];
+		$name    = $feed["meta"]["customer_fields_name"];
+		$email   = $feed["meta"]["customer_fields_email"];
+
+		$Desc1       = ! empty( $desc_pm ) ? str_replace( [
+			'{entry_id}',
+			'{form_title}',
+			'{form_id}'
+		], [ $entry['id'], $form['title'], $formId ], $desc_pm ) : '';
+		$Desc2       = ! empty( $desc ) ? rgpost( 'input_' . str_replace( ".", "_", $desc ) ) : '';
+		$Description = sanitize_text_field( $Desc1 . ( ! empty( $Desc1 ) && ! empty( $Desc2 ) ? ' - ' : '' ) . $Desc2 . ' ' );
+		$Mobile      = ! empty( $mobile ) ? sanitize_text_field( rgpost( 'input_' . str_replace( ".", "_", $mobile ) ) ) : '';
+		$Name        = ! empty( $name ) ? sanitize_text_field( rgpost( 'input_' . str_replace( ".", "_", $name ) ) ) : '';
+		$Mail        = ! empty( $email ) ? sanitize_text_field( rgpost( 'input_' . str_replace( ".", "_", $email ) ) ) : '';
+
+		return [
+			'mobile'      => GFPersian_Payments::fix_mobile( $Mobile ),
+			'name'        => $Name,
+			'mail'        => $Mail,
+			'description' => $Description,
+		];
+
+	}
+
+	public static function rejectTransaction( $entry, $form, $Message = '' ): string {
+		$entryId      = $entry['id'];
+		$formId       = $form['id'];
+		$Message      = ! empty( $Message ) ? $Message : __( 'خطایی رخ داده است. به نظر میرسد این خطا به علت مبلغ ارسالی اشتباه باشد', 'gravityformsIDPay' );
+		$confirmation = __( 'متاسفانه نمیتوانیم به درگاه متصل شویم. علت : ', 'gravityformsIDPay' ) . $Message;
+
+		$entry                   = GFPersian_Payments::get_entry( $entryId );
+		$entry['payment_status'] = 'Failed';
+		GFAPI::update_entry( $entry );
+
+		global $current_user;
+		$user_id   = 0;
+		$user_name = __( 'مهمان', 'gravityformsIDPay' );
+		if ( $current_user && $user_data = get_userdata( $current_user->ID ) ) {
+			$user_id   = $current_user->ID;
+			$user_name = $user_data->display_name;
+		}
+
+		RGFormsModel::add_note( $entryId, $user_id, $user_name, sprintf( __( 'خطا در اتصال به درگاه رخ داده است : %s', "gravityformsIDPay" ), $Message ) );
+		GFPersian_Payments::notification( $form, $entry );
+
+		$anchor   = gf_apply_filters( 'gform_confirmation_anchor', $formId, 0 ) ? "<a id='gf_{$formId}' name='gf_{$formId}' class='gform_anchor' ></a>" : '';
+		$nl2br    = ! ( ! empty( $form['confirmation'] ) && rgar( $form['confirmation'], 'disableAutoformat' ) );
+		$cssClass = rgar( $form, 'cssClass' );
+
+		$output = "{$anchor} ";
+		if ( ! empty( $confirmation ) ) {
+			$output .= "
                 <div id='gform_confirmation_wrapper_{$formId}' class='gform_confirmation_wrapper {$cssClass}'>
                     <div id='gform_confirmation_message_{$formId}' class='gform_confirmation_message_{$formId} gform_confirmation_message'>" .
-                       GFCommon::replace_variables($confirmation, $form, $entry, false, true, $nl2br) .
-                       '</div>
+			           GFCommon::replace_variables( $confirmation, $form, $entry, false, true, $nl2br ) .
+			           '</div>
                 </div>';
-        }
-        $confirmation = $output;
+		}
+		$confirmation = $output;
 
-        return $confirmation;
-    }
+		return $confirmation;
+	}
+
+	public static function checkErrorResponse( $response, $http_status, $result ) {
+
+		if ( is_wp_error( $response ) ) {
+			$error = $response->get_error_message();
+
+			return [
+				'message' => sprintf( __( 'خطا هنگام ایجاد تراکنش. پیام خطا: %s', 'gravityformsIDPay' ), $error )
+			];
+		} elseif ( $http_status != 201 || empty( $result ) || empty( $result->id ) || empty( $result->link ) ) {
+			return [
+				'message' => sprintf( 'خطا هنگام ایجاد تراکنش. : %s (کد خطا: %s)', $result->error_message, $result->error_code )
+			];
+		}
+		return false;
+	}
+
+
+	public static function doPayment( $confirmation, $form, $entry, $ajax ) {
+		$entryId = $entry['id'];
+		$formId  = $form['id'];
+
+		if ( ! self::checkOneConfirmationExists( $confirmation, $form, $entry, $ajax ) ) {
+			return $confirmation;
+		}
+
+		$resp = null;
+		if ( $confirmation == 'custom' ) {
+			$resp = self::doPaymentByCustomConfirmation( $confirmation, $form, $entry, $ajax );
+		} else {
+			$resp = self::doPaymentByAutoConfirmation( $confirmation, $form, $entry, $ajax );
+		}
+
+		if ( self::dataGet( $resp, 'transactionType' ) == 'Free' ) {
+			return self::dataGet( $resp, 'data.confirmation' );
+		} elseif ( self::dataGet( $resp, 'transactionType' ) == 'Purchase' ) {
+
+			$data   = self::dataGet( $resp, 'data' );
+			$amount = self::dataGet( $data, 'amount' );
+
+			unset( $entry["transaction_type"] );
+			unset( $entry["payment_amount"] );
+			unset( $entry["payment_date"] );
+			unset( $entry["transaction_id"] );
+
+			$entry["payment_status"]   = "Processing";
+			$entry["payment_method"]   = "IDPay";
+			$entry["is_fulfilled"]     = 0;
+			$entry["transaction_type"] = self::dataGet( $data, 'gravityType' );
+			GFAPI::update_entry( $entry );
+			$entry      = GFPersian_Payments::get_entry( $entryId );
+			$ReturnPath = self::Return_URL( $formId, $entryId );
+
+			if ( self::isNotApprovedPrice( $amount ) ) {
+				return self::rejectTransaction( $entry, $form );
+			}
+
+			$paymentDto = [
+				'order_id' => $entryId,
+				'amount'   => $amount,
+				'callback' => $ReturnPath,
+				'name'     => self::dataGet( $data, 'name' ),
+				'mail'     => self::dataGet( $data, 'mail' ),
+				'desc'     => self::dataGet( $data, 'description' ),
+				'phone'    => self::dataGet( $data, 'mobile' ),
+			];
+
+			$response       = self::httpRequest( 'https://api.idpay.ir/v1.1/payment', $paymentDto );
+			$http_status    = wp_remote_retrieve_response_code( $response );
+			$result         = json_decode( wp_remote_retrieve_body( $response ) ) ?? null;
+			$errorResponder = self::checkErrorResponse( $response, $http_status, $result );
+
+			if ( ! $errorResponder == false ) {
+				$message = self::dataGet( $errorResponder, 'message' );
+
+				return self::rejectTransaction( $entry, $form, $message );
+			}
+
+			gform_update_meta( $entryId, "IdpayTransactionId:$entryId", $result->id );
+
+			return self::redirect_confirmation( $result->link, $ajax );
+
+		}
+
+		return $confirmation;
+	}
+
 }

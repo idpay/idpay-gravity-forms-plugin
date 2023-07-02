@@ -96,11 +96,10 @@ class GF_Gateway_IDPay
         return 'completed';
     }
 
-    private static function is_gravityforms_supported(): bool|int
-    {
-        return class_exists("GFCommon")
-            ? version_compare(GFCommon::$version, self::$min_gravityforms_version, ">=")
-            : false;
+    private static function is_gravityforms_supported(): bool {
+        $condition1 = class_exists( "GFCommon" );
+        $condition2 = (bool) version_compare( GFCommon::$version, self::$min_gravityforms_version, ">=" );
+        return $condition1 && $condition2;
     }
 
     public static function alter_submit_button($button_input, $form)
@@ -627,76 +626,15 @@ class GF_Gateway_IDPay
 
 
 
-    private static function call_gateway_endpoint($url, $args)
-    {
-        $number_of_connection_tries = 4;
-        while ($number_of_connection_tries) {
-            $response = wp_safe_remote_post($url, $args);
-            if (is_wp_error($response)) {
-                $number_of_connection_tries --;
-                continue;
-            } else {
-                break;
-            }
-        }
 
-        return $response;
-    }
 
     /* Request Func Moved */
 
 
 
-    private static function redirect_confirmation($url, $ajax)
-    {
-        if (headers_sent() || $ajax) {
-            $confirmation = "<script type=\"text/javascript\">" . apply_filters('gform_cdata_open', '') . " function gformRedirect(){document.location.href='$url';}";
-            if (! $ajax) {
-                $confirmation .= 'gformRedirect();';
-            }
-            $confirmation .= apply_filters('gform_cdata_close', '') . '</script>';
-        } else {
-            $confirmation = array( 'redirect' => $url );
-        }
 
-        return $confirmation;
-    }
 
-    private static function Return_URL($form_id, $entry_id)
-    {
-        $pageURL = GFCommon::is_ssl() ? 'https://' : 'http://';
 
-        if ($_SERVER['SERVER_PORT'] != '80') {
-            $pageURL .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . $_SERVER['REQUEST_URI'];
-        } else {
-            $pageURL .= $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
-        }
-
-        $arr_params = array( 'id', 'entry', 'no', 'Authority', 'Status' );
-        $pageURL    = esc_url(remove_query_arg($arr_params, $pageURL));
-
-        $pageURL = str_replace('#038;', '&', add_query_arg(array(
-            'form_id' => $form_id,
-            'entry'   => $entry_id
-        ), $pageURL));
-
-        return apply_filters(self::$author . '_IDPay_return_url', apply_filters(self::$author . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__), $form_id, $entry_id, __CLASS__);
-    }
-
-    private static function get_api_key()
-    {
-        $settings = get_option("gf_IDPay_settings");
-        $api_key  = isset($settings["api_key"]) ? $settings["api_key"] : '';
-
-        return trim($api_key);
-    }
-
-    private static function get_sandbox()
-    {
-        $settings = get_option("gf_IDPay_settings");
-
-        return $settings["sandbox"] ? "true" : "false";
-    }
 
     public static function isNotDoubleSpending($reference_id, $order_id, $transaction_id)
     {
@@ -791,21 +729,13 @@ class GF_Gateway_IDPay
                     if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
                         return;
                     }
-                    $data     = array(
-                        'id'       => $pid,
-                        'order_id' => $entry_id
-                    );
-                    $headers  = array(
-                        'Content-Type' => 'application/json',
-                        'X-API-KEY'    => self::get_api_key(),
-                        'X-SANDBOX'    => self::get_sandbox()
-                    );
-                    $args     = array(
-                        'body'    => json_encode($data),
-                        'headers' => $headers,
-                        'timeout' => 15,
-                    );
-                    $response = self::call_gateway_endpoint('https://api.idpay.ir/v1.1/payment/verify', $args);
+
+	                $data = [
+		                'id'       => $pid,
+		                'order_id' => $entry_id
+	                ];
+
+                    $response = self::httpRequest('https://api.idpay.ir/v1.1/payment/verify', $data);
 
                     $http_status = wp_remote_retrieve_response_code($response);
                     $result      = wp_remote_retrieve_body($response);
