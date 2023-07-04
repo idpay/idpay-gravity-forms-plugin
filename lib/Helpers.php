@@ -2,8 +2,10 @@
 
 class Helpers {
 
+	public static $version = "1.0.5";
 	public static $author = "IDPay";
-	private static $domain = "gravityformsIDPay";
+	public static $domain = "gravityformsIDPay";
+	public static $min_gravityforms_version = "1.9.10";
 
 	public static function exists( $array, $key ): bool {
 		if ( $array instanceof ArrayAccess ) {
@@ -160,6 +162,29 @@ class Helpers {
 
 	public static function isNotApprovedPrice( $amount ): int {
 		return empty( $amount ) || $amount > 500000000 || $amount < 1000;
+	}
+	public static function isNotApprovedGettingTransaction( $entry,$form_id) {
+
+		$entryId = self::dataGet($entry,'id');
+		$paymentMethod = self::dataGet($entry,'payment_method');
+		$paymentDate = self::dataGet($entry,'payment_date');
+		$condition1 = apply_filters('gf_gateway_IDPay_return', apply_filters('gf_gateway_verify_return', false));
+		$condition2 = ! self::is_gravityforms_supported();
+		$condition3 = ! is_numeric($form_id);
+		$condition4 = ! is_numeric($entryId);
+		$condition5 = is_wp_error($entry);
+		$condition6 = ! empty($paymentDate);
+		$condition7 = ! ( isset($paymentMethod) );
+		$condition8 = $paymentMethod == 'IDPay';
+
+		return $condition1 || $condition2 || $condition3 || $condition4 ||
+		       $condition5 || $condition6 || $condition7 || $condition8;
+	}
+
+	public static function is_gravityforms_supported(): bool {
+		$condition1 = class_exists( "GFCommon" );
+		$condition2 = (bool) version_compare( GFCommon::$version, self::$min_gravityforms_version, ">=" );
+		return $condition1 && $condition2;
 	}
 
 	public static function getApiKey() {
