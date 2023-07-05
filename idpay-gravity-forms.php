@@ -27,9 +27,9 @@ require_once('lib/IDPay_Chart.php');
 class GF_Gateway_IDPay extends Helpers
 {
     public static $author = "IDPay";
-	public static $version = "1.0.5";
-	public static $min_gravityforms_version = "1.9.10";
-	public static $domain = "gravityformsIDPay";
+    public static $version = "1.0.5";
+    public static $min_gravityforms_version = "1.9.10";
+    public static $domain = "gravityformsIDPay";
 
     public static function init()
     {
@@ -95,265 +95,235 @@ class GF_Gateway_IDPay extends Helpers
         return 'completed';
     }
 
-	public static function doPayment( $confirmation, $form, $entry, $ajax ) {
-		return IDPayPayment::doPayment($confirmation, $form, $entry, $ajax);
-	}
+    public static function doPayment($confirmation, $form, $entry, $ajax)
+    {
+        return IDPayPayment::doPayment($confirmation, $form, $entry, $ajax);
+    }
 
-	public static function doVerify()
-	{
-		$formId  = (int) sanitize_text_field(rgget('form_id'));
-		$entryId = (int) sanitize_text_field(rgget('entry'));
-		$entry    = GFPersian_Payments::get_entry($entryId);
+    public static function doVerify()
+    {
+       return IDPayPayment::doVerify();
 
-		if ( self::isNotApprovedGettingTransaction( $entry,$formId ) ) {
-			return ;
-		}
 
-		$form         = RGFormsModel::get_form_meta($formId);
-		$payment_type = gform_get_meta($entryId, 'payment_type');
-		gform_delete_meta($entryId, 'payment_type');
+        $status_id = ! empty(rgpost('status')) ? rgpost('status') : ( ! empty(rgget('status')) ? rgget('status') : null );
+        $track_id  = ! empty(rgpost('track_id')) ? rgpost('track_id') : ( ! empty(rgget('track_id')) ? rgget('track_id') : null );
+        $id        = ! empty(rgpost('id')) ? rgpost('id') : ( ! empty(rgget('id')) ? rgget('id') : null );
+        $order_id  = ! empty(rgpost('order_id')) ? rgpost('order_id') : ( ! empty(rgget('order_id')) ? rgget('order_id') : null );
+        $params    = ! empty(rgpost('id')) ? $_POST : $_GET;
 
-		if ($payment_type != 'custom') {
-			$config = self::get_config_by_entry($entry);
-			if (empty($config)) {
-				return;
-			}
-		} elseif($payment_type != 'form') {
-			$config = apply_filters(self::$author . '_gf_IDPay_config',
-                      apply_filters(self::$author . '_gf_gateway_config', [], $form, $entry),
-                      $form, $entry);
-		}
+        $Transaction_ID = ! empty($Transaction_ID) ? $Transaction_ID : ( ! empty($track_id) ? $track_id : '-' );
 
-		global $current_user;
-		$user_id   = 0;
-		$user_name = __('مهمان', 'gravityformsIDPay');
-		if ($current_user && $user_data = get_userdata($current_user->ID)) {
-			$user_id   = $current_user->ID;
-			$user_name = $user_data->display_name;
-		}
+        if (! $free && ! empty($id) && ! empty($order_id)) {
+            if ($status_id == 10) {
+                $pid       = sanitize_text_field($id);
+                $porder_id = sanitize_text_field($order_id);
 
-		$transaction_type = 1;
-		if (! empty($config["meta"]["type"]) && $config["meta"]["type"] == 'subscription') {
-			$transaction_type = 2;
-		}
+                if (! empty($pid) && ! empty($porder_id) && $porder_id == $entryId &&
+                     self::isNotDoubleSpending($entryId, $order_id, $id) == true) {
+                    $__params = $pricing->amount . $pid;
+                    if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
+                        return;
+                    }
 
-		if ($payment_type == 'custom') {
-			$Amount = $Total = gform_get_meta($entryId, 'IDPay_part_price_' . $formId);
-		} else {
-			$Amount = $Total = self::getOrderTotal($form, $entry);
-			$Amount = GFPersian_Payments::amount($Amount, 'IRR', $form, $entry);
-		}
-		$Total_Money = GFCommon::to_money($Total, $entry["currency"]);
+                    $data = [
+                        'id'       => $pid,
+                        'order_id' => $entryId
+                    ];
 
-		$free = false;
-		if (sanitize_text_field(rgget('no')) == 'true') {
-			$Status         = 'completed';
-			$free           = true;
-			$Transaction_ID = apply_filters(self::$author . '_gf_rand_transaction_id', GFPersian_Payments::transaction_id($entry), $form, $entry);
-		}
+                    $response = self::httpRequest('https://api.idpay.ir/v1.1/payment/verify', $data);
 
-		$status_id = ! empty(rgpost('status')) ? rgpost('status') : ( ! empty(rgget('status')) ? rgget('status') : null );
-		$track_id  = ! empty(rgpost('track_id')) ? rgpost('track_id') : ( ! empty(rgget('track_id')) ? rgget('track_id') : null );
-		$id        = ! empty(rgpost('id')) ? rgpost('id') : ( ! empty(rgget('id')) ? rgget('id') : null );
-		$order_id  = ! empty(rgpost('order_id')) ? rgpost('order_id') : ( ! empty(rgget('order_id')) ? rgget('order_id') : null );
-		$params    = ! empty(rgpost('id')) ? $_POST : $_GET;
+                    $http_status = wp_remote_retrieve_response_code($response);
+                    $result      = wp_remote_retrieve_body($response);
+                    $result      = json_decode($result);
+                    $Note        = print_r($result, true);
 
-		$Transaction_ID = ! empty($Transaction_ID) ? $Transaction_ID : ( ! empty($track_id) ? $track_id : '-' );
+                    if (is_wp_error($response) || $http_status != 200) {
+                        $Status = 'Failed';
+                    } else {
+                        $verify_status   = empty($result->status) ? null : $result->status;
+                        $verify_track_id = empty($result->track_id) ? null : $result->track_id;
+                        $verify_amount   = empty($result->amount) ? null : $result->amount;
+                        $Transaction_ID  = ! empty($verify_track_id) ? $verify_track_id : '-';
 
-		if (! $free && ! empty($id) && ! empty($order_id)) {
-			if ($status_id == 10) {
-				$pid       = sanitize_text_field($id);
-				$porder_id = sanitize_text_field($order_id);
+                        if (empty($verify_status) || $verify_status != 100 || empty($verify_track_id) ||
+                             empty($verify_amount) || $verify_amount != $pricing->amount) {
+                            $Status = 'Failed';
+                        } else {
+                            $Status = 'completed';
+                        }
+                    }
+                } else {
+                    $Status = 'cancelled';
+                }
+            } else {
+                $Status = 'Failed';
+            }
+        }
 
-				if (! empty($pid) && ! empty($porder_id) && $porder_id == $entryId &&
-				    self::isNotDoubleSpending($entryId, $order_id, $id) == true) {
-					$__params = $Amount . $pid;
-					if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
-						return;
-					}
+        $Status         = ! empty($Status) ? $Status : 'Failed';
+        $transaction_id = ! empty($Transaction_ID) ? $Transaction_ID : '';
+        $transaction_id = apply_filters(
+            self::$author . '_gf_real_transaction_id',
+            $transaction_id,
+            $Status,
+            $form,
+            $entry
+        );
 
-					$data = [
-						'id'       => $pid,
-						'order_id' => $entryId
-					];
+        $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
+        $entry["transaction_id"]   = $transaction_id;
+        $entry["transaction_type"] = $transaction_type;
+        $status_code               = sanitize_text_field($status_id);
 
-					$response = self::httpRequest('https://api.idpay.ir/v1.1/payment/verify', $data);
+        if ($Status == 'completed') {
+            $entry["is_fulfilled"]   = 1;
+            $entry["payment_amount"] = $pricing->amount;
 
-					$http_status = wp_remote_retrieve_response_code($response);
-					$result      = wp_remote_retrieve_body($response);
-					$result      = json_decode($result);
-					$Note        = print_r($result, true);
+            if ($transaction_type == 2) {
+                $entry["payment_status"] = "Active";
+                RGFormsModel::add_note(
+                    $entryId,
+                    $userData->id,
+                    $userData->username,
+                    __(
+                        "تغییرات اطلاعات فیلدها فقط در همین پیام ورودی اعمال خواهد شد و بر روی وضعیت کاربر تاثیری نخواهد داشت .",
+                        "gravityformsIDPay"
+                    )
+                );
+            } else {
+                $entry["payment_status"] = "Paid";
+            }
 
-					if (is_wp_error($response) || $http_status != 200) {
-						$Status = 'Failed';
-					} else {
-						$verify_status   = empty($result->status) ? null : $result->status;
-						$verify_track_id = empty($result->track_id) ? null : $result->track_id;
-						$verify_amount   = empty($result->amount) ? null : $result->amount;
-						$Transaction_ID  = ! empty($verify_track_id) ? $verify_track_id : '-';
+            if ($free == true) {
+                unset($entry["payment_amount"]);
+                unset($entry["payment_method"]);
+                unset($entry["is_fulfilled"]);
+                gform_delete_meta($entryId, 'payment_gateway');
+                $message = $Note = sprintf(__('وضعیت پرداخت : رایگان - بدون نیاز به درگاه پرداخت', "gravityformsIDPay"));
+            } else {
+                $message = sprintf(__(' پرداخت شما با موفقیت انجام شد. شماره سفارش: %s - کد رهگیری: %s', "gravityformsIDPay"), $result->order_id, $result->track_id);
+                $Note    = sprintf(__(' وضعیت تراکنش: %s - کد رهگیری: %s - شماره کارت: %s شماره کارت هش شده:%s', "gravityformsIDPay"),
+                    self::getStatus($result->status), $result->track_id, $result->payment->card_no, $result->payment->hashed_card_no);
+                $Note    .= print_r($result, true);
+            }
 
-						if (empty($verify_status) || $verify_status != 100 || empty($verify_track_id) || empty($verify_amount) || $verify_amount != $Amount) {
-							$Status = 'Failed';
-						} else {
-							$Status = 'completed';
-						}
-					}
-				} else {
-					$Status = 'cancelled';
-				}
-			} else {
-				$Status = 'Failed';
-			}
-		}
+            GFAPI::update_entry($entry);
 
-		$Status         = ! empty($Status) ? $Status : 'Failed';
-		$transaction_id = ! empty($Transaction_ID) ? $Transaction_ID : '';
-		$transaction_id = apply_filters(self::$author . '_gf_real_transaction_id', $transaction_id, $Status, $form, $entry);
+            if (! empty($__params)) {
+                GFPersian_Payments::set_verification($entry, __CLASS__, $__params);
+            }
 
-		$entry["payment_date"]     = gmdate("Y-m-d H:i:s");
-		$entry["transaction_id"]   = $transaction_id;
-		$entry["transaction_type"] = $transaction_type;
-		$status_code               = sanitize_text_field($status_id);
+            $user_registration_slug = apply_filters('gf_user_registration_slug', 'gravityformsuserregistration');
+            $idpay_config           = [ 'meta' => [] ];
+            if (! empty($config["meta"]["addon"]) && $config["meta"]["addon"] == 'true') {
+                if (class_exists('GFAddon') && method_exists('GFAddon', 'get_registered_addons')) {
+                    $addons = GFAddon::get_registered_addons();
+                    foreach ((array) $addons as $addon) {
+                        if (is_callable(array( $addon, 'get_instance' ))) {
+                            $addon = call_user_func(array( $addon, 'get_instance' ));
+                            if (is_object($addon) && method_exists($addon, 'get_slug')) {
+                                $slug = $addon->get_slug();
+                                if ($slug != $user_registration_slug) {
+                                    $idpay_config['meta'][ 'delay_' . $slug ] = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (! empty($config["meta"]["type"]) && $config["meta"]["type"] == "subscription") {
+                $idpay_config['meta'][ 'delay_' . $user_registration_slug ] = true;
+            }
 
-		if ($Status == 'completed') {
-			$entry["is_fulfilled"]   = 1;
-			$entry["payment_amount"] = $Total;
+            do_action("gform_IDPay_fulfillment", $entry, $config, $transaction_id, $pricing->amount);
+            do_action("gform_gateway_fulfillment", $entry, $config, $transaction_id, $pricing->amount);
+            do_action("gform_idpay_fulfillment", $entry, $idpay_config, $transaction_id, $pricing->amount);
+        }
 
-			if ($transaction_type == 2) {
-				$entry["payment_status"] = "Active";
-				RGFormsModel::add_note($entryId, $user_id, $user_name, __("تغییرات اطلاعات فیلدها فقط در همین پیام ورودی اعمال خواهد شد و بر روی وضعیت کاربر تاثیری نخواهد داشت .", "gravityformsIDPay"));
-			} else {
-				$entry["payment_status"] = "Paid";
-			}
+        else {
 
-			if ($free == true) {
-				unset($entry["payment_amount"]);
-				unset($entry["payment_method"]);
-				unset($entry["is_fulfilled"]);
-				gform_delete_meta($entryId, 'payment_gateway');
-				$message = $Note = sprintf(__('وضعیت پرداخت : رایگان - بدون نیاز به درگاه پرداخت', "gravityformsIDPay"));
-			} else {
-				$message = sprintf(__(' پرداخت شما با موفقیت انجام شد. شماره سفارش: %s - کد رهگیری: %s', "gravityformsIDPay"), $result->order_id, $result->track_id);
-				$Note    = sprintf(__(' وضعیت تراکنش: %s - کد رهگیری: %s - شماره کارت: %s شماره کارت هش شده:%s', "gravityformsIDPay"), self::getStatus($result->status), $result->track_id, $result->payment->card_no, $result->payment->hashed_card_no);
-				$Note    .= print_r($result, true);
-			}
+            $entry["payment_status"] = ( $Status == 'cancelled' ) ? "Cancelled" : "Failed";
+            $entry["payment_amount"] = 0;
+            $entry["is_fulfilled"]   = 0;
+            GFAPI::update_entry($entry);
 
-			GFAPI::update_entry($entry);
+            $message = $Note = sprintf(__('وضعیت پرداخت :%s (کد خطا: %s) - مبلغ قابل پرداخت : %s', "gravityformsIDPay"),
+                self::getStatus($status_code), $status_code, $pricing->money);
+            $Note    .= print_r($params, true);
+        }
 
-			if (! empty($__params)) {
-				GFPersian_Payments::set_verification($entry, __CLASS__, $__params);
-			}
+        $entry = GFPersian_Payments::get_entry($entryId);
 
-			$user_registration_slug = apply_filters('gf_user_registration_slug', 'gravityformsuserregistration');
-			$idpay_config           = [ 'meta' => [] ];
-			if (! empty($config["meta"]["addon"]) && $config["meta"]["addon"] == 'true') {
-				if (class_exists('GFAddon') && method_exists('GFAddon', 'get_registered_addons')) {
-					$addons = GFAddon::get_registered_addons();
-					foreach ((array) $addons as $addon) {
-						if (is_callable(array( $addon, 'get_instance' ))) {
-							$addon = call_user_func(array( $addon, 'get_instance' ));
-							if (is_object($addon) && method_exists($addon, 'get_slug')) {
-								$slug = $addon->get_slug();
-								if ($slug != $user_registration_slug) {
-									$idpay_config['meta'][ 'delay_' . $slug ] = true;
-								}
-							}
-						}
-					}
-				}
-			}
-			if (! empty($config["meta"]["type"]) && $config["meta"]["type"] == "subscription") {
-				$idpay_config['meta'][ 'delay_' . $user_registration_slug ] = true;
-			}
+        RGFormsModel::add_note($entryId, $userData->id, $userData->username, $Note);
+        do_action('gform_post_payment_status', $config, $entry,
+            strtolower($Status), $transaction_id, '', $pricing->amount, '', '');
+        do_action('gform_post_payment_status_' . __CLASS__, $config, $form, $entry,
+            strtolower($Status), $transaction_id, '', $pricing->amount, '', '');
 
-			do_action("gform_IDPay_fulfillment", $entry, $config, $transaction_id, $Total);
-			do_action("gform_gateway_fulfillment", $entry, $config, $transaction_id, $Total);
-			do_action("gform_idpay_fulfillment", $entry, $idpay_config, $transaction_id, $Total);
-		} else {
-			$entry["payment_status"] = ( $Status == 'cancelled' ) ? "Cancelled" : "Failed";
-			$entry["payment_amount"] = 0;
-			$entry["is_fulfilled"]   = 0;
-			GFAPI::update_entry($entry);
+        if (apply_filters(self::$author . '_gf_IDPay_verify',
+            apply_filters(self::$author . '_gf_gateway_verify', ( $paymentType != 'custom' ), $form, $entry),
+            $form, $entry)) {
+            foreach ($form['confirmations'] as $key => $value) {
+                $form['confirmations'][ $key ]['message'] = self::_payment_entry_detail(
+                        $message, $Status, $config, $value['message']);
+            }
 
-			$message = $Note = sprintf(__('وضعیت پرداخت :%s (کد خطا: %s) - مبلغ قابل پرداخت : %s', "gravityformsIDPay"), self::getStatus($status_code), $status_code, $Total_Money);
-			$Note    .= print_r($params, true);
-		}
+            if (! empty($idpay_config['meta'])) {
+                if (in_array("delay_post-update-addon-gravity-forms", $idpay_config['meta'])) {
+                    $addon = call_user_func(array( 'ACGF_PostUpdateAddOn', 'get_instance' ));
+                    $feeds = $addon->get_feeds($formId);
+                    foreach ($feeds as $feed) {
+                        $addon->process_feed($feed, $entry, $form);
+                    }
+                }
 
-		$entry = GFPersian_Payments::get_entry($entryId);
+                if (in_array("delay_gravityformsadvancedpostcreation", $idpay_config['meta'])) {
+                    $addon = call_user_func(array( 'GF_Advanced_Post_Creation', 'get_instance' ));
+                    $feeds = $addon->get_feeds($formId);
+                    foreach ($feeds as $feed) {
+                        $addon->process_feed($feed, $entry, $form);
+                    }
+                }
 
-		RGFormsModel::add_note($entryId, $user_id, $user_name, $Note);
-		do_action('gform_post_payment_status', $config, $entry, strtolower($Status), $transaction_id, '', $Total, '', '');
-		do_action('gform_post_payment_status_' . __CLASS__, $config, $form, $entry, strtolower($Status), $transaction_id, '', $Total, '', '');
+                if (in_array("delay_gravityformsuserregistration", $idpay_config['meta'])) {
+                    $addon = call_user_func(array( 'GF_User_Registration', 'get_instance' ));
+                    $feeds = $addon->get_feeds($formId);
+                    foreach ($feeds as $feed) {
+                        $addon->process_feed($feed, $entry, $form);
+                    }
+                }
+            }
 
-		if (apply_filters(self::$author . '_gf_IDPay_verify', apply_filters(self::$author . '_gf_gateway_verify', ( $payment_type != 'custom' ), $form, $entry), $form, $entry)) {
-			foreach ($form['confirmations'] as $key => $value) {
-				$form['confirmations'][ $key ]['message'] = self::_payment_entry_detail($message, $Status, $config, $value['message']);
-			}
+            GFPersian_Payments::notification($form, $entry);
+            GFPersian_Payments::confirmation($form, $entry, $Note);
+        }
+    }
 
-			if (! empty($idpay_config['meta'])) {
-				if (in_array("delay_post-update-addon-gravity-forms", $idpay_config['meta'])) {
-					$addon = call_user_func(array( 'ACGF_PostUpdateAddOn', 'get_instance' ));
-					$feeds = $addon->get_feeds($formId);
-					foreach ($feeds as $feed) {
-						$addon->process_feed($feed, $entry, $form);
-					}
-				}
 
-				if (in_array("delay_gravityformsadvancedpostcreation", $idpay_config['meta'])) {
-					$addon = call_user_func(array( 'GF_Advanced_Post_Creation', 'get_instance' ));
-					$feeds = $addon->get_feeds($formId);
-					foreach ($feeds as $feed) {
-						$addon->process_feed($feed, $entry, $form);
-					}
-				}
 
-				if (in_array("delay_gravityformsuserregistration", $idpay_config['meta'])) {
-					$addon = call_user_func(array( 'GF_User_Registration', 'get_instance' ));
-					$feeds = $addon->get_feeds($formId);
-					foreach ($feeds as $feed) {
-						$addon->process_feed($feed, $entry, $form);
-					}
-				}
-			}
+    public static function loadFeedList()
+    {
+        GFFormSettings::page_header();
+        require_once(self::get_base_path() . '/pages/FeedList.php');
+        GFFormSettings::page_footer();
+    }
 
-			GFPersian_Payments::notification($form, $entry);
-			GFPersian_Payments::confirmation($form, $entry, $Note);
-		}
-	}
+    public static function routeFeedPage()
+    {
+        $view = rgget("view");
+        if ($view == "edit") {
+            require_once(self::get_base_path() . '/pages/FeedConfig.php');
+        } elseif ($view == "stats") {
+            IDPay_Chart::stats_page();
+        } else {
+            require_once(self::get_base_path() . '/pages/FeedList.php');
+        }
+    }
 
-	public static function isNotDoubleSpending($reference_id, $order_id, $transaction_id)
-	{
-		$relatedTransaction = gform_get_meta($reference_id, "IdpayTransactionId:$order_id", false);
-		if (! empty($relatedTransaction)) {
-			return $transaction_id == $relatedTransaction;
-		}
-
-		return false;
-	}
-
-	public static function loadFeedList()
-	{
-		GFFormSettings::page_header();
-		require_once(self::get_base_path() . '/pages/FeedList.php');
-		GFFormSettings::page_footer();
-	}
-
-	public static function routeFeedPage()
-	{
-		$view = rgget("view");
-		if ($view == "edit") {
-			require_once(self::get_base_path() . '/pages/FeedConfig.php');
-		} elseif ($view == "stats") {
-			IDPay_Chart::stats_page();
-		} else {
-			require_once(self::get_base_path() . '/pages/FeedList.php');
-		}
-	}
-
-	public static function loadSettingPage()
-	{
-		require_once(self::get_base_path() . '/pages/Setting.php');
-	}
+    public static function loadSettingPage()
+    {
+        require_once(self::get_base_path() . '/pages/Setting.php');
+    }
 
 //    private static function is_gravityforms_supported(): bool {
 //        $condition1 = class_exists( "GFCommon" );
@@ -788,13 +758,7 @@ class GF_Gateway_IDPay extends Helpers
             $payment_date = $date->format('Y-m-d H:i:s');
         }
 
-        global $current_user;
-        $user_id   = 0;
-        $user_name = __("مهمان", 'gravityformsIDPay');
-        if ($current_user && $user_data = get_userdata($current_user->ID)) {
-            $user_id   = $current_user->ID;
-            $user_name = $user_data->display_name;
-        }
+        $userData = self::loadUser();
 
         $entry["payment_status"] = $payment_status;
         $entry["payment_amount"] = $payment_amount;
@@ -809,12 +773,12 @@ class GF_Gateway_IDPay extends Helpers
 
         $new_status = '';
         switch (rgar($entry, "payment_status")) {
-	        case "Paid":
-	        case "Active":
+            case "Paid":
+            case "Active":
                 $new_status = __('موفق', 'gravityformsIDPay');
                 break;
 
-	        case "Cancelled":
+            case "Cancelled":
                 $new_status = __('منصرف شده', 'gravityformsIDPay');
                 break;
 
@@ -827,7 +791,7 @@ class GF_Gateway_IDPay extends Helpers
                 break;
         }
 
-        RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("اطلاعات تراکنش به صورت دستی ویرایش شد . وضعیت : %s - مبلغ : %s - کد رهگیری : %s - تاریخ : %s", "gravityformsIDPay"), $new_status, GFCommon::to_money($entry["payment_amount"], $entry["currency"]), $payment_transaction, $entry["payment_date"]));
+        RGFormsModel::add_note($entry["id"], $userData->id, $userData->username, sprintf(__("اطلاعات تراکنش به صورت دستی ویرایش شد . وضعیت : %s - مبلغ : %s - کد رهگیری : %s - تاریخ : %s", "gravityformsIDPay"), $new_status, GFCommon::to_money($entry["payment_amount"], $entry["currency"]), $payment_transaction, $entry["payment_date"]));
     }
 
     public static function uninstall()
@@ -844,59 +808,9 @@ class GF_Gateway_IDPay extends Helpers
         update_option('recently_activated', array( $plugin => time() ) + (array) get_option('recently_activated'));
     }
 
-    public static function get_config_by_entry($entry)
-    {
-        $feed_id = gform_get_meta($entry["id"], "IDPay_feed_id");
-        $feed    = ! empty($feed_id) ? IDPayDB::get_feed($feed_id) : '';
-        $return  = ! empty($feed) ? $feed : false;
 
-        return apply_filters(self::$author . '_gf_IDPay_get_config_by_entry', apply_filters(self::$author . '_gf_gateway_get_config_by_entry', $return, $entry), $entry);
-    }
 
-    public static function getStatus($status_code)
-    {
-        switch ($status_code) {
-            case 1:
-                return 'پرداخت انجام نشده است';
-                break;
-            case 2:
-                return 'پرداخت ناموفق بوده است';
-                break;
-            case 3:
-                return 'خطا رخ داده است';
-                break;
-            case 4:
-                return 'بلوکه شده';
-                break;
-            case 5:
-                return 'برگشت به پرداخت کننده';
-                break;
-            case 6:
-                return 'برگشت خورده سیستمی';
-                break;
-            case 7:
-                return 'انصراف از پرداخت';
-                break;
-            case 8:
-                return 'به درگاه پرداخت منتقل شد';
-                break;
-            case 10:
-                return 'در انتظار تایید پرداخت';
-                break;
-            case 100:
-                return 'پرداخت تایید شده است';
-                break;
-            case 101:
-                return 'پرداخت قبلا تایید شده است';
-                break;
-            case 200:
-                return 'به دریافت کننده واریز شد';
-                break;
-            default:
-                return 'خطای ناشناخته';
-                break;
-        }
-    }
+
 
     public static function _payment_entry_detail($messages, $payment_status, $config, $text)
     {
@@ -967,5 +881,4 @@ class GF_Gateway_IDPay extends Helpers
         <?php
         return $form;
     }
-
 }
