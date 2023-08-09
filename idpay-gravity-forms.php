@@ -22,6 +22,7 @@ add_action('init', array( 'GF_Gateway_IDPay', 'init' ));
 require_once('lib/IDPayDB.php');
 require_once('lib/Helpers.php');
 require_once('lib/IDPayPayment.php');
+require_once('lib/IDPayVerify.php');
 require_once('lib/IDPay_Chart.php');
 
 class GF_Gateway_IDPay extends Helpers
@@ -102,8 +103,9 @@ class GF_Gateway_IDPay extends Helpers
 
     public static function doVerify()
     {
-       return IDPayPayment::doVerify();
+       return IDPayVerify::doVerify();
 
+       // Refactor Until This Line
 
         $status_id = ! empty(rgpost('status')) ? rgpost('status') : ( ! empty(rgget('status')) ? rgget('status') : null );
         $track_id  = ! empty(rgpost('track_id')) ? rgpost('track_id') : ( ! empty(rgget('track_id')) ? rgget('track_id') : null );
