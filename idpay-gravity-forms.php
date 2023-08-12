@@ -40,13 +40,11 @@ class GF_Gateway_IDPay extends Helpers
 
         if ($condition1 || $condition2 || $condition3) {
             add_action('admin_notices', array( __CLASS__, 'admin_notice_persian_gf' ));
-
             return false;
         }
 
         if (! self::is_gravityforms_supported()) {
             add_action('admin_notices', array( __CLASS__, 'admin_notice_gf_support' ));
-
             return false;
         }
 
@@ -105,7 +103,7 @@ class GF_Gateway_IDPay extends Helpers
     {
        return IDPayVerify::doVerify();
 
-       // Refactor Until This Line
+// Recatored
 
         $status_id = ! empty(rgpost('status')) ? rgpost('status') : ( ! empty(rgget('status')) ? rgget('status') : null );
         $track_id  = ! empty(rgpost('track_id')) ? rgpost('track_id') : ( ! empty(rgget('track_id')) ? rgget('track_id') : null );
@@ -113,40 +111,47 @@ class GF_Gateway_IDPay extends Helpers
         $order_id  = ! empty(rgpost('order_id')) ? rgpost('order_id') : ( ! empty(rgget('order_id')) ? rgget('order_id') : null );
         $params    = ! empty(rgpost('id')) ? $_POST : $_GET;
 
+ // Recatored
+
         $Transaction_ID = ! empty($Transaction_ID) ? $Transaction_ID : ( ! empty($track_id) ? $track_id : '-' );
 
         if (! $free && ! empty($id) && ! empty($order_id)) {
             if ($status_id == 10) {
                 $pid       = sanitize_text_field($id);
                 $porder_id = sanitize_text_field($order_id);
-
+// Recatored
                 if (! empty($pid) && ! empty($porder_id) && $porder_id == $entryId &&
                      self::isNotDoubleSpending($entryId, $order_id, $id) == true) {
                     $__params = $pricing->amount . $pid;
                     if (GFPersian_Payments::check_verification($entry, __CLASS__, $__params)) {
                         return;
                     }
-
+// Recatored
                     $data = [
                         'id'       => $pid,
                         'order_id' => $entryId
                     ];
-
+// Recatored
                     $response = self::httpRequest('https://api.idpay.ir/v1.1/payment/verify', $data);
-
+// Recatored
                     $http_status = wp_remote_retrieve_response_code($response);
                     $result      = wp_remote_retrieve_body($response);
                     $result      = json_decode($result);
                     $Note        = print_r($result, true);
+// Recatored
 
+
+
+// Recatored
                     if (is_wp_error($response) || $http_status != 200) {
                         $Status = 'Failed';
                     } else {
+	                    // Recatored
                         $verify_status   = empty($result->status) ? null : $result->status;
                         $verify_track_id = empty($result->track_id) ? null : $result->track_id;
                         $verify_amount   = empty($result->amount) ? null : $result->amount;
                         $Transaction_ID  = ! empty($verify_track_id) ? $verify_track_id : '-';
-
+// Recatored
                         if (empty($verify_status) || $verify_status != 100 || empty($verify_track_id) ||
                              empty($verify_amount) || $verify_amount != $pricing->amount) {
                             $Status = 'Failed';
@@ -161,9 +166,12 @@ class GF_Gateway_IDPay extends Helpers
                 $Status = 'Failed';
             }
         }
+// Recatored
 
         $Status         = ! empty($Status) ? $Status : 'Failed';
         $transaction_id = ! empty($Transaction_ID) ? $Transaction_ID : '';
+
+// Recatored
         $transaction_id = apply_filters(
             self::$author . '_gf_real_transaction_id',
             $transaction_id,
@@ -171,6 +179,9 @@ class GF_Gateway_IDPay extends Helpers
             $form,
             $entry
         );
+
+
+	    // Refactor Until This Line
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]   = $transaction_id;
@@ -326,12 +337,6 @@ class GF_Gateway_IDPay extends Helpers
     {
         require_once(self::get_base_path() . '/pages/Setting.php');
     }
-
-//    private static function is_gravityforms_supported(): bool {
-//        $condition1 = class_exists( "GFCommon" );
-//        $condition2 = (bool) version_compare( GFCommon::$version, self::$min_gravityforms_version, ">=" );
-//        return $condition1 && $condition2;
-//    }
 
     public static function alter_submit_button($button_input, $form)
     {
@@ -809,10 +814,6 @@ class GF_Gateway_IDPay extends Helpers
         deactivate_plugins($plugin);
         update_option('recently_activated', array( $plugin => time() ) + (array) get_option('recently_activated'));
     }
-
-
-
-
 
     public static function _payment_entry_detail($messages, $payment_status, $config, $text)
     {

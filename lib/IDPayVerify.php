@@ -9,42 +9,6 @@ class IDPayVerify extends Helpers
         return Helpers::dataGet($target, $key, $default);
     }
 
-	public static function doVerify()
-	{
-		$request = self::getRequestData();
-
-		if (self::isNotApprovedGettingTransaction($request->entryId, $request->formId)) {
-			return 'Error';
-		}
-
-		$entry   = GFPersian_Payments::get_entry($request->entryId);
-		$form        = RGFormsModel::get_form_meta($request->formId);
-		$paymentType = gform_get_meta($request->entryId, 'payment_type');
-		gform_delete_meta($request->entryId, 'payment_type');
-		$config = self::loadConfig($entry, $form, $paymentType);
-		if (empty($config)) {
-			return 'Error';
-		}
-
-		$transaction_type = self::getTransactionType($config);
-		$pricing = self::getPriceOrder($paymentType, $entry, $form);
-
-		if (self::checkTypeVerify() == 'Purchase' && !self::checkApprovedVerifyData($request)) {
-			return self::rejectVerifyTransaction($entry, $form, $transaction_type, $request, $pricing, $config);
-		}
-
-		if (self::checkTypeVerify() == 'Free') {
-			$transaction = self::prepareFreeTransactionVerify($entry, $form);
-		} elseif (self::checkTypeVerify() == 'Purchase') {
-			$transaction = self::preparePurchaseTransactionVerify($entry, $form,$request,$pricing,$config);
-			if($transaction == 'Error') {
-				return 'Error';
-			}
-
-		}
-	}
-
-
 	public static function rejectVerifyTransaction($entry, $form, $transaction_type, $request, $pricing, $config)
 	{
 		$Status        = 'Failed';
@@ -141,7 +105,8 @@ class IDPayVerify extends Helpers
 				'statusCode'  => 0,
 				'type'    => 'Purchase',
 				'is_free' => false,
-				'id'      => $request->id
+				'id'      => $request->id,
+				'response' => []
 			];
 		}
 
@@ -158,28 +123,40 @@ class IDPayVerify extends Helpers
 			self::rejectVerifyTransaction($entry, $form, $transaction_type, $request, $pricing, $config);
 			return 'Error';
 		}
-		$verify_status   = empty($result->status) ? null : $result->status;
-		$verify_track_id = empty($result->track_id) ? null : $result->track_id;
-		$verify_amount   = empty($result->amount) ? null : $result->amount;
-		$Transaction_ID  = ! empty($verify_track_id) ? $verify_track_id : '-';
+		$statusCode   = empty($result->status) ? null : $result->status;
+		$trackId = empty($result->track_id) ? null : $result->track_id;
+		$amount   = empty($result->amount) ? null : $result->amount;
 
-		if ($verify_status != 100 ||$verify_amount != $pricing->amount) {
+		$condition1 =  $statusCode != 100;
+		$condition2 =  $amount != $pricing->amount;
+		$condition3 =  empty($statusCode);
+		$condition4 =  empty($amount);
+		$condition5 =  empty($trackId);
+
+		if ($condition1 ||$condition2 || $condition3 || $condition4 || $condition5) {
 			return (object) [
 				'status'  => 'Failed',
-				'statusCode'  => $verify_status,
+				'statusCode'  => $statusCode,
 				'type'    => 'Purchase',
 				'is_free' => false,
-				'id'      => $request->id
+				'id'      => $request->id,
+				'response' => $result
 			];
 		}
 
 		return (object) [
 			'status'  => 'completed',
-			'statusCode'  => 100,
+			'statusCode'  => $statusCode,
 			'type'    => 'Purchase',
 			'is_free' => false,
-			'id'      => $request->id
+			'id'      => $request->id,
+			'response' => $result
 		];
+	}
+
+	public static function processVerifyTransaction($transaction){
+		// process when transaction type free and puchase is approved all condition
+
 	}
 
 	public static function checkErrorVerifyResponse($response, $http_status, $result)
@@ -200,4 +177,56 @@ class IDPayVerify extends Helpers
 		return false;
 	}
 
+	public static function doVerify()
+	{
+		$request = self::getRequestData();
+
+		if (self::isNotApprovedGettingTransaction($request->entryId, $request->formId)) {
+			return 'Error';
+		}
+
+		$entry   = GFPersian_Payments::get_entry($request->entryId);
+		$form        = RGFormsModel::get_form_meta($request->formId);
+		$paymentType = gform_get_meta($request->entryId, 'payment_type');
+		gform_delete_meta($request->entryId, 'payment_type');
+		$config = self::loadConfig($entry, $form, $paymentType);
+		if (empty($config)) {
+			return 'Error';
+		}
+
+		$transaction_type = self::getTransactionType($config);
+		$pricing = self::getPriceOrder($paymentType, $entry, $form);
+
+		if (self::checkTypeVerify() == 'Purchase' && !self::checkApprovedVerifyData($request)) {
+			return self::rejectVerifyTransaction($entry, $form, $transaction_type, $request, $pricing, $config);
+		}
+
+		if (self::checkTypeVerify() == 'Free') {
+			$transaction = self::prepareFreeTransactionVerify($entry, $form);
+		} elseif (self::checkTypeVerify() == 'Purchase') {
+			$transaction = self::preparePurchaseTransactionVerify($entry, $form,$request,$pricing,$config);
+			if($transaction == 'Error') {
+				return 'Error';
+			}
+			elseif ($transaction->statusCode != 100){
+				$data = (object) [
+					'id'      => self::dataGet( $request, 'id' ),
+					'status'  => self::dataGet( $transaction, 'statusCode' ),
+					'trackId' => self::dataGet( $request, 'track_id' ),
+					'orderId' => self::dataGet( $request, 'order_id' ),
+					'formId'  => (int) self::dataGet( $_GET, 'form_id' ),
+					'entryId' => (int) self::dataGet( $_GET, 'entry' ),
+					'all'     => self::dataGet( $transaction, 'response' ),
+				];
+				return self::rejectVerifyTransaction($entry, $form, $transaction_type, $data, $pricing, $config);
+			}
+
+			$verified = self::processVerifyTransaction($transaction);
+
+
+
+
+
+		}
+	}
 }
