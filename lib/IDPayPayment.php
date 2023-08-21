@@ -3,12 +3,7 @@
 class IDPayPayment extends Helpers
 {
     public static $author = "IDPay";
-
-    public static function dataGet($target, $key, $default = null)
-    {
-        return Helpers::dataGet($target, $key, $default);
-    }
-
+	
 	public static function doPayment($confirmation, $form, $entry, $ajax)
 	{
 		$entryId = $entry['id'];
@@ -20,9 +15,9 @@ class IDPayPayment extends Helpers
 
 		$resp = null;
 		if ($confirmation == 'custom') {
-			$resp = self::doPaymentByCustomConfirmation($confirmation, $form, $entry, $ajax);
+			$resp = self::handleCustomConfirmation($confirmation, $form, $entry, $ajax);
 		} else {
-			$resp = self::doPaymentByAutoConfirmation($confirmation, $form, $entry, $ajax);
+			$resp = self::handleAutoConfirmation($confirmation, $form, $entry, $ajax);
 		}
 
 		if (self::dataGet($resp, 'transactionType') == 'Free') {
@@ -44,7 +39,7 @@ class IDPayPayment extends Helpers
 			$ReturnPath = self::Return_URL($formId, $entryId);
 
 			if (self::isNotApprovedPrice($amount)) {
-				return self::rejectPaymentTransaction($entry, $form);
+				return self::reject($entry, $form);
 			}
 
 			$paymentDto = [
@@ -60,12 +55,12 @@ class IDPayPayment extends Helpers
 			$response       = self::httpRequest('https://api.idpay.ir/v1.1/payment', $paymentDto);
 			$http_status    = wp_remote_retrieve_response_code($response);
 			$result         = json_decode(wp_remote_retrieve_body($response)) ?? null;
-			$errorResponder = self::checkErrorPaymentResponse($response, $http_status, $result);
+			$errorResponder = self::checkErrorResponse($response, $http_status, $result);
 
 			if (! $errorResponder == false) {
 				$message = self::dataGet($errorResponder, 'message');
 
-				return self::rejectPaymentTransaction($entry, $form, $message);
+				return self::reject($entry, $form, $message);
 			}
 
 			gform_update_meta($entryId, "IdpayTransactionId:$entryId", $result->id);
@@ -76,7 +71,7 @@ class IDPayPayment extends Helpers
 		return $confirmation;
 	}
 
-    public static function processOrderCheckout($form, $entry)
+    public static function checkout($form, $entry)
     {
         $formId       = $form['id'];
         $Amount       = self::getOrderTotal($form, $entry);
@@ -98,7 +93,7 @@ class IDPayPayment extends Helpers
         return $Amount;
     }
 
-    public static function doPaymentByAutoConfirmation($confirmation, $form, $entry, $ajax)
+    public static function handleAutoConfirmation($confirmation, $form, $entry, $ajax)
     {
         $formId  = $form['id'];
         $entryId = $entry['id'];
@@ -111,21 +106,21 @@ class IDPayPayment extends Helpers
         $feedType    = self::dataGet($feed, 'meta.type') == "subscription" ? "subscription" : "payment";
         $gravityType = self::getGravityTransactionTypeCode($feedType);
         $gatewayName = self::getGatewayName();
-        $amount      = self::processOrderCheckout($form, $entry);
+        $amount      = self::checkout($form, $entry);
 
         gform_update_meta($entryId, 'IDPay_feed_id', $feedId);
         gform_update_meta($entryId, 'payment_type', 'form');
         gform_update_meta($entryId, 'payment_gateway', $gatewayName);
 
-        return self::processPayment($amount, $gravityType, $feed, $entry, $form, $ajax);
+        return self::process($amount, $gravityType, $feed, $entry, $form, $ajax);
     }
 
-    public static function processPayment($amount, $gravityType, $feed, $entry, $form, $ajax)
+    public static function process($amount, $gravityType, $feed, $entry, $form, $ajax)
     {
         $formId = $form['id'];
 
         if (self::checkTypePayment($amount) == 'Free') {
-            $confirmation = self::processFreePayment($entry, $formId, $ajax);
+            $confirmation = self::processFree($entry, $formId, $ajax);
 
             return [
                 'transactionType' => 'Free',
@@ -134,7 +129,7 @@ class IDPayPayment extends Helpers
                 ]
             ];
         } elseif (self::checkTypePayment($amount) == 'Purchase') {
-            $data = self::processPurchasePayment($feed, $entry, $form);
+            $data = self::processPurchase($feed, $entry, $form);
 
             return [
                 'transactionType' => 'Purchase',
@@ -150,12 +145,7 @@ class IDPayPayment extends Helpers
         }
     }
 
-    public static function checkTypePayment($amount): string
-    {
-        return empty($amount) || $amount == 0 ? 'Free' : 'Purchase';
-    }
-
-    public static function doPaymentByCustomConfirmation($confirmation, $form, $entry, $ajax)
+    public static function handleCustomConfirmation($confirmation, $form, $entry, $ajax)
     {
         $formId      = $form['id'];
         $feed        = self::getFeed($form);
@@ -184,10 +174,10 @@ class IDPayPayment extends Helpers
         gform_update_meta($entryId, 'payment_gateway', self::getGatewayName());
         gform_update_meta($entryId, 'payment_type', 'custom');
 
-        return self::processPayment($amount, $gravityType, $feed, $entry, $form, $ajax);
+        return self::process($amount, $gravityType, $feed, $entry, $form, $ajax);
     }
 
-    public static function processFreePayment($entry, $formId, $ajax)
+    public static function processFree($entry, $formId, $ajax)
     {
 
         $entry["payment_status"]   = null;
@@ -205,7 +195,7 @@ class IDPayPayment extends Helpers
         return self::redirect_confirmation($queryParams, $ajax);
     }
 
-    public static function processPurchasePayment($feed, $entry, $form)
+    public static function processPurchase($feed, $entry, $form)
     {
 
         $formId  = $form['id'];
@@ -234,7 +224,7 @@ class IDPayPayment extends Helpers
         ];
     }
 
-    public static function rejectPaymentTransaction($entry, $form, $Message = '')
+    public static function reject($entry, $form, $Message = '')
     {
         $entryId      = $entry['id'];
         $formId       = $form['id'];
@@ -274,7 +264,7 @@ class IDPayPayment extends Helpers
         return $confirmation;
     }
 
-    public static function checkErrorPaymentResponse($response, $http_status, $result)
+    public static function checkErrorResponse($response, $http_status, $result)
     {
 
         if (is_wp_error($response)) {

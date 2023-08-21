@@ -689,4 +689,34 @@ class Helpers {
 
 		return false;
 	}
+
+	public static function processConfirmations(&$form,$request,$entry,$note, $status, $config) {
+		$paymentType    = gform_get_meta( $request->entryId, 'payment_type' );
+		$hasCustomPayment = ( $paymentType != 'custom' );
+		$confirmPrepare = apply_filters( self::$author . '_gf_gateway_verify', $hasCustomPayment, $form, $entry );
+		$confirmations  = apply_filters( self::$author . '_gf_IDPay_verify', $confirmPrepare, $form, $entry );
+		if ( $confirmations ) {
+			foreach ( $form['confirmations'] as $key => $value ) {
+				$message = self::dataGet($value,'message');
+				$payment = self::makeHtmlConfirmation( $note, $status, $config, $message );
+				$form['confirmations'][ $key ]['message'] = $payment;
+			}
+		}
+	}
+
+	public static function makeHtmlConfirmation($note, $status, $config, $message) {
+		$key = '{idpay_payment_result}';
+		$type = $status == 'Failed' ? 'Failed' : 'Success';
+		$color = $type == 'Failed' ? '#f44336' : '#4CAF50';
+		$style = "direction:rtl;padding: 20px;background-color:{$color};color: white;" .
+		         "opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;";
+		$output = "<div  style='{$style}'>{$note}</div>";
+		return empty(self::dataGet($config,'meta.confirmation')) ? $output : str_replace($key, $output, $message);
+	}
+
+	public static function checkTypePayment($amount): string
+	{
+		return empty($amount) || $amount == 0 ? 'Free' : 'Purchase';
+	}
+
 }
