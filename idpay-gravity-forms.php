@@ -181,19 +181,26 @@ class GF_Gateway_IDPay extends Helpers
         );
 
 
-	    // Refactor Until This Line
+
+// Recatored
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]   = $transaction_id;
         $entry["transaction_type"] = $transaction_type;
         $status_code               = sanitize_text_field($status_id);
+// Recatored
 
         if ($Status == 'completed') {
+	        // Recatored
             $entry["is_fulfilled"]   = 1;
             $entry["payment_amount"] = $pricing->amount;
-
+// Recatored
             if ($transaction_type == 2) {
                 $entry["payment_status"] = "Active";
+	            // Recatored
+
+	            // Refactor Until This Line
+
                 RGFormsModel::add_note(
                     $entryId,
                     $userData->id,
@@ -251,18 +258,6 @@ class GF_Gateway_IDPay extends Helpers
             do_action("gform_IDPay_fulfillment", $entry, $config, $transaction_id, $pricing->amount);
             do_action("gform_gateway_fulfillment", $entry, $config, $transaction_id, $pricing->amount);
             do_action("gform_idpay_fulfillment", $entry, $idpay_config, $transaction_id, $pricing->amount);
-        }
-
-        else {
-
-            $entry["payment_status"] = ( $Status == 'cancelled' ) ? "Cancelled" : "Failed";
-            $entry["payment_amount"] = 0;
-            $entry["is_fulfilled"]   = 0;
-            GFAPI::update_entry($entry);
-
-            $message = $Note = sprintf(__('وضعیت پرداخت :%s (کد خطا: %s) - مبلغ قابل پرداخت : %s', "gravityformsIDPay"),
-                self::getStatus($status_code), $status_code, $pricing->money);
-            $Note    .= print_r($params, true);
         }
 
         $entry = GFPersian_Payments::get_entry($entryId);
