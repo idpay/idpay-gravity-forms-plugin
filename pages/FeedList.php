@@ -1,29 +1,34 @@
 <?php
 include_once self::get_base_path() . '/lib/scripts.php';
 include_once self::get_base_path() . '/lib/styles.php';
-    self::checkSupportedGravityVersion();
-    $operation = self::checkSubmittedOperation();
-    $dictionary = self::loadDictionary('', '');
-    $addNewHtml =  "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
-    $addOption = get_option("gf_IDPay_configured") == true ? $addNewHtml : '';
-    $list_action = wp_nonce_field('list_action', 'gf_IDPay_list');
-    $settings = IDPayDB::get_feeds();
-    $addFeedOption = !get_option("gf_IDPay_configured") ? "<tr><td colspan='5' style='padding:20px;'>{$dictionary->label31}</td></tr>" : '';
-    $checkSettingsExits = is_array($settings) && sizeof($settings) > 0 ? true : false;
-    $checkSettingsNotExits = is_array($settings) && sizeof($settings) > 0 ? '' :"<tr><td colspan='5' style='padding:20px;'>شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید</td></tr>";
+
+self::checkSupportedGravityVersion();
+$operation             = self::checkSubmittedOperation();
+$dictionary            = self::loadDictionary( '', '' );
+$addNewHtml            = "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
+$addOption             = get_option( "gf_IDPay_configured" ) == true ? $addNewHtml : '';
+$list_action           = wp_nonce_field( 'list_action', 'gf_IDPay_list' );
+$settings              = IDPayDB::get_feeds();
+$addFeedOption         = ! get_option( "gf_IDPay_configured" ) ?
+	"<tr><td colspan='5' 
+        style='padding:20px;'>{$dictionary->label31}</td></tr>" : '';
+$checkSettingsExits    = is_array( $settings ) && sizeof( $settings ) > 0;
+$checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' :
+	"<tr><td colspan='5' 
+        style='padding:20px;'>شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید</td></tr>";
 ?>
 
 <?php echo $operation ?>
 <div class="wrap">
-        <h2>
-            <?php echo $dictionary->label22 ?>
-            <?php echo $addOption ?>
-            <a class="button button-primary" style="text-align: center;display: inline-block;margin: 0;"
-               href="admin.php?page=gf_settings&subview=gf_IDPay"><?php echo $dictionary->label26 ?></a>
-        </h2>
+    <h2>
+		<?php echo $dictionary->label22 ?>
+		<?php echo $addOption ?>
+        <a class="button button-primary" style="text-align: center;display: inline-block;margin: 0;"
+           href="admin.php?page=gf_settings&subview=gf_IDPay"><?php echo $dictionary->label26 ?></a>
+    </h2>
 
     <form id="confirmation_list_form" method="post">
-        <?php echo $list_action ?>
+		<?php echo $list_action ?>
         <input type="hidden" id="action" name="action"/>
         <input type="hidden" id="action_argument" name="action_argument"/>
         <div class="tablenav">
@@ -43,23 +48,23 @@ include_once self::get_base_path() . '/lib/styles.php';
                 <th scope="col" id="cb" class="manage-column column-cb check-column"
                     style="padding:13px 3px;width:30px"><input type="checkbox"/></th>
                 <th scope="col" id="active" class="manage-column" style="width:50px">
-                    <?php echo $dictionary->label27 ?></th>
+					<?php echo $dictionary->label27 ?></th>
                 <th scope="col" class="manage-column" style="width:65px">
-                    <?php echo $dictionary->label28 ?></th>
+					<?php echo $dictionary->label28 ?></th>
                 <th scope="col" class="manage-column" style="width:100px"><?php echo $dictionary->label29 ?></th>
                 <th scope="col" class="manage-column" style="width:100px"><?php echo $dictionary->label30 ?></th>
                 <th scope="col" class="manage-column"><?php echo $dictionary->label32 ?></th>
             </tr>
             </thead>
             <tbody class="list:user user-list">
-            <?php
-            echo $addFeedOption;
-            if ($checkSettingsExits) {
-                foreach ($settings as $setting) {
-                    $settingId = $setting["id"];
-                    $settingFormId = $setting["form_id"];
-                    $imageOption = (object) self::getStatusFeedImage($setting);
-                    ?>
+			<?php
+			echo $addFeedOption;
+			if ( $checkSettingsExits ) {
+				foreach ( $settings as $setting ) {
+					$settingId     = $setting["id"];
+					$settingFormId = $setting["form_id"];
+					$imageOption   = (object) self::getStatusFeedImage( $setting );
+					?>
                     <tr class='author-self status-inherit'>
                         <th scope="row" class="check-column">
                             <input type="checkbox" name="feed[]" value="<?php echo $settingId ?>"/>
@@ -73,15 +78,15 @@ include_once self::get_base_path() . '/lib/styles.php';
 
                         <td><?php echo $settingId ?></td>
                         <td class="column-date">
-                            <?php echo self::getTypeFeed($setting); ?>
+							<?php echo self::getTypeFeed( $setting ); ?>
                         </td>
 
                         <td>
                             <strong>
                                 <a class="row-title"
-                                       href="admin.php?page=gf_IDPay&view=edit&id=<?php echo $settingId ?>"
-                                       title="<?php _e("تنظیم مجدد درگاه", "gravityformsIDPay") ?>">
-                                    <?php echo $setting["form_title"] ?></a>
+                                   href="admin.php?page=gf_IDPay&view=edit&id=<?php echo $settingId ?>"
+                                   title="<?php _e( "تنظیم مجدد درگاه", "gravityformsIDPay" ) ?>">
+									<?php echo $setting["form_title"] ?></a>
                             </strong>
                         </td>
 
@@ -106,12 +111,12 @@ include_once self::get_base_path() . '/lib/styles.php';
                                      href="admin.php?page=gf_IDPay&view=stats&id=<?php echo $settingFormId ?>">
                                     <?php echo $dictionary->label37 ?>
                                 </a></span>
-                            </td>
-                      </tr>
-                <?php }
-            } ?>
-                <!-- End ForEach -->
-          <?php echo $checkSettingsNotExits; ?>
+                        </td>
+                    </tr>
+				<?php }
+			} ?>
+            <!-- End ForEach -->
+			<?php echo $checkSettingsNotExits; ?>
             </tbody>
         </table>
     </form>

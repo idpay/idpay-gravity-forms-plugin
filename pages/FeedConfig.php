@@ -33,14 +33,14 @@ $hasPriceFieldInForm = self::checkSetPriceForForm( $form, $formId );
 // End Section
 
 // LoadConfigValues
-$isPostCreateSuccessPay        = self::dataGet( $idpayConfig, 'meta.post_create_success_payment' );
-$isCheckedPostCreateSuccessPay = $isPostCreateSuccessPay == "true" ? "checked='checked'" : "";
-$isPostUpdateSuccessPay        = self::dataGet( $idpayConfig, 'meta.post_update_success_payment' );
-$isCheckedPostUpdateSuccessPay = $isPostUpdateSuccessPay == "true" ? "checked='checked'" : "";
-$isUserRegSuccessPay           = self::dataGet( $idpayConfig, 'meta.user_reg_success_payment' );
-$isCheckedUserRegSuccessPay    = $isUserRegSuccessPay == "true" ? "checked='checked'" : "";
-$isUserRegNoPay                = self::dataGet( $idpayConfig, 'meta.user_reg_no_payment' );
-$isCheckedUserRegNoPay         = $isUserRegNoPay == "true" ? "checked='checked'" : "";
+$isPostCreateSuccessPay         = self::dataGet( $idpayConfig, 'meta.post_create_success_payment' );
+$isCheckedPostCreateSuccessPay  = $isPostCreateSuccessPay == "true" ? "checked='checked'" : "";
+$isPostUpdateSuccessPay         = self::dataGet( $idpayConfig, 'meta.post_update_success_payment' );
+$isCheckedPostUpdateSuccessPay  = $isPostUpdateSuccessPay == "true" ? "checked='checked'" : "";
+$isUserRegSuccessPay            = self::dataGet( $idpayConfig, 'meta.user_reg_success_payment' );
+$isCheckedUserRegSuccessPay     = $isUserRegSuccessPay == "true" ? "checked='checked'" : "";
+$isUserRegNoPay                 = self::dataGet( $idpayConfig, 'meta.user_reg_no_payment' );
+$isCheckedUserRegNoPay          = $isUserRegNoPay == "true" ? "checked='checked'" : "";
 $isUseCustomConfirmation        = self::dataGet( $idpayConfig, 'meta.confirmation' );
 $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
 $description                    = self::dataGet( $idpayConfig, "meta.desc_pm" );

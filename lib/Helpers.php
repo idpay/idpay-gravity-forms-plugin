@@ -6,6 +6,8 @@ class Helpers {
 	public static $author = "IDPay";
 	public static $domain = "gravityformsIDPay";
 	public static $min_gravityforms_version = "1.9.10";
+	public const NO_PAYMENT = "NO_PAYMENT";
+	public const SUCCESS_PAYMENT = "SUCCESS_PAYMENT";
 
 	public static function exists( $array, $key ): bool {
 		if ( $array instanceof ArrayAccess ) {
@@ -751,5 +753,55 @@ class Helpers {
 	public static function checkTypePayment( $amount ): string {
 		return empty( $amount ) || $amount == 0 ? 'Free' : 'Purchase';
 	}
+
+
+	public static function processAddons( $form, $entry, $config, $type ) {
+
+		$config = self::dataGet( $config, 'meta' );
+
+		if ( $type == self::NO_PAYMENT ) {
+
+			$ADDON_USER_REGESTERATION = (object) [
+				'class' => 'GF_User_Registration',
+				'run'   => self::dataGet( $config, 'user_reg_no_payment' ) == true,
+			];
+
+			self::runAddon( $ADDON_USER_REGESTERATION, $form, $entry );
+		}
+
+		if ( $type == self::SUCCESS_PAYMENT ) {
+
+			$ADDON_USER_REGESTERATION = (object) [
+				'class' => 'GF_User_Registration',
+				'run'   => self::dataGet( $config, 'user_reg_success_payment' ) == true,
+			];
+
+			$ADDON_POST_CREATION = (object) [
+				'class' => 'GF_Advanced_Post_Creation',
+				'run'   => self::dataGet( $config, 'post_create_success_payment' ) == true,
+			];
+
+			$ADDON_POST_UPDATE = (object) [
+				'class' => 'ACGF_PostUpdateAddOn',
+				'run'   => self::dataGet( $config, 'post_update_success_payment' ) == true,
+			];
+
+			self::runAddon( $ADDON_USER_REGESTERATION, $form, $entry );
+			self::runAddon( $ADDON_POST_CREATION, $form, $entry );
+			self::runAddon( $ADDON_POST_UPDATE, $form, $entry );
+		}
+	}
+
+	public static function runAddon( $obj, $form, $entry ) {
+		$formId = self::dataGet( $form, 'id' );
+		if ( $obj->run == true ) {
+			$addon = call_user_func( [ $obj->class, 'get_instance' ] );
+			$feeds = $addon->get_feeds( $formId );
+			foreach ( $feeds as $feed ) {
+				$addon->process_feed( $feed, $entry, $form );
+			}
+		}
+	}
+
 
 }
