@@ -231,13 +231,10 @@ class Helpers {
 	public static function checkSetPriceForForm( $form, $formId ) {
 		$check = false;
 		if ( isset( $form['fields'] ) ) {
-			$shippingField = GFAPI::get_fields_by_type( $form, [ 'shipping' ] );
-			$fields        = self::dataGet( $form, 'fields' );
-			if ( ! empty( $shippingField ) ) {
-				foreach ( $fields as $field ) {
-					if ( $field['type'] == 'product' ) {
-						$check = true;
-					}
+			$fields = self::dataGet( $form, 'fields' );
+			foreach ( $fields as $field ) {
+				if ( $field['type'] == 'product' ) {
+					$check = true;
 				}
 			}
 
@@ -306,16 +303,19 @@ class Helpers {
 	}
 
 	public static function readDataFromRequest( $config ) {
-		$config["form_id"]                        = absint( rgpost( "gf_IDPay_form" ) );
-		$config["is_active"]                      = true;
-		$config["meta"]["type"]                   = rgpost( "gf_IDPay_type" );
-		$config["meta"]["addon"]                  = rgpost( "gf_IDPay_addon" );
-		$config["meta"]["desc_pm"]                = rgpost( "gf_IDPay_desc_pm" );
-		$config["meta"]["customer_fields_desc"]   = rgpost( "IDPay_customer_field_desc" );
-		$config["meta"]["customer_fields_email"]  = rgpost( "IDPay_customer_field_email" );
-		$config["meta"]["customer_fields_mobile"] = rgpost( "IDPay_customer_field_mobile" );
-		$config["meta"]["customer_fields_name"]   = rgpost( "IDPay_customer_field_name" );
-		$config["meta"]["confirmation"]           = rgpost( "gf_IDPay_confirmation" );
+		$config["form_id"]                             = absint( rgpost( "gf_IDPay_form" ) );
+		$config["meta"]["desc_pm"]                     = rgpost( "gf_IDPay_desc_pm" );
+		$config["meta"]["customer_fields_desc"]        = rgpost( "IDPay_customer_field_desc" );
+		$config["meta"]["customer_fields_email"]       = rgpost( "IDPay_customer_field_email" );
+		$config["meta"]["customer_fields_mobile"]      = rgpost( "IDPay_customer_field_mobile" );
+		$config["meta"]["customer_fields_name"]        = rgpost( "IDPay_customer_field_name" );
+		$config["meta"]["confirmation"]                = rgpost( "gf_IDPay_confirmation" );
+		$config["meta"]["post_create_success_payment"] = rgpost( "gf_IDPay_post_create_success_payment" );
+		$config["meta"]["post_update_success_payment"] = rgpost( "gf_IDPay_post_update_success_payment" );
+		$config["meta"]["user_reg_success_payment"]    = rgpost( "gf_IDPay_user_reg_success_payment" );
+		$config["meta"]["user_reg_no_payment"]         = rgpost( "gf_IDPay_user_reg_no_payment" );
+		$config["is_active"]                           = true;
+
 
 		return $config;
 	}
@@ -330,9 +330,38 @@ class Helpers {
 	}
 
 	public static function loadSavedOrDefaultValue( $form, $fieldName, $selectedValue ) {
-		$gravityFormFields = ! empty( $form ) ? self::get_form_fields( $form ) : null;
-		if ( $gravityFormFields != null ) {
-			return self::get_mapped_field_list( $fieldName, $selectedValue, $gravityFormFields );
+
+		$fields = null;
+		if ( ! empty( $form ) && is_array( $form['fields'] ) ) {
+			foreach ( $form['fields'] as $item ) {
+				$condition1 = isset( $item['inputs'] ) && is_array( $item['inputs'] );
+				$condition2 = ! rgar( $item, 'displayOnly' );
+				if ( $condition1 ) {
+					foreach ( $item['inputs'] as $input ) {
+						$id       = self::dataGet( $input, 'id' );
+						$label    = GFCommon::get_label( $item, $id );
+						$fields[] = [ 'id' => $id, 'label' => $label ];
+					}
+				} elseif ( $condition2 ) {
+					$id       = self::dataGet( $item, 'id' );
+					$label    = GFCommon::get_label( $item );
+					$fields[] = [ 'id' => $id, 'label' => $label ];
+				}
+			}
+		}
+
+		if ( $fields != null && is_array( $fields ) ) {
+			$str = "<select name='{$fieldName}' id='{$fieldName}'>";
+			$str .= "<option value=''></option>";
+			foreach ( $fields as $field ) {
+				$id       = self::dataGet( $field, 'id' );
+				$label    = esc_html( GFCommon::truncate_middle( self::dataGet( $field, 'label' ), 40 ) );
+				$selected = $id == $selectedValue ? "selected='selected'" : "";
+				$str      .= "<option value='{$id}' {$selected} >{$label}</option>";
+			}
+			$str .= "</select>";
+
+			return $str;
 		}
 
 		return '';
@@ -384,10 +413,13 @@ class Helpers {
 			'label14'            => translate( "توضیح تکمیلی", self::$domain ),
 			'label15'            => translate( "تلفن همراه پرداخت کننده", self::$domain ),
 			'label16'            => translate( "مدیریت افزودنی های گراویتی", self::$domain ),
-			'label17'            => translate( "این گزینه را تنها در صورتی تیک بزنید که", self::$domain ),
-			'label17_2'          => translate( "شما از پلاگین های افزودنی گراویتی مانند", self::$domain ),
-			'label17_3'          => translate( "(Post Update , Post Create , ...)", self::$domain ),
-			'label17_4'          => translate( " استفاده می کنید و باید تنها در صورت پرداخت موفق اجرا شوند", self::$domain ),
+			'label17'            => translate( "هر کدام از گزینه ها را تنها در صورتی تیک بزنید که", self::$domain ),
+			'label17_2'          => translate( "شما از پلاگین های افزودنی گراویتی", self::$domain ),
+			'label17_4'          => translate( " استفاده می کنید و باید پس از بازگشت به سایت اجرا شوند", self::$domain ),
+			'label17_5'          => translate( "پس از پرداخت موفق اجرا شود  Post Creation", self::$domain ),
+			'label17_6'          => translate( "پس از پرداخت موفق اجرا شود  Post Update", self::$domain ),
+			'label17_7'          => translate( "برای ثبت نام کاربران پس از پرداخت موفق اجرا شود  User Registeration", self::$domain ),
+			'label17_8'          => translate( "برای ثبت نام کاربران در تمام وضعیت های پرداخت اجرا شود  User Registeration", self::$domain ),
 			'label18'            => translate( "استفاده از تاییدیه های سفارشی", self::$domain ),
 			'label19'            => translate( "این گزینه را در صورتی تیک بزنید که", self::$domain ),
 			'label19_2'          => translate( "نمیخواهید از تاییدیه ثبت فرم پیش فرض آیدی پی استفاده کنید", self::$domain ),
@@ -645,6 +677,7 @@ class Helpers {
 				return false;
 			}
 		}
+
 		return true;
 	}
 
@@ -690,33 +723,33 @@ class Helpers {
 		return false;
 	}
 
-	public static function processConfirmations(&$form,$request,$entry,$note, $status, $config) {
-		$paymentType    = gform_get_meta( $request->entryId, 'payment_type' );
+	public static function processConfirmations( &$form, $request, $entry, $note, $status, $config ) {
+		$paymentType      = gform_get_meta( $request->entryId, 'payment_type' );
 		$hasCustomPayment = ( $paymentType != 'custom' );
-		$confirmPrepare = apply_filters( self::$author . '_gf_gateway_verify', $hasCustomPayment, $form, $entry );
-		$confirmations  = apply_filters( self::$author . '_gf_IDPay_verify', $confirmPrepare, $form, $entry );
+		$confirmPrepare   = apply_filters( self::$author . '_gf_gateway_verify', $hasCustomPayment, $form, $entry );
+		$confirmations    = apply_filters( self::$author . '_gf_IDPay_verify', $confirmPrepare, $form, $entry );
 		if ( $confirmations ) {
 			foreach ( $form['confirmations'] as $key => $value ) {
-				$message = self::dataGet($value,'message');
-				$payment = self::makeHtmlConfirmation( $note, $status, $config, $message );
+				$message                                  = self::dataGet( $value, 'message' );
+				$payment                                  = self::makeHtmlConfirmation( $note, $status, $config, $message );
 				$form['confirmations'][ $key ]['message'] = $payment;
 			}
 		}
 	}
 
-	public static function makeHtmlConfirmation($note, $status, $config, $message) {
-		$key = '{idpay_payment_result}';
-		$type = $status == 'Failed' ? 'Failed' : 'Success';
-		$color = $type == 'Failed' ? '#f44336' : '#4CAF50';
-		$style = "direction:rtl;padding: 20px;background-color:{$color};color: white;" .
-		         "opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;";
+	public static function makeHtmlConfirmation( $note, $status, $config, $message ) {
+		$key    = '{idpay_payment_result}';
+		$type   = $status == 'Failed' ? 'Failed' : 'Success';
+		$color  = $type == 'Failed' ? '#f44336' : '#4CAF50';
+		$style  = "direction:rtl;padding: 20px;background-color:{$color};color: white;" .
+		          "opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;";
 		$output = "<div  style='{$style}'>{$note}</div>";
-		return empty(self::dataGet($config,'meta.confirmation')) ? $output : str_replace($key, $output, $message);
+
+		return empty( self::dataGet( $config, 'meta.confirmation' ) ) ? $output : str_replace( $key, $output, $message );
 	}
 
-	public static function checkTypePayment($amount): string
-	{
-		return empty($amount) || $amount == 0 ? 'Free' : 'Purchase';
+	public static function checkTypePayment( $amount ): string {
+		return empty( $amount ) || $amount == 0 ? 'Free' : 'Purchase';
 	}
 
 }

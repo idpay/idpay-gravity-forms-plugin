@@ -314,40 +314,6 @@ class GF_Gateway_IDPay extends Helpers
         return $is_delayed;
     }
 
-    private static function get_form_fields($form)
-    {
-        $fields = array();
-        if (is_array($form["fields"])) {
-            foreach ($form["fields"] as $field) {
-                if (isset($field["inputs"]) && is_array($field["inputs"])) {
-                    foreach ($field["inputs"] as $input) {
-                        $fields[] = array( $input["id"], GFCommon::get_label($field, $input["id"]) );
-                    }
-                } elseif (! rgar($field, 'displayOnly')) {
-                    $fields[] = array( $field["id"], GFCommon::get_label($field) );
-                }
-            }
-        }
-
-        return $fields;
-    }
-
-    private static function get_mapped_field_list($field_name, $selected_field, $fields)
-    {
-        $str = "<select name='$field_name' id='$field_name'><option value=''></option>";
-        if (is_array($fields)) {
-            foreach ($fields as $field) {
-                $field_id    = $field[0];
-                $field_label = esc_html(GFCommon::truncate_middle($field[1], 40));
-                $selected    = $field_id == $selected_field ? "selected='selected'" : "";
-                $str         .= "<option value='" . $field_id . "' " . $selected . ">" . $field_label . "</option>";
-            }
-        }
-        $str .= "</select>";
-
-        return $str;
-    }
-
     public static function update_feed_active()
     {
         check_ajax_referer('gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active');

@@ -3,7 +3,9 @@
 class IDPayVerify extends Helpers {
 
 	public static $author = "IDPay";
-	
+	public const NO_PAYMENT = "NO_PAYMENT";
+	public const SUCCESS_PAYMENT = "SUCCESS_PAYMENT";
+
 	public static function reject( $entry, $form, $request, $pricing, $config ) {
 		$transactionId = $request->trackId ?? '';
 		$statusCode    = $request->status ?? 0;
@@ -123,7 +125,7 @@ class IDPayVerify extends Helpers {
 			''
 		);
 
-		self::processConfirmations($form,$request,$entry,$note, $status, $config);
+		self::processConfirmations( $form, $request, $entry, $note, $status, $config );
 		GFPersian_Payments::notification( $form, $entry );
 		GFPersian_Payments::confirmation( $form, $entry, $note );
 
@@ -182,8 +184,8 @@ class IDPayVerify extends Helpers {
 			'',
 			''
 		);
-		
-		self::processConfirmations($form,$request,$entry,$note, $status, $config);
+
+		self::processConfirmations( $form, $request, $entry, $note, $status, $config );
 		GFPersian_Payments::notification( $form, $entry );
 		GFPersian_Payments::confirmation( $form, $entry, $note );
 
@@ -208,7 +210,7 @@ class IDPayVerify extends Helpers {
 		];
 	}
 
-	public static function preparePurchase( $entry, $form, $request, $pricing, $config) {
+	public static function preparePurchase( $entry, $form, $request, $pricing, $config ) {
 		$entryId    = self::dataGet( $entry, 'id' );
 		$condition1 = $request->status != 10;
 		$condition2 = $request->orderId != $entryId;
@@ -290,57 +292,50 @@ class IDPayVerify extends Helpers {
 		return false;
 	}
 
-	public static function processAddons($form,$entry) {
-
-		$formId   = self::dataGet( $form, 'id' );
-		$user_registration_slug = apply_filters( 'gf_user_registration_slug', 'gravityformsuserregistration' );
-		$idpay_config           = [ 'meta' => [] ];
-
-		if ( ! empty( $config["meta"]["addon"] ) && $config["meta"]["addon"] == 'true' ) {
-			if ( class_exists( 'GFAddon' ) && method_exists( 'GFAddon', 'get_registered_addons' ) ) {
-				$addons = GFAddon::get_registered_addons();
-				foreach ( $addons as $addon ) {
-					if ( is_callable( array( $addon, 'get_instance' ) ) ) {
-						$addon = call_user_func( array( $addon, 'get_instance' ) );
-						if ( is_object( $addon ) && method_exists( $addon, 'get_slug' ) ) {
-							$slug = $addon->get_slug();
-							if ( $slug != $user_registration_slug ) {
-								$idpay_config['meta'][ 'delay_' . $slug ] = true;
-							}
-						}
-					}
-				}
+	public static function runAddon( $obj, $form, $entry ) {
+		$formId = self::dataGet( $form, 'id' );
+		if ( $obj->run == true ) {
+			$addon = call_user_func( [ $obj->class, 'get_instance' ] );
+			$feeds = $addon->get_feeds( $formId );
+			foreach ( $feeds as $feed ) {
+				$addon->process_feed( $feed, $entry, $form );
 			}
 		}
+	}
 
-		if ( ! empty( $config["meta"]["type"] ) && $config["meta"]["type"] == "subscription" ) {
-			$idpay_config['meta'][ 'delay_' . $user_registration_slug ] = true;
-		}
+	public static function processAddons( $form, $entry, $config, $type ) {
 
-		if ( ! empty( $idpay_config['meta'] ) ) {
-			if ( in_array( "delay_post-update-addon-gravity-forms", $idpay_config['meta'] ) ) {
-				$addon = call_user_func( array( 'ACGF_PostUpdateAddOn', 'get_instance' ) );
-				$feeds = $addon->get_feeds( $formId );
-				foreach ( $feeds as $feed ) {
-					$addon->process_feed( $feed, $entry, $form );
-				}
-			}
+		$config = self::dataGet( $config, 'meta' );
 
-			if ( in_array( "delay_gravityformsadvancedpostcreation", $idpay_config['meta'] ) ) {
-				$addon = call_user_func( array( 'GF_Advanced_Post_Creation', 'get_instance' ) );
-				$feeds = $addon->get_feeds( $formId );
-				foreach ( $feeds as $feed ) {
-					$addon->process_feed( $feed, $entry, $form );
-				}
-			}
+		if ( $type == self::NO_PAYMENT ) {
 
-			if ( in_array( "delay_gravityformsuserregistration", $idpay_config['meta'] ) ) {
-				$addon = call_user_func( array( 'GF_User_Registration', 'get_instance' ) );
-				$feeds = $addon->get_feeds( $formId );
-				foreach ( $feeds as $feed ) {
-					$addon->process_feed( $feed, $entry, $form );
-				}
-			}
+			$ADDON_USER_REGESTERATION = (object) [
+				'class' => 'GF_User_Registration',
+				'run'   => self::dataGet( $config, 'user_reg_no_payment' ) == true,
+			];
+
+			self::runAddon( $ADDON_USER_REGESTERATION, $form, $entry );
+
+		} elseif ( $type == self::SUCCESS_PAYMENT ) {
+
+			$ADDON_USER_REGESTERATION = (object) [
+				'class' => 'GF_User_Registration',
+				'run'   => self::dataGet( $config, 'user_reg_success_payment' ) == true,
+			];
+
+			$ADDON_POST_CREATION = (object) [
+				'class' => 'GF_Advanced_Post_Creation',
+				'run'   => self::dataGet( $config, 'post_create_success_payment' ) == true,
+			];
+
+			$ADDON_POST_UPDATE = (object) [
+				'class' => 'ACGF_PostUpdateAddOn',
+				'run'   => self::dataGet( $config, 'post_update_success_payment' ) == true,
+			];
+
+			self::runAddon( $ADDON_USER_REGESTERATION, $form, $entry );
+			self::runAddon( $ADDON_POST_CREATION, $form, $entry );
+			self::runAddon( $ADDON_POST_UPDATE, $form, $entry );
 		}
 	}
 
@@ -364,6 +359,7 @@ class IDPayVerify extends Helpers {
 
 		if ( self::checkTypeVerify() == 'Purchase' && ! self::checkApprovedVerifyData( $request ) ) {
 			self::reject( $entry, $form, $request, $pricing, $config );
+			self::processAddons( $form, $entry, $config, self::NO_PAYMENT );
 
 			return 'error';
 		}
@@ -377,6 +373,8 @@ class IDPayVerify extends Helpers {
 		}
 
 		if ( $transaction == 'error' ) {
+			self::processAddons( $form, $entry, $config, self::NO_PAYMENT );
+
 			return 'error';
 		} elseif ( $transaction->statusCode != 100 ) {
 			$data    = (object) [
@@ -390,6 +388,7 @@ class IDPayVerify extends Helpers {
 			];
 			$request = $data;
 			self::reject( $entry, $form, $request, $pricing, $config );
+			self::processAddons( $form, $entry, $config, self::NO_PAYMENT );
 
 			return 'error';
 		}
@@ -401,7 +400,8 @@ class IDPayVerify extends Helpers {
 			self::acceptPurchase( $transaction, $entry, $form, $request, $pricing, $config );
 		}
 
-		self::processAddons($form,$entry);
+		self::processAddons( $form, $entry, $config, self::SUCCESS_PAYMENT );
+
 		return true;
 	}
 }
