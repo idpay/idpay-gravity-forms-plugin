@@ -294,7 +294,7 @@ class IDPayVerify extends Helpers {
 
 		$request = self::getRequestData();
 
-		if ( self::isNotApprovedGettingTransaction( $request->entryId, $request->formId ) ) {
+		if ( empty($request) || self::isNotApprovedGettingTransaction( $request->entryId, $request->formId ) ) {
 			return 'error';
 		}
 

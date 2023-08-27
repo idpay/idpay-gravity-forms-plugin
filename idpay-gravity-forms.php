@@ -145,14 +145,16 @@ class GF_Gateway_IDPay extends Helpers
 
         if ($has_product && ! empty($config)) {
             $button_input .= sprintf(
-                '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;"><img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
+                '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;">
+                        <img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
                 $form['id'],
                 plugins_url('/lib/logo.svg', __FILE__),
                 __('پرداخت امن با آیدی پی', 'gravityformsIDPay')
             );
             $button_input .=
                 "<script>
-                gform.addAction('gform_post_conditional_logic_field_action', function (formId, action, targetId, defaultValues, isInit) {
+                gform.addAction('gform_post_conditional_logic_field_action', 
+                function (formId, action, targetId, defaultValues, isInit) {
                     gf_do_action(action, '#idpay-pay-id-'+ formId, true, defaultValues, isInit, null, formId);
                 });
             </script>";
@@ -319,7 +321,7 @@ class GF_Gateway_IDPay extends Helpers
         check_ajax_referer('gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active');
         $id   = absint(rgpost('feed_id'));
         $feed = IDPayDB::get_feed($id);
-        IDPayDB::update_feed($id, $feed["form_id"], sanitize_text_field(rgpost("is_active")), $feed["meta"]);
+        IDPayDB::updateFeed($id, $feed["form_id"], $feed["meta"]);
     }
 
     public static function payment_entry_detail($formId, $entry)

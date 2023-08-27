@@ -168,22 +168,17 @@ class Helpers {
 		return empty( $amount ) || $amount > 500000000 || $amount < 1000;
 	}
 
-	public static function isNotApprovedGettingTransaction( $entry, $form_id ) {
+	public static function isNotApprovedGettingTransaction( $entryId, $form_id ) {
 
-		$entryId       = self::dataGet( $entry, 'id' );
+		$entry       = GFPersian_Payments::get_entry( $entryId );
 		$paymentMethod = self::dataGet( $entry, 'payment_method' );
-		$paymentDate   = self::dataGet( $entry, 'payment_date' );
 		$condition1    = apply_filters( 'gf_gateway_IDPay_return', apply_filters( 'gf_gateway_verify_return', false ) );
-		$condition2    = ! self::is_gravityforms_supported();
-		$condition3    = ! is_numeric( $form_id );
-		$condition4    = ! is_numeric( $entryId );
-		$condition5    = is_wp_error( $entry );
-		$condition6    = empty( $paymentDate );
-		$condition7    = ! ( isset( $paymentMethod ) );
-		$condition8    = $paymentMethod != 'IDPay';
+		$condition2    = (! self::is_gravityforms_supported() ) || is_wp_error( $entry ) ;
+		$condition3    = (! is_numeric( (int) $form_id )) || (! is_numeric( (int) $entryId ));
+		$condition4    =  empty( $paymentMethod ) || $paymentMethod != 'IDPay' ;
 
-		return $condition1 || $condition2 || $condition3 || $condition4 ||
-		       $condition5 || $condition6 || $condition7 || $condition8;
+		return $condition1 || $condition2 || $condition3 || $condition4;
+
 	}
 
 	public static function is_gravityforms_supported(): bool {
@@ -248,24 +243,23 @@ class Helpers {
 		return false;
 	}
 
-	public static function makeSafeDataForDb( $idpayConfig ) {
-		$safeData = [];
-		$metas    = self::dataGet( $idpayConfig, 'meta' );
-		foreach ( $metas as $key => $val ) {
-			$value            = ! is_array( $val ) ? sanitize_text_field( $val ) : array_map( 'sanitize_text_field', $val );
-			$safeData[ $key ] = $value;
-		}
-
-		return $safeData;
-	}
+//	public static function makeSafeDataForDb( $idpayConfig ) {
+//		$safeData = [];
+//		$metas    = self::dataGet( $idpayConfig, 'meta' );
+//		foreach ( $metas as $key => $val ) {
+//			$value            = ! is_array( $val ) ? sanitize_text_field( $val ) : array_map( 'sanitize_text_field', $val );
+//			$safeData[ $key ] = $value;
+//		}
+//
+//		return $safeData;
+//	}
 
 	public static function updateConfigAndRedirectPage( $feedId, $data ) {
 		$idpayConfig = apply_filters( self::$author . '_gform_gateway_save_config', $data );
 		$idpayConfig = apply_filters( self::$author . '_gform_IDPay_save_config', $idpayConfig );
-		$feedId      = IDPayDB::update_feed(
+		$feedId      = IDPayDB::updateFeed(
 			$feedId,
 			self::dataGet( $idpayConfig, 'form_id' ),
-			self::dataGet( $idpayConfig, 'is_active' ),
 			self::dataGet( $idpayConfig, 'meta' ),
 		);
 		if ( ! headers_sent() ) {
@@ -305,21 +299,31 @@ class Helpers {
 	}
 
 	public static function readDataFromRequest( $config ) {
-		$config["form_id"]                             = absint( rgpost( "gf_IDPay_form" ) );
-		$config["meta"]["desc_pm"]                     = rgpost( "gf_IDPay_desc_pm" );
-		$config["meta"]["customer_fields_desc"]        = rgpost( "IDPay_customer_field_desc" );
-		$config["meta"]["customer_fields_email"]       = rgpost( "IDPay_customer_field_email" );
-		$config["meta"]["customer_fields_mobile"]      = rgpost( "IDPay_customer_field_mobile" );
-		$config["meta"]["customer_fields_name"]        = rgpost( "IDPay_customer_field_name" );
-		$config["meta"]["confirmation"]                = rgpost( "gf_IDPay_confirmation" );
-		$config["meta"]["post_create_success_payment"] = rgpost( "gf_IDPay_post_create_success_payment" );
-		$config["meta"]["post_update_success_payment"] = rgpost( "gf_IDPay_post_update_success_payment" );
-		$config["meta"]["user_reg_success_payment"]    = rgpost( "gf_IDPay_user_reg_success_payment" );
-		$config["meta"]["user_reg_no_payment"]         = rgpost( "gf_IDPay_user_reg_no_payment" );
-		$config["is_active"]                           = true;
-
-
-		return $config;
+		return [
+			"form_id" => absint( rgpost( "IDPay_formId" ) ),
+			"meta" => [
+				"description" => rgpost( "IDPay_description" ),
+				"payment_description" => rgpost( "IDPay_payment_description" ),
+				"payment_email" => rgpost( "IDPay_payment_email" ),
+				"payment_mobile" => rgpost( "IDPay_payment_mobile" ),
+				"payment_name" => rgpost( "IDPay_payment_name" ),
+				"confirmation" => rgpost( "IDPay_payment_confirmation" ),
+				"addon" => [
+					"post_create" => [
+						"success_payment" => (bool) rgpost( "IDPay_addon_post_create_success_payment" ) ,
+						"no_payment" => false,
+					],
+					"post_update" => [
+						"success_payment" => (bool) rgpost( "IDPay_addon_post_update_success_payment" ) ,
+						"no_payment" => false,
+					],
+					"user_registration" => [
+						"success_payment" => (bool) rgpost( "IDPay_addon_user_reg_success_payment" ) ,
+						"no_payment" => (bool) rgpost( "IDPay_addon_user_reg_no_payment" ),
+					],
+				],
+			]
+		];
 	}
 
 	public static function makeUpdateMessageBar( $oldFeedId ) {
@@ -397,9 +401,9 @@ class Helpers {
 
 	public static function loadDictionary( $feedId, $formName ) {
 		return (object) [
-			'label1'             => translate( "پیکربندی درگاه IDPay", self::$domain ),
-			'label2'             => sprintf( __( "فید: %s", self::$domain ), $feedId ),
-			'label3'             => sprintf( __( "فرم: %s", self::$domain ), $formName ),
+			'label1'             => translate( "تنظیمات", self::$domain ),
+			'label2'             => sprintf( __( "شناسه :  %s", self::$domain ), $feedId ),
+			'label3'             => sprintf( __( "فرم :  %s", self::$domain ), $formName ),
 			'label4'             => translate( "تنظیمات کلی", self::$domain ),
 			'label5'             => translate( "انتخاب فرم", self::$domain ),
 			'label6'             => translate( "یک فرم انتخاب نمایید", self::$domain ),
@@ -503,7 +507,7 @@ class Helpers {
 		if ( rgpost( 'action' ) == "delete" ) {
 			check_admin_referer( "list_action", "gf_IDPay_list" );
 			$id = absint( rgpost( "action_argument" ) );
-			IDPayDB::delete_feed( $id );
+			IDPayDB::deleteFeed( $id );
 
 			return "<div class='updated fade' style='padding:6px'>فید حذف شد</div>";
 		} elseif ( ! empty( $_POST["bulk_action"] ) ) {
@@ -511,7 +515,7 @@ class Helpers {
 			$selected_feeds = rgpost( "feed" );
 			if ( is_array( $selected_feeds ) ) {
 				foreach ( $selected_feeds as $feed_id ) {
-					IDPayDB::delete_feed( $feed_id );
+					IDPayDB::deleteFeed( $feed_id );
 
 					return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
 				}
@@ -757,13 +761,13 @@ class Helpers {
 
 	public static function processAddons( $form, $entry, $config, $type ) {
 
-		$config = self::dataGet( $config, 'meta' );
+		$config = self::dataGet( $config, 'meta.addon' );
 
 		if ( $type == self::NO_PAYMENT ) {
 
 			$ADDON_USER_REGESTERATION = (object) [
 				'class' => 'GF_User_Registration',
-				'run'   => self::dataGet( $config, 'user_reg_no_payment' ) == true,
+				'run'   => self::dataGet( $config, 'user_registration.no_payment' ) == true,
 			];
 
 			self::runAddon( $ADDON_USER_REGESTERATION, $form, $entry );
@@ -773,17 +777,17 @@ class Helpers {
 
 			$ADDON_USER_REGESTERATION = (object) [
 				'class' => 'GF_User_Registration',
-				'run'   => self::dataGet( $config, 'user_reg_success_payment' ) == true,
+				'run'   => self::dataGet( $config, 'user_registration.success_payment' ) == true,
 			];
 
 			$ADDON_POST_CREATION = (object) [
 				'class' => 'GF_Advanced_Post_Creation',
-				'run'   => self::dataGet( $config, 'post_create_success_payment' ) == true,
+				'run'   => self::dataGet( $config, 'post_create.success_payment' ) == true,
 			];
 
 			$ADDON_POST_UPDATE = (object) [
 				'class' => 'ACGF_PostUpdateAddOn',
-				'run'   => self::dataGet( $config, 'post_update_success_payment' ) == true,
+				'run'   => self::dataGet( $config, 'post_update.success_payment' ) == true,
 			];
 
 			self::runAddon( $ADDON_USER_REGESTERATION, $form, $entry );

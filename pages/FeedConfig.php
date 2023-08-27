@@ -17,7 +17,7 @@ $gfStatusBarMessage    = '';
 if ( ! rgempty( "gf_IDPay_submit" ) ) {
 	check_admin_referer( "update", "gf_IDPay_feed" );
 	$idpayConfig           = self::readDataFromRequest( $idpayConfig );
-	$idpayConfig['meta']   = self::makeSafeDataForDb( $idpayConfig );
+	//$idpayConfig['meta']   = self::makeSafeDataForDb( $idpayConfig );
 	$gfStatusBarMessage    = self::generateStatusBarMessage( $formId );
 	$isSubmitDataForUpdate = true;
 	self::updateConfigAndRedirectPage( $feedId, $idpayConfig );
@@ -33,30 +33,30 @@ $hasPriceFieldInForm = self::checkSetPriceForForm( $form, $formId );
 // End Section
 
 // LoadConfigValues
-$isPostCreateSuccessPay         = self::dataGet( $idpayConfig, 'meta.post_create_success_payment' );
-$isCheckedPostCreateSuccessPay  = $isPostCreateSuccessPay == "true" ? "checked='checked'" : "";
-$isPostUpdateSuccessPay         = self::dataGet( $idpayConfig, 'meta.post_update_success_payment' );
-$isCheckedPostUpdateSuccessPay  = $isPostUpdateSuccessPay == "true" ? "checked='checked'" : "";
-$isUserRegSuccessPay            = self::dataGet( $idpayConfig, 'meta.user_reg_success_payment' );
-$isCheckedUserRegSuccessPay     = $isUserRegSuccessPay == "true" ? "checked='checked'" : "";
-$isUserRegNoPay                 = self::dataGet( $idpayConfig, 'meta.user_reg_no_payment' );
-$isCheckedUserRegNoPay          = $isUserRegNoPay == "true" ? "checked='checked'" : "";
+$isPostCreateSuccessPay         = self::dataGet( $idpayConfig, 'meta.addon.post_create.success_payment' );
+$isCheckedPostCreateSuccessPay  = $isPostCreateSuccessPay == true ? "checked='checked'" : "";
+$isPostUpdateSuccessPay         = self::dataGet( $idpayConfig, 'meta.addon.post_update.success_payment' );
+$isCheckedPostUpdateSuccessPay  = $isPostUpdateSuccessPay == true ? "checked='checked'" : "";
+$isUserRegSuccessPay            = self::dataGet( $idpayConfig, 'meta.addon.user_registration.success_payment' );
+$isCheckedUserRegSuccessPay     = $isUserRegSuccessPay == true ? "checked='checked'" : "";
+$isUserRegNoPay                 = self::dataGet( $idpayConfig, 'meta.addon.user_registration.no_payment' );
+$isCheckedUserRegNoPay          = $isUserRegNoPay == true ? "checked='checked'" : "";
 $isUseCustomConfirmation        = self::dataGet( $idpayConfig, 'meta.confirmation' );
 $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
-$description                    = self::dataGet( $idpayConfig, "meta.desc_pm" );
+$description                    = self::dataGet( $idpayConfig, "meta.description" );
 $defaultDescription             = "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
 $descriptionText                = ! empty( $description ) ? $description : $defaultDescription;
-$gfSysFieldName_CustomerName    = 'IDPay_customer_field_name';
-$selectedCustomerName           = $idpayConfig["meta"]["customer_fields_name"] ?? '';
+$gfSysFieldName_CustomerName    = 'IDPay_payment_name';
+$selectedCustomerName           = $idpayConfig["meta"]["payment_name"] ?? '';
 $customerName                   = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerName, $selectedCustomerName );
-$gfSysFieldName_CustomerEmail   = 'IDPay_customer_field_email';
-$selectedCustomerEmail          = $idpayConfig["meta"]["customer_fields_email"] ?? '';
+$gfSysFieldName_CustomerEmail   = 'IDPay_payment_email';
+$selectedCustomerEmail          = $idpayConfig["meta"]["payment_email"] ?? '';
 $customerEmail                  = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerEmail, $selectedCustomerEmail );
-$gfSysFieldName_CustomerDesc    = 'IDPay_customer_field_desc';
-$selectedCustomerDesc           = $idpayConfig["meta"]["customer_fields_desc"] ?? '';
+$gfSysFieldName_CustomerDesc    = 'IDPay_payment_description';
+$selectedCustomerDesc           = $idpayConfig["meta"]["payment_description"] ?? '';
 $customerDesc                   = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerDesc, $selectedCustomerDesc );
-$gfSysFieldName_CustomerMobile  = 'IDPay_customer_field_mobile';
-$selectedCustomerMobile         = $idpayConfig["meta"]["customer_fields_mobile"] ?? '';
+$gfSysFieldName_CustomerMobile  = 'IDPay_payment_mobile';
+$selectedCustomerMobile         = $idpayConfig["meta"]["payment_mobile"] ?? '';
 $customerMobile                 = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerMobile, $selectedCustomerMobile );
 do_action( self::$author . '_gform_gateway_config', $idpayConfig, $form );
 do_action( self::$author . '_gform_IDPay_config', $idpayConfig, $form );
@@ -75,11 +75,12 @@ $optionsForms           = $gfFormFeedSelect->options;
 
 
 <div class="wrap gforms_edit_form gf_browser_gecko"></div>
-<h2 class="gf_admin_page_title"><?php echo $dictionary->label1 ?>
+<h2 class="gf_admin_page_title">
+    <?php echo $dictionary->label1 ?>
 	<?php if ( ! empty( $formId ) ) { ?>
         <span class="gf_admin_page_subtitle">
+            <span class="gf_admin_page_formid"><?php echo $dictionary->label3 ?></span>
             <span class="gf_admin_page_formid"><?php echo $dictionary->label2 ?></span>
-            <span class="gf_admin_page_formname"><?php echo $dictionary->label3 ?></span>
         </span>
 	<?php } ?>
 </h2>
@@ -106,7 +107,7 @@ $optionsForms           = $gfFormFeedSelect->options;
                         <tr style="">
                             <th><?php echo $dictionary->label5 ?></th>
                             <td>
-                                <select id="gf_IDPay_form" name="gf_IDPay_form"
+                                <select id="IDPay_formId" name="IDPay_formId"
                                         onchange="GF_SwitchFid(jQuery(this).val());">
                                     <!-- Options --><?php echo $optionsForms ?><!-- Options -->
                                 </select>
@@ -175,8 +176,8 @@ $optionsForms           = $gfFormFeedSelect->options;
                                     <br><span class="description"><?php echo $dictionary->label11_3 ?></span>
                                     <br><br>
 
-                                    <textarea name="gf_IDPay_desc_pm" type="text" cols="75" rows="5"
-                                              id="gf_IDPay_desc_pm"><?php echo $descriptionText ?></textarea>
+                                    <textarea name="IDPay_description" type="text" cols="75" rows="5"
+                                              id="IDPay_description"><?php echo $descriptionText ?></textarea>
                                     <hr>
                                 </td>
                             </tr>
@@ -189,23 +190,23 @@ $optionsForms           = $gfFormFeedSelect->options;
                                     <br><span class="description"><?php echo $dictionary->label17_4 ?></span>
                                     <br><br>
                                     <input type="checkbox" <?php echo $isCheckedPostCreateSuccessPay; ?>
-                                           name="gf_IDPay_post_create_success_payment"
-                                           id="gf_IDPay_post_create_success_payment"
+                                           name="IDPay_addon_post_create_success_payment"
+                                           id="IDPay_addon_post_create_success_payment"
                                            value="true"/><?php echo $dictionary->label17_5 ?>
                                     <br><br>
                                     <input type="checkbox" <?php echo $isCheckedPostUpdateSuccessPay; ?>
-                                           name="gf_IDPay_post_update_success_payment"
-                                           id="gf_IDPay_post_update_success_payment"
+                                           name="IDPay_addon_post_update_success_payment"
+                                           id="IDPay_addon_post_update_success_payment"
                                            value="true"/><?php echo $dictionary->label17_6 ?>
                                     <br><br>
                                     <input type="checkbox" <?php echo $isCheckedUserRegSuccessPay; ?>
-                                           name="gf_IDPay_user_reg_success_payment"
-                                           id="gf_IDPay_user_reg_success_payment"
+                                           name="IDPay_addon_user_reg_success_payment"
+                                           id="IDPay_addon_user_reg_success_payment"
                                            value="true"/><?php echo $dictionary->label17_7 ?>
                                     <br><br>
                                     <input type="checkbox" <?php echo $isCheckedUserRegNoPay; ?>
-                                           name="gf_IDPay_user_reg_no_payment"
-                                           id="gf_IDPay_user_reg_no_payment"
+                                           name="IDPay_addon_user_reg_no_payment"
+                                           id="IDPay_addon_user_reg_no_payment"
                                            value="true"/><?php echo $dictionary->label17_8 ?>
                                     <hr>
                                 </td>
@@ -220,8 +221,8 @@ $optionsForms           = $gfFormFeedSelect->options;
                                     <br><span class="description"><?php echo $dictionary->label19_3 ?></span>
                                     <br><br>
 
-                                    <input type="checkbox" name="gf_IDPay_confirmation"
-                                           id="gf_IDPay_confirmation_true" <?php echo $isCheckedUseCustomConfirmation ?>
+                                    <input type="checkbox" name="IDPay_payment_confirmation"
+                                           id="IDPay_payment_confirmation" <?php echo $isCheckedUseCustomConfirmation ?>
                                            value="true"/>
 
                                     <hr>

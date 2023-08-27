@@ -192,17 +192,17 @@ class IDPayPayment extends Helpers {
 	public static function processPurchase( $feed, $entry, $form ) {
 
 		$formId  = $form['id'];
-		$desc_pm = $feed["meta"]["desc_pm"];
-		$desc    = $feed["meta"]["customer_fields_desc"];
-		$mobile  = $feed["meta"]["customer_fields_mobile"];
-		$name    = $feed["meta"]["customer_fields_name"];
-		$email   = $feed["meta"]["customer_fields_email"];
+		$description = $feed["meta"]["description"];
+		$desc    = $feed["meta"]["payment_description"];
+		$mobile  = $feed["meta"]["payment_mobile"];
+		$name    = $feed["meta"]["payment_name"];
+		$email   = $feed["meta"]["payment_email"];
 
-		$Desc1       = ! empty( $desc_pm ) ? str_replace( [
+		$Desc1       = ! empty( $description ) ? str_replace( [
 			'{entry_id}',
 			'{form_title}',
 			'{form_id}'
-		], [ $entry['id'], $form['title'], $formId ], $desc_pm ) : '';
+		], [ $entry['id'], $form['title'], $formId ], $description ) : '';
 		$Desc2       = ! empty( $desc ) ? rgpost( 'input_' . str_replace( ".", "_", $desc ) ) : '';
 		$Description = sanitize_text_field( $Desc1 . ( ! empty( $Desc1 ) && ! empty( $Desc2 ) ? ' - ' : '' ) . $Desc2 . ' ' );
 		$Mobile      = ! empty( $mobile ) ? sanitize_text_field( rgpost( 'input_' . str_replace( ".", "_", $mobile ) ) ) : '';

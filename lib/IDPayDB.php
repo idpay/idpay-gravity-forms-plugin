@@ -10,7 +10,7 @@ class IDPayDB
 
         global $wpdb;
 
-        $table_name = self::get_table_name();
+        $table_name = self::getTableName();
 
         $old_table = $wpdb->prefix . "rg_IDPay";
         if ($wpdb->get_var("SHOW TABLES LIKE '$old_table'")) {
@@ -38,13 +38,6 @@ class IDPayDB
         dbDelta($feed);
     }
 
-    public static function get_table_name()
-    {
-        global $wpdb;
-
-        return $wpdb->prefix . "gf_IDPay";
-    }
-
     public static function get_entry_table_name()
     {
 
@@ -59,7 +52,7 @@ class IDPayDB
     public static function drop_tables()
     {
         global $wpdb;
-        $wpdb->query("DROP TABLE IF EXISTS " . self::get_table_name());
+        $wpdb->query("DROP TABLE IF EXISTS " . self::getTableName());
     }
 
     public static function get_available_forms()
@@ -76,7 +69,7 @@ class IDPayDB
     public static function get_feed($id)
     {
         global $wpdb;
-        $table_name = self::get_table_name();
+        $table_name = self::getTableName();
         $sql = $wpdb->prepare("SELECT id, form_id, is_active, meta FROM $table_name WHERE id=%d", $id);
         $results = $wpdb->get_results($sql, ARRAY_A);
         if (empty($results)) {
@@ -91,7 +84,7 @@ class IDPayDB
     public static function get_feeds()
     {
         global $wpdb;
-        $table_name = self::get_table_name();
+        $table_name = self::getTableName();
         $form_table_name = RGFormsModel::get_form_table_name();
         $sql = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
                 FROM $table_name s
@@ -105,53 +98,6 @@ class IDPayDB
         return $results;
     }
 
-    public static function get_feed_by_form($form_id, $only_active = false)
-    {
-        global $wpdb;
-        $table_name = self::get_table_name();
-        $active_clause = $only_active ? " AND is_active=1" : "";
-        $sql = $wpdb->prepare("SELECT id, form_id, is_active, meta FROM $table_name WHERE form_id=%d $active_clause", $form_id);
-        $results = $wpdb->get_results($sql, ARRAY_A);
-        if (empty($results)) {
-            return array();
-        }
-        $count = sizeof($results);
-        for ($i = 0; $i < $count; $i++) {
-            $results[$i]["meta"] = maybe_unserialize($results[$i]["meta"]);
-        }
-
-        return $results;
-    }
-
-    public static function update_feed($id, $form_id, $is_active, $setting)
-    {
-        global $wpdb;
-        $table_name = self::get_table_name();
-        $setting = maybe_serialize($setting);
-        if ($id == 0) {
-            $wpdb->insert($table_name, array(
-                "form_id" => $form_id,
-                "is_active" => $is_active,
-                "meta" => $setting
-            ), array("%d", "%d", "%s"));
-            $id = $wpdb->get_var("SELECT LAST_INSERT_ID()");
-        } else {
-            $wpdb->update($table_name, array(
-                "form_id" => $form_id,
-                "is_active" => $is_active,
-                "meta" => $setting
-            ), array("id" => $id), array("%d", "%d", "%s"), array("%d"));
-        }
-
-        return $id;
-    }
-
-    public static function delete_feed($id)
-    {
-        global $wpdb;
-        $table_name = self::get_table_name();
-        $wpdb->query($wpdb->prepare("DELETE FROM $table_name WHERE id=%s", $id));
-    }
 
     public static function get_transaction_totals($form_id)
     {
@@ -245,7 +191,7 @@ class IDPayDB
 
     public static function getActiveFeed($form)
     {
-        $configs = IDPayDB::get_feed_by_form($form["id"], true);
+        $configs = IDPayDB::getFeedByFormId( $form["id"] );
         $configs = apply_filters(
             self::$author . '_gf_IDPay_get_active_configs',
             apply_filters(self::$author . '_gf_gateway_get_active_configs', $configs, $form),
@@ -253,4 +199,56 @@ class IDPayDB
         );
         return $configs;
     }
+
+	public static function getFeedByFormId( $formId )
+	{
+		global $wpdb;
+		$tableName = self::getTableName();
+		$query = "SELECT * FROM {$tableName} WHERE form_id={$formId}";
+		$results = $wpdb->get_results($query, ARRAY_A);
+		if (empty($results)) {
+			return [];
+		}
+		$count = sizeof($results);
+		for ($i = 0; $i < $count; $i++) {
+			$results[$i]["meta"] = maybe_unserialize($results[$i]["meta"]);
+		}
+
+		return $results;
+	}
+
+	public static function getTableName()
+	{
+		global $wpdb;
+		return $wpdb->prefix . "gf_IDPay";
+	}
+
+	public static function updateFeed($id, $form_id, $setting)
+	{
+		global $wpdb;
+		$dto = [
+			"form_id" => $form_id,
+			"is_active" => true,
+			"meta" => maybe_serialize($setting)
+		];
+
+		if ($id == 0) {
+			$wpdb->insert(self::getTableName(),$dto, ["%d", "%d", "%s"]);
+			$id = $wpdb->get_var("SELECT LAST_INSERT_ID()");
+		} else {
+			$wpdb->update(self::getTableName(), $dto, ["id" => $id], ["%d", "%d", "%s"], ["%d"]);
+		}
+
+		return $id;
+	}
+
+	public static function deleteFeed($id)
+	{
+		global $wpdb;
+		$table_name = self::getTableName();
+		$query = "DELETE FROM {$table_name} WHERE id={$id}";
+		$wpdb->query($query);
+	}
+	
+	
 }
