@@ -3,191 +3,31 @@
 class IDPayDB
 {
 	public static $author = "IDPay";
-    private static $method = 'IDPay';
 
-    public static function update_table()
-    {
+	public static function unSerializeDto($dto)
+	{
+		$count = sizeof($dto);
+		for ($i = 0; $i < $count; $i++) {
+			$dto[$i]["meta"] = maybe_unserialize($dto[$i]["meta"]);
+		}
+		return $dto;
+	}
 
-        global $wpdb;
+	public static function castAndNormalizeDto($dto)
+	{
+		if( !is_array($dto)){
+			return [];
+		}
 
-        $table_name = self::getTableName();
-
-        $old_table = $wpdb->prefix . "rg_IDPay";
-        if ($wpdb->get_var("SHOW TABLES LIKE '$old_table'")) {
-            $wpdb->query("RENAME TABLE $old_table TO $table_name");
-        }
-
-        $charset_collate = '';
-        if (!empty($wpdb->charset)) {
-            $charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
-        }
-        if (!empty($wpdb->collate)) {
-            $charset_collate .= " COLLATE $wpdb->collate";
-        }
-
-        $feed = "CREATE TABLE IF NOT EXISTS $table_name (
-              id mediumint(8) unsigned not null auto_increment,
-              form_id mediumint(8) unsigned not null,
-              is_active tinyint(1) not null default 1,
-              meta longtext,
-              PRIMARY KEY  (id),
-              KEY form_id (form_id)
-		) $charset_collate;";
-
-        require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
-        dbDelta($feed);
-    }
-
-    public static function get_entry_table_name()
-    {
-
-        $version = GFCommon::$version;
-        if (method_exists('GFFormsModel', 'get_database_version')) {
-            $version = GFFormsModel::get_database_version();
-        }
-
-        return version_compare($version, '2.3-dev-1', '<') ? GFFormsModel::get_lead_table_name() : GFFormsModel::get_entry_table_name();
-    }
-
-    public static function drop_tables()
-    {
-        global $wpdb;
-        $wpdb->query("DROP TABLE IF EXISTS " . self::getTableName());
-    }
-
-    public static function get_available_forms()
-    {
-        $forms = RGFormsModel::get_forms();
-        $available_forms = array();
-        foreach ($forms as $form) {
-            $available_forms[] = $form;
-        }
-
-        return $available_forms;
-    }
-
-    public static function get_feed($id)
-    {
-        global $wpdb;
-        $table_name = self::getTableName();
-        $sql = $wpdb->prepare("SELECT id, form_id, is_active, meta FROM $table_name WHERE id=%d", $id);
-        $results = $wpdb->get_results($sql, ARRAY_A);
-        if (empty($results)) {
-            return array();
-        }
-        $result = $results[0];
-        $result["meta"] = maybe_unserialize($result["meta"]);
-
-        return $result;
-    }
-
-    public static function get_feeds()
-    {
-        global $wpdb;
-        $table_name = self::getTableName();
-        $form_table_name = RGFormsModel::get_form_table_name();
-        $sql = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
-                FROM $table_name s
-                INNER JOIN $form_table_name f ON s.form_id = f.id";
-        $results = $wpdb->get_results($sql, ARRAY_A);
-        $count = sizeof($results);
-        for ($i = 0; $i < $count; $i++) {
-            $results[$i]["meta"] = maybe_unserialize($results[$i]["meta"]);
-        }
-
-        return $results;
-    }
-
-
-    public static function get_transaction_totals($form_id)
-    {
-        global $wpdb;
-        $entry_table_name = self::get_entry_table_name();
-        $sql = $wpdb->prepare(" SELECT l.status, sum(l.payment_amount) revenue, count(l.id) transactions
-                                 FROM {$entry_table_name} l
-                                 WHERE l.form_id=%d AND l.status=%s AND l.is_fulfilled=%d AND l.payment_method=%s
-                                 GROUP BY l.status", $form_id, 'active', 1, self::$method);
-        $results = $wpdb->get_results($sql, ARRAY_A);
-        $totals = array();
-        if (is_array($results)) {
-            foreach ($results as $result) {
-                $totals[$result["status"]] = array(
-                    "revenue" => empty($result["revenue"]) ? 0 : $result["revenue"],
-                    "transactions" => empty($result["transactions"]) ? 0 : $result["transactions"]
-                );
-            }
-        }
-
-        return $totals;
-    }
-
-    public static function get_transaction_totals_this_gateway()
-    {
-        global $wpdb;
-        $entry_table_name = self::get_entry_table_name();
-        $sql = $wpdb->prepare(" SELECT l.status, sum(l.payment_amount) revenue, count(l.id) transactions
-                                 FROM {$entry_table_name} l
-                                 WHERE l.status=%s AND l.is_fulfilled=%d AND l.payment_method=%s
-                                 GROUP BY l.status", 'active', 1, self::$method);
-        $results = $wpdb->get_results($sql, ARRAY_A);
-        $totals = array();
-        if (is_array($results)) {
-            foreach ($results as $result) {
-                $totals[$result["status"]] = array(
-                    "revenue" => empty($result["revenue"]) ? 0 : $result["revenue"],
-                    "transactions" => empty($result["transactions"]) ? 0 : $result["transactions"]
-                );
-            }
-        }
-
-        return $totals;
-    }
-
-    public static function get_transaction_totals_gateways($form_id)
-    {
-        global $wpdb;
-        $entry_table_name = self::get_entry_table_name();
-        $sql = $wpdb->prepare(" SELECT l.status, sum(l.payment_amount) revenue, count(l.id) transactions
-                                 FROM {$entry_table_name} l
-                                 WHERE l.form_id=%d AND l.status=%s AND l.is_fulfilled=%d
-                                 GROUP BY l.status", $form_id, 'active', 1);
-        $results = $wpdb->get_results($sql, ARRAY_A);
-        $totals = array();
-        if (is_array($results)) {
-            foreach ($results as $result) {
-                $totals[$result["status"]] = array(
-                    "revenue" => empty($result["revenue"]) ? 0 : $result["revenue"],
-                    "transactions" => empty($result["transactions"]) ? 0 : $result["transactions"]
-                );
-            }
-        }
-
-        return $totals;
-    }
-
-    public static function get_transaction_totals_site()
-    {
-        global $wpdb;
-        $entry_table_name = self::get_entry_table_name();
-        $sql = $wpdb->prepare(" SELECT l.status, sum(l.payment_amount) revenue, count(l.id) transactions
-                                 FROM {$entry_table_name} l
-                                 WHERE l.status=%s AND l.is_fulfilled=%d
-                                 GROUP BY l.status", 'active', 1);
-        $results = $wpdb->get_results($sql, ARRAY_A);
-        $totals = array();
-        if (is_array($results)) {
-            foreach ($results as $result) {
-                $totals[$result["status"]] = array(
-                    "revenue" => empty($result["revenue"]) ? 0 : $result["revenue"],
-                    "transactions" => empty($result["transactions"]) ? 0 : $result["transactions"]
-                );
-            }
-        }
-
-        return $totals;
-    }
-
-    /* ------------------ New Section And Refactored Functions ****************** */
+		$list =[];
+			foreach ($dto as $item) {
+				$status = $item["status"];
+				$revenue = !empty($item["revenue"]) ? $item["revenue"] : 0 ;
+				$transactions = !empty($item["transactions"]) ? $item["transactions"] : 0 ;
+				$list[$status] = ["revenue" => $revenue,"transactions" => $transactions];
+			}
+			return $list;
+	}
 
     public static function getActiveFeed($form)
     {
@@ -206,15 +46,7 @@ class IDPayDB
 		$tableName = self::getTableName();
 		$query = "SELECT * FROM {$tableName} WHERE form_id={$formId}";
 		$results = $wpdb->get_results($query, ARRAY_A);
-		if (empty($results)) {
-			return [];
-		}
-		$count = sizeof($results);
-		for ($i = 0; $i < $count; $i++) {
-			$results[$i]["meta"] = maybe_unserialize($results[$i]["meta"]);
-		}
-
-		return $results;
+		return  !empty($results) == true ? self::unSerializeDto($results) : [] ;
 	}
 
 	public static function getTableName()
@@ -235,7 +67,8 @@ class IDPayDB
 		if ($id == 0) {
 			$wpdb->insert(self::getTableName(),$dto, ["%d", "%d", "%s"]);
 			$id = $wpdb->get_var("SELECT LAST_INSERT_ID()");
-		} else {
+		}
+		if($id != 0){
 			$wpdb->update(self::getTableName(), $dto, ["id" => $id], ["%d", "%d", "%s"], ["%d"]);
 		}
 
@@ -245,10 +78,142 @@ class IDPayDB
 	public static function deleteFeed($id)
 	{
 		global $wpdb;
-		$table_name = self::getTableName();
-		$query = "DELETE FROM {$table_name} WHERE id={$id}";
+		$tableName = self::getTableName();
+		$query = "DELETE FROM {$tableName} WHERE id={$id}";
 		$wpdb->query($query);
 	}
-	
-	
+
+	public static function getFeed($id)
+	{
+		global $wpdb;
+		$tableName = self::getTableName();
+		$query = "SELECT id, form_id, is_active, meta FROM {$tableName} WHERE id={$id}";
+		$results = $wpdb->get_results($query, ARRAY_A);
+		$results =  !empty($results) == true ? self::unSerializeDto($results) : [] ;
+		return  $results[0];
+	}
+
+	public static function getFeeds()
+	{
+		global $wpdb;
+		$IDPayTable = self::getTableName();
+		$formTable = RGFormsModel::get_form_table_name();
+		$query = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
+                  FROM {$IDPayTable} s INNER JOIN {$formTable} f ON s.form_id = f.id";
+		$results = $wpdb->get_results($query, ARRAY_A);
+		return  !empty($results) == true ? self::unSerializeDto($results) : [] ;
+	}
+
+	public static function dropTable()
+	{
+		global $wpdb;
+		$tableName = self::getTableName();
+		$query = "DROP TABLE IF EXISTS {$tableName}";
+		$wpdb->query($query);
+	}
+
+	public static function getTransactionTableName()
+	{
+		$version = GFCommon::$version;
+		if (method_exists('GFFormsModel', 'get_database_version')) {
+			$version = GFFormsModel::get_database_version();
+		}
+		$condition = version_compare($version, '2.3-dev-1', '<') ;
+		return $condition ? GFFormsModel::get_lead_table_name() : GFFormsModel::get_entry_table_name();
+	}
+
+	public static function upgrade()
+	{
+		require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
+
+		global $wpdb;
+		$oldTable = $wpdb->prefix . "rg_IDPay";
+		$tableName = self::getTableName();
+		$queryShowTable = "SHOW TABLES LIKE '{$oldTable}'";
+		$queryRenameTable = "ALTER TABLE {$oldTable} RENAME {$tableName}";
+		$existsTable = !empty($wpdb->get_var($queryShowTable));
+		$charset = !empty($wpdb->charset) ? $wpdb->charset : null;
+		$collate = !empty($wpdb->collate) ? $wpdb->collate : null;
+		$options = !empty($charset) ? "DEFAULT CHARACTER SET {$charset}" : "";
+		$options .= !empty($collate) ? " COLLATE {$collate}" : "";
+
+		$queryCreateTable = "CREATE TABLE IF NOT EXISTS {$tableName} (
+              id mediumint(8) unsigned not null auto_increment,
+              form_id mediumint(8) unsigned not null,
+              is_active tinyint(1) not null default 1,
+              meta longtext,
+              PRIMARY KEY  (id),
+              KEY form_id (form_id)
+		) {$options};";
+
+
+		if($existsTable == true){
+			$wpdb->query($queryRenameTable);
+			return 'completed rename table';
+		}else
+		{
+			dbDelta($queryCreateTable);
+			return 'completed create table';
+		}
+
+	}
+
+	public static function runAnalyticsQuery($query)
+	{
+		global $wpdb;
+		$transactionTableName = self::getTransactionTableName();
+		$query = sprintf($query,$transactionTableName);
+		$results = $wpdb->get_results($query, ARRAY_A);
+		return self::castAndNormalizeDto($results);
+	}
+
+	public static function prepareAnalyticsQuery()
+	{
+		return " SELECT status, sum(payment_amount) revenue, count(id) transactions FROM %s ";
+	}
+
+	public static function getAnalyticsTransactions($form_id)
+	{
+		$query = self::prepareAnalyticsQuery();
+		$query .= "
+			  WHERE form_id={$form_id} 
+	            AND status='active' 
+	            AND is_fulfilled=1 
+	            AND payment_method='IDPay'
+	          GROUP BY status";
+		return self::runAnalyticsQuery($query);
+	}
+
+	public static function getAnalyticsTransactionsForGateways($form_id)
+	{
+		$query = self::prepareAnalyticsQuery();
+		$query .= "
+			WHERE form_id={$form_id} 
+	          AND status='active' 
+	          AND is_fulfilled=1 
+	        GROUP BY status";
+		return self::runAnalyticsQuery($query);
+	}
+
+	public static function getAnalyticsTransactionsForMyGateway()
+	{
+		$query = self::prepareAnalyticsQuery();
+		$query .= "
+			WHERE status='active' 
+	          AND is_fulfilled=1 
+	          AND payment_method='IDPay'
+	        GROUP BY status";
+		return self::runAnalyticsQuery($query);
+	}
+
+	public static function getAnalyticsTransactionsForSite()
+	{
+		$query = self::prepareAnalyticsQuery();
+		$query .= "
+			WHERE status='active' 
+	          AND is_fulfilled=1 
+	        GROUP BY status";
+		return self::runAnalyticsQuery($query);
+	}
+
 }

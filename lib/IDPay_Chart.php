@@ -270,7 +270,7 @@ class IDPay_Chart
 
                 $sales_label = __("تعداد کل پرداخت های  IDPay این فرم", "gravityformsIDPay");
 
-                $transaction_totals = IDPayDB::get_transaction_totals($form_id);
+                $transaction_totals = IDPayDB::getAnalyticsTransactions($form_id);
                 $total_sales = empty($transaction_totals["active"]["transactions"]) ? 0 : $transaction_totals["active"]["transactions"];
                 $total_revenue = empty($transaction_totals["active"]["revenue"]) ? 0 : $transaction_totals["active"]["revenue"];
                 ?>
@@ -327,7 +327,7 @@ class IDPay_Chart
 
                 $sales_label = __("تعداد کل پرداخت های  همه روشهای این فرم", "gravityformsIDPay");
 
-                $transaction_totals = IDPayDB::get_transaction_totals_gateways($form_id);
+                $transaction_totals = IDPayDB::getAnalyticsTransactionsForGateways($form_id);
                 $total_sales = empty($transaction_totals["active"]["transactions"]) ? 0 : $transaction_totals["active"]["transactions"];
                 $total_revenue = empty($transaction_totals["active"]["revenue"]) ? 0 : $transaction_totals["active"]["revenue"];
                 ?>
@@ -388,7 +388,7 @@ class IDPay_Chart
 
                 $sales_label = __("تعداد کل پرداخت های درگاه IDPay", "gravityformsIDPay");
 
-                $transaction_totals = IDPayDB::get_transaction_totals_this_gateway();
+                $transaction_totals = IDPayDB::getAnalyticsTransactionsForMyGateway();
                 $total_sales = empty($transaction_totals["active"]["transactions"]) ? 0 : $transaction_totals["active"]["transactions"];
                 $total_revenue = empty($transaction_totals["active"]["revenue"]) ? 0 : $transaction_totals["active"]["revenue"];
                 ?>
@@ -446,7 +446,7 @@ class IDPay_Chart
 
                 $sales_label = __("تعداد کل پرداخت های همه فرمهای سایت", "gravityformsIDPay");
 
-                $transaction_totals = IDPayDB::get_transaction_totals_site();
+                $transaction_totals = IDPayDB::getAnalyticsTransactionsForSite();
                 $total_sales = empty($transaction_totals["active"]["transactions"]) ? 0 : $transaction_totals["active"]["transactions"];
                 $total_revenue = empty($transaction_totals["active"]["revenue"]) ? 0 : $transaction_totals["active"]["revenue"];
                 ?>
@@ -677,7 +677,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'diamond', fillColor: '#058DC7' }, color: '#058DC7'}";
             $t = __('IDPay این فرم', 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -688,7 +688,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'square', fillColor: '#50B432' }, color: '#50B432'}";
             $t = __('همه روشهای این فرم', 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -699,7 +699,7 @@ class IDPay_Chart
             $dt = "}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -710,7 +710,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'triangle', fillColor: '#AA4643' }, color: '#AA4643'}";
             $t = __("همه فرمهای سایت", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -822,7 +822,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'diamond', fillColor: '#058DC7' }, color: '#058DC7'}";
             $t = __("IDPay این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -833,7 +833,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'square', fillColor: '#50B432' }, color: '#50B432'}";
             $t = __("همه روشهای این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -845,7 +845,7 @@ class IDPay_Chart
             $dt = "}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -856,7 +856,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'triangle', fillColor: '#AA4643' }, color: '#AA4643'}";
             $t = __("همه فرم های سایت", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1026,7 +1026,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'diamond', fillColor: '#058DC7' }, color: '#058DC7'}";
             $t = __("IDPay این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1037,7 +1037,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'square', fillColor: '#50B432' }, color: '#50B432'}";
             $t = __("همه روشهای این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1048,7 +1048,7 @@ class IDPay_Chart
             $dt = "}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1059,7 +1059,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'triangle', fillColor: '#AA4643' }, color: '#AA4643'}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1268,7 +1268,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'diamond', fillColor: '#058DC7' }, color: '#058DC7'}";
             $t = __("IDPay این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY hour(date) , day(date)
                                         ORDER BY payment_date desc");
@@ -1279,7 +1279,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'square', fillColor: '#50B432' }, color: '#50B432'}";
             $t = __("همه روشهای این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1
                                         GROUP BY hour(date) , day(date)
                                         ORDER BY payment_date desc");
@@ -1290,7 +1290,7 @@ class IDPay_Chart
             $dt = "color: '#EDC240'}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY hour(date) , day(date)
                                         ORDER BY payment_date desc");
@@ -1301,7 +1301,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'triangle', fillColor: '#AA4643' }, color: '#AA4643'}";
             $t = __("همه فرم های سایت", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1
                                         GROUP BY hour(date) , day(date)
                                         ORDER BY payment_date desc");
@@ -1415,7 +1415,7 @@ class IDPay_Chart
             $t = __("IDPay این فرم", 'gravityformsIDPay');
 
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-											FROM " . IDPayDB::get_entry_table_name() . " l
+											FROM " . IDPayDB::getTransactionTableName() . " l
 											WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                             group by date
                                             order by date desc");
@@ -1425,7 +1425,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'square', fillColor: '#50B432' }, color: '#50B432'}";
             $t = __("همه روشهای این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-											FROM " . IDPayDB::get_entry_table_name() . " l
+											FROM " . IDPayDB::getTransactionTableName() . " l
 											WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1
                                             group by date
                                             order by date desc");
@@ -1436,7 +1436,7 @@ class IDPay_Chart
             $dt = "}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-											FROM " . IDPayDB::get_entry_table_name() . " l
+											FROM " . IDPayDB::getTransactionTableName() . " l
 											WHERE l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                             group by date
                                             order by date desc");
@@ -1447,7 +1447,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'triangle', fillColor: '#AA4643' }, color: '#AA4643'}";
             $t = __("همه فرمهای سایت", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-											FROM " . IDPayDB::get_entry_table_name() . " l
+											FROM " . IDPayDB::getTransactionTableName() . " l
 											WHERE l.status='active' AND l.is_fulfilled=1
                                             group by date
                                             order by date desc");
@@ -1553,7 +1553,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'diamond', fillColor: '#058DC7' }, color: '#058DC7'}";
             $t = __("IDPay این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1564,7 +1564,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'square', fillColor: '#50B432' }, color: '#50B432'}";
             $t = __("همه روشهای این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1575,7 +1575,7 @@ class IDPay_Chart
             $dt = "}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1586,7 +1586,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'triangle', fillColor: '#AA4643' }, color: '#AA4643'}";
             $t = __("همه فرم های سایت", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1736,7 +1736,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'diamond', fillColor: '#058DC7' }, color: '#058DC7'}";
             $t = __("IDPay این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1747,7 +1747,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'square', fillColor: '#50B432' }, color: '#50B432'}";
             $t = __("همه روشهای این فرم", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE form_id={$form_id} AND l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1758,7 +1758,7 @@ class IDPay_Chart
             $dt = "}";
             $t = __("همه فرمهای IDPay", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1 AND l.payment_method='IDPay'
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");
@@ -1769,7 +1769,7 @@ class IDPay_Chart
             $dt = "points: { symbol: 'triangle', fillColor: '#AA4643' }, color: '#AA4643'}";
             $t = __("همه فرمهای سایت", 'gravityformsIDPay');
             $results = $wpdb->get_results( "SELECT CONVERT_TZ(l.payment_date, '+00:00', '{$tz_offset}') as date, sum(l.payment_amount) as amount_sold, count(l.id) as new_sales
-                                        FROM " . IDPayDB::get_entry_table_name() . " l
+                                        FROM " . IDPayDB::getTransactionTableName() . " l
                                         WHERE l.status='active' AND l.is_fulfilled=1
                                         GROUP BY date(date)
                                         ORDER BY payment_date desc");

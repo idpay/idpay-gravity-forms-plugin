@@ -5,7 +5,7 @@ include_once self::get_base_path() . '/lib/styles.php';
 //Section Load Necessary Variables
 self::setStylePage();
 $feedId                = ! rgempty( "IDPay_setting_id" ) ? rgpost( "IDPay_setting_id" ) : absint( rgget( "id" ) );
-$idpayConfig           = ! empty( $feedId ) ? IDPayDB::get_feed( $feedId ) : null;
+$idpayConfig           = ! empty( $feedId ) ? IDPayDB::getFeed( $feedId ) : null;
 $formId                = ! empty( rgget( 'fid' ) ) ? rgget( 'fid' ) : ( ! empty( $idpayConfig ) ? $idpayConfig["form_id"] : null );
 $formName              = self::SearchFormName( $feedId );
 $dictionary            = self::loadDictionary( $feedId, $formName );

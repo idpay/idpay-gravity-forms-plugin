@@ -184,7 +184,7 @@ class GF_Gateway_IDPay extends Helpers
     private static function setup()
     {
         if (get_option("gf_IDPay_version") != self::$version) {
-            IDPayDB::update_table();
+            IDPayDB::upgrade();
             update_option("gf_IDPay_version", self::$version);
         }
     }
@@ -320,7 +320,7 @@ class GF_Gateway_IDPay extends Helpers
     {
         check_ajax_referer('gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active');
         $id   = absint(rgpost('feed_id'));
-        $feed = IDPayDB::get_feed($id);
+        $feed = IDPayDB::getFeed($id);
         IDPayDB::updateFeed($id, $feed["form_id"], $feed["meta"]);
     }
 
@@ -564,7 +564,7 @@ class GF_Gateway_IDPay extends Helpers
         if (! self::hasPermission("gravityforms_IDPay_uninstall")) {
             die(__("شما مجوز کافی برای این کار را ندارید . سطح دسترسی شما پایین تر از حد مجاز است . ", "gravityformsIDPay"));
         }
-        IDPayDB::drop_tables();
+        IDPayDB::dropTable();
         delete_option("gf_IDPay_settings");
         delete_option("gf_IDPay_configured");
         delete_option("gf_IDPay_version");

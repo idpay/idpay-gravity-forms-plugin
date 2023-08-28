@@ -286,7 +286,7 @@ class Helpers {
 	}
 
 	public static function SearchFormName( $feedId ) {
-		$dbFeeds  = (array) IDPayDB::get_feeds();
+		$dbFeeds  = (array) IDPayDB::getFeeds();
 		$formName = '';
 		foreach ( $dbFeeds as $dbFeed ) {
 			$dbFeedId = self::dataGet( $dbFeed, 'id' );
@@ -374,7 +374,7 @@ class Helpers {
 	}
 
 	public static function generateFeedSelectForm( $formId ) {
-		$gfAllForms             = IDPayDB::get_available_forms();
+		$gfAllForms             = RGFormsModel::get_forms();
 		$visibleFieldFormSelect = rgget( 'id' ) || rgget( 'fid' ) ? 'style="display:none !important"' : '';
 		$label                  = 'یک فرم انتخاب نمایید';
 		$optionsForms           = "<option value=''>{$label}</option>";
@@ -561,7 +561,7 @@ class Helpers {
 
 	public static function loadConfigByEntry( $entry ) {
 		$feed_id = gform_get_meta( $entry["id"], "IDPay_feed_id" );
-		$feed    = ! empty( $feed_id ) ? IDPayDB::get_feed( $feed_id ) : '';
+		$feed    = ! empty( $feed_id ) ? IDPayDB::getFeed( $feed_id ) : '';
 		$return  = ! empty( $feed ) ? $feed : false;
 
 		return apply_filters(
@@ -800,7 +800,7 @@ class Helpers {
 		$formId = self::dataGet( $form, 'id' );
 		if ( $obj->run == true ) {
 			$addon = call_user_func( [ $obj->class, 'get_instance' ] );
-			$feeds = $addon->get_feeds( $formId );
+			$feeds = $addon->getFeeds( $formId );
 			foreach ( $feeds as $feed ) {
 				$addon->process_feed( $feed, $entry, $form );
 			}

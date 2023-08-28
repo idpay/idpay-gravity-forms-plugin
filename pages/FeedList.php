@@ -8,7 +8,7 @@ $dictionary            = self::loadDictionary( '', '' );
 $addNewHtml            = "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
 $addOption             = get_option( "gf_IDPay_configured" ) == true ? $addNewHtml : '';
 $list_action           = wp_nonce_field( 'list_action', 'gf_IDPay_list' );
-$settings              = IDPayDB::get_feeds();
+$settings              = IDPayDB::getFeeds();
 $addFeedOption         = ! get_option( "gf_IDPay_configured" ) ?
 	"<tr><td colspan='5' 
         style='padding:20px;'>{$dictionary->label31}</td></tr>" : '';
