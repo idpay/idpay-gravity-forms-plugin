@@ -1,20 +1,25 @@
 <?php
 self::prepareFrontEndTools();
-
 self::checkSupportedGravityVersion();
+
 $operation             = self::checkSubmittedOperation();
 $dictionary            = self::loadDictionary( '', '' );
 $addNewHtml            = "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
 $addOption             = get_option( "gf_IDPay_configured" ) == true ? $addNewHtml : '';
 $list_action           = wp_nonce_field( 'list_action', 'gf_IDPay_list' );
-$settings              = IDPayDB::getFeeds();
 $addFeedOption         = ! get_option( "gf_IDPay_configured" ) ?
 	"<tr><td colspan='5' 
         style='padding:20px;'>{$dictionary->label31}</td></tr>" : '';
-$checkSettingsExits    = is_array( $settings ) && sizeof( $settings ) > 0;
-$checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' :
-	"<tr><td colspan='5' 
+$checkSettingsNotExistsHtml = "<tr><td colspan='5' 
         style='padding:20px;'>شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید</td></tr>";
+
+/* Load Data And Pagination Section */
+$pagination = self::loadPagination(IDPayDB::METHOD_FEEDS);
+$settings              = IDPayDB::getFeeds($pagination);
+$checkSettingsExits    = is_array( $settings ) && sizeof( $settings ) > 0;
+$checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' : $checkSettingsNotExistsHtml;
+/* Load Data And Pagination Section */
+
 ?>
 
 <?php echo $operation ?>
@@ -38,8 +43,14 @@ $checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' :
                     <option value='delete'><?php echo $dictionary->label25 ?></option>
                 </select>
                 <input type="submit" class="button" value="اعمال"/>
+
+                <button class='button' disabled style="color : black !important;">
+					<?php echo $dictionary->labelCountFeed . $pagination->query->count; ?>
+                </button>
+
             </div>
         </div>
+
 
         <table class="wp-list-table widefat fixed striped toplevel_page_gf_edit_forms">
             <thead>
@@ -118,5 +129,12 @@ $checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' :
 			<?php echo $checkSettingsNotExits; ?>
             </tbody>
         </table>
+		<?php echo $pagination->html; ?>
+        <br>
+        <div style='display: flex;justify-content: center'>
+            <button class='button' style="color : black !important;" disabled>
+				<?php echo $dictionary->labelCountFeed . $pagination->query->count; ?>
+            </button>
+        </div>
     </form>
 </div>

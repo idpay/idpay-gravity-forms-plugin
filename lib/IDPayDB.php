@@ -3,6 +3,9 @@
 class IDPayDB
 {
 	public static $author = "IDPay";
+	public const METHOD_FEEDS = 'getFeeds';
+	public const METHOD_TRANSACTIONS = 'getFeeds';
+
 
 	public static function unSerializeDto($dto)
 	{
@@ -93,15 +96,28 @@ class IDPayDB
 		return  $results[0];
 	}
 
-	public static function getFeeds()
+	public static function getFeeds($pagination)
+	{
+		global $wpdb;
+		$limitRowsMin = !empty($pagination->query->min) ? $pagination->query->min : 0 ;
+		$limitRowsMax = !empty($pagination->query->max) ? $pagination->query->max : $pagination->query->count ;
+		$IDPayTable = self::getTableName();
+		$formTable = RGFormsModel::get_form_table_name();
+		$query = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
+                  FROM ( SELECT * FROM {$IDPayTable} LIMIT {$limitRowsMin},{$limitRowsMax} ) s
+                  INNER JOIN {$formTable} f ON s.form_id = f.id  ORDER BY s.id";
+		$results = $wpdb->get_results($query, ARRAY_A);
+		return  !empty($results) == true ? self::unSerializeDto($results) : [] ;
+	}
+
+	public static function getFeedsCount()
 	{
 		global $wpdb;
 		$IDPayTable = self::getTableName();
 		$formTable = RGFormsModel::get_form_table_name();
-		$query = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
-                  FROM {$IDPayTable} s INNER JOIN {$formTable} f ON s.form_id = f.id";
+		$query = "SELECT count(*) as count FROM {$IDPayTable}";
 		$results = $wpdb->get_results($query, ARRAY_A);
-		return  !empty($results) == true ? self::unSerializeDto($results) : [] ;
+		return  !empty($results) == true ? (int) $results[0]['count']  : 0 ;
 	}
 
 	public static function dropTable()

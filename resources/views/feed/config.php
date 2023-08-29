@@ -1,7 +1,6 @@
 <?php
-self::prepareFrontEndTools();
-
 //Section Load Necessary Variables
+self::prepareFrontEndTools();
 self::setStylePage();
 $feedId                = ! rgempty( "IDPay_setting_id" ) ? rgpost( "IDPay_setting_id" ) : absint( rgget( "id" ) );
 $idpayConfig           = ! empty( $feedId ) ? IDPayDB::getFeed( $feedId ) : null;

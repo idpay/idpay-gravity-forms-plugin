@@ -447,10 +447,10 @@ class Helpers {
 			'label31'            => translate( "برای شروع باید درگاه را فعال نمایید . به تنظیمات IDPay بروید .", self::$domain ),
 			'label32'            => translate( "عملیات", self::$domain ),
 			'label33'            => translate( "ویرایش فید", self::$domain ),
-			'label34'            => translate( "حذف فید", self::$domain ),
+			'label34'            => translate( "حذف", self::$domain ),
 			'label35'            => translate( "ویرایش فرم", self::$domain ),
 			'label36'            => translate( "صندوق ورودی", self::$domain ),
-			'label37'            => translate( "نمودارهای فرم", self::$domain ),
+			'label37'            => translate( "تراکنش ها", self::$domain ),
 			'label38'            => translate( "افزودن فید جدید", self::$domain ),
 			'label39'            => translate( "نمودار ها", self::$domain ),
 			'label40'            => translate( "درگاه با موفقیت غیرفعال شد و اطلاعات مربوط به آن نیز از بین رفت برای فعالسازی مجدد میتوانید از طریق افزونه های وردپرس اقدام نمایید ", self::$domain ),
@@ -467,6 +467,7 @@ class Helpers {
 			'label51'            => translate( "تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد", self::$domain ),
 			'label52'            => translate( "غیر فعال سازی درگاه IDPay", self::$domain ),
 			'label53'            => translate( "تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد . آیا همچنان مایل به غیر فعالسازی میباشید؟", self::$domain ),
+			'labelCountFeed'            => translate( "مجموع تعداد فید ها : ", self::$domain ),
 			'labelSelectGravity' => translate( "از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain ),
 			'labelNotSupprt'     => sprintf( __( "درگاه IDPay نیاز به گرویتی فرم نسخه %s دارد. برای بروز رسانی هسته گرویتی فرم به %s مراجعه نمایید.", self::$domain ), $feedId, $formName ),
 		];
@@ -819,6 +820,40 @@ class Helpers {
 		$baseDir = WP_PLUGIN_DIR;
 		$pluginDir = self::PLUGIN_FOLDER;
 		return	"{$baseDir}/{$pluginDir}";
+	}
+
+	public static function loadPagination($methodEntity)
+	{
+		global $wp;
+		$currentUrl =  add_query_arg( $_SERVER['QUERY_STRING'] , '' , admin_url( $wp->request ) . 'admin.php' );
+
+		$pageNumber = rgget( 'page_number' ) != '' ? sanitize_text_field(rgget( 'page_number' )) : 1;
+		$methodName = "{$methodEntity}Count";
+		$count = IDPayDB::{$methodName}();
+		$limit = 50;
+		$min = $pageNumber == 1 ? 0 : ($pageNumber - 1) * $limit;
+		$max = $pageNumber * $limit;
+		$paginationHtml = "<ul style='display: flex;justify-content: center'>";
+		$fPage = $pageNumber + 1;
+		$bPage = $pageNumber - 1;
+		if($pageNumber > 1){
+			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$bPage'>صفحه قبل</a></li>";
+		}
+		if ((($count/$limit)/$pageNumber) > 1){
+			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$fPage'>صفحه بعد</a></li>";
+		}
+
+		$paginationHtml .= '</ul>';
+
+
+		return	(object) [
+			'query' => (object) [
+				'min' => $min,
+				'max' => $max,
+				'count' => $count
+			],
+			'html' => $paginationHtml,
+		];
 	}
 
 
