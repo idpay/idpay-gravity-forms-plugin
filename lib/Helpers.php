@@ -8,6 +8,7 @@ class Helpers {
 	public static $min_gravityforms_version = "1.9.10";
 	public const NO_PAYMENT = "NO_PAYMENT";
 	public const SUCCESS_PAYMENT = "SUCCESS_PAYMENT";
+	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
 
 	public static function exists( $array, $key ): bool {
 		if ( $array instanceof ArrayAccess ) {
@@ -805,6 +806,19 @@ class Helpers {
 				$addon->process_feed( $feed, $entry, $form );
 			}
 		}
+	}
+
+	public static function prepareFrontEndTools()
+	{
+		include_once self::getBasePath() . '/resources/js/scripts.php';
+		include_once self::getBasePath() . '/resources/css/styles.php';
+	}
+
+	public static function getBasePath()
+	{
+		$baseDir = WP_PLUGIN_DIR;
+		$pluginDir = self::PLUGIN_FOLDER;
+		return	"{$baseDir}/{$pluginDir}";
 	}
 
 

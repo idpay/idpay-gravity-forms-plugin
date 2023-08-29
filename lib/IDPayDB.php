@@ -55,11 +55,11 @@ class IDPayDB
 		return $wpdb->prefix . "gf_IDPay";
 	}
 
-	public static function updateFeed($id, $form_id, $setting)
+	public static function updateFeed($id, $formId, $setting)
 	{
 		global $wpdb;
 		$dto = [
-			"form_id" => $form_id,
+			"form_id" => $formId,
 			"is_active" => true,
 			"meta" => maybe_serialize($setting)
 		];
@@ -172,47 +172,15 @@ class IDPayDB
 		return " SELECT status, sum(payment_amount) revenue, count(id) transactions FROM %s ";
 	}
 
-	public static function getAnalyticsTransactions($form_id)
+	public static function getAnalyticsTotalTransactions($formId)
 	{
 		$query = self::prepareAnalyticsQuery();
 		$query .= "
-			  WHERE form_id={$form_id} 
+			  WHERE form_id={$formId} 
 	            AND status='active' 
 	            AND is_fulfilled=1 
 	            AND payment_method='IDPay'
 	          GROUP BY status";
-		return self::runAnalyticsQuery($query);
-	}
-
-	public static function getAnalyticsTransactionsForGateways($form_id)
-	{
-		$query = self::prepareAnalyticsQuery();
-		$query .= "
-			WHERE form_id={$form_id} 
-	          AND status='active' 
-	          AND is_fulfilled=1 
-	        GROUP BY status";
-		return self::runAnalyticsQuery($query);
-	}
-
-	public static function getAnalyticsTransactionsForMyGateway()
-	{
-		$query = self::prepareAnalyticsQuery();
-		$query .= "
-			WHERE status='active' 
-	          AND is_fulfilled=1 
-	          AND payment_method='IDPay'
-	        GROUP BY status";
-		return self::runAnalyticsQuery($query);
-	}
-
-	public static function getAnalyticsTransactionsForSite()
-	{
-		$query = self::prepareAnalyticsQuery();
-		$query .= "
-			WHERE status='active' 
-	          AND is_fulfilled=1 
-	        GROUP BY status";
 		return self::runAnalyticsQuery($query);
 	}
 

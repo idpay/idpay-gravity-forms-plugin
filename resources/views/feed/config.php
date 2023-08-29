@@ -1,6 +1,5 @@
 <?php
-include_once self::get_base_path() . '/lib/scripts.php';
-include_once self::get_base_path() . '/lib/styles.php';
+self::prepareFrontEndTools();
 
 //Section Load Necessary Variables
 self::setStylePage();

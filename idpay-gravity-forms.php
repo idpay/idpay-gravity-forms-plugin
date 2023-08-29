@@ -23,7 +23,6 @@ require_once('lib/IDPayDB.php');
 require_once('lib/Helpers.php');
 require_once('lib/IDPayPayment.php');
 require_once('lib/IDPayVerify.php');
-require_once('lib/IDPay_Chart.php');
 
 class GF_Gateway_IDPay extends Helpers
 {
@@ -107,7 +106,7 @@ class GF_Gateway_IDPay extends Helpers
     public static function loadFeedList()
     {
         GFFormSettings::page_header();
-        require_once(self::get_base_path() . '/pages/FeedList.php');
+        require_once(self::getBasePath() . '/resources/views/feed/index.php');
         GFFormSettings::page_footer();
     }
 
@@ -115,17 +114,17 @@ class GF_Gateway_IDPay extends Helpers
     {
         $view = rgget("view");
         if ($view == "edit") {
-            require_once(self::get_base_path() . '/pages/FeedConfig.php');
+            require_once(self::getBasePath() . '/resources/views/feed/config.php');
         } elseif ($view == "stats") {
-            IDPay_Chart::stats_page();
+	        require_once(self::getBasePath() . '/resources/views/feed/transactions.php');
         } else {
-            require_once(self::get_base_path() . '/pages/FeedList.php');
+            require_once(self::getBasePath() . '/resources/views/feed/index.php');
         }
     }
 
     public static function loadSettingPage()
     {
-        require_once(self::get_base_path() . '/pages/Setting.php');
+        require_once(self::getBasePath() . '/resources/views/setting.php');
     }
 
     public static function alter_submit_button($button_input, $form)
@@ -148,7 +147,7 @@ class GF_Gateway_IDPay extends Helpers
                 '<div id="idpay-pay-id-%1$s" class="idpay-logo" style="font-size: 14px;padding: 5px 0;">
                         <img src="%2$s" style="display: inline-block;vertical-align: middle;width: 70px;">%3$s</div>',
                 $form['id'],
-                plugins_url('/lib/logo.svg', __FILE__),
+                plugins_url('/resources/images/logo.svg', __FILE__),
                 __('پرداخت امن با آیدی پی', 'gravityformsIDPay')
             );
             $button_input .=
@@ -576,13 +575,6 @@ class GF_Gateway_IDPay extends Helpers
     protected static function get_base_url()
     {
         return plugins_url(null, __FILE__);
-    }
-
-    protected static function get_base_path()
-    {
-        $folder = basename(dirname(__FILE__));
-
-        return WP_PLUGIN_DIR . "/" . $folder;
     }
 
     public static function merge_tags_keys($form)
