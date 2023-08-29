@@ -191,12 +191,12 @@ class IDPayPayment extends Helpers {
 
 	public static function processPurchase( $feed, $entry, $form ) {
 
-		$formId  = $form['id'];
+		$formId      = $form['id'];
 		$description = $feed["meta"]["description"];
-		$desc    = $feed["meta"]["payment_description"];
-		$mobile  = $feed["meta"]["payment_mobile"];
-		$name    = $feed["meta"]["payment_name"];
-		$email   = $feed["meta"]["payment_email"];
+		$desc        = $feed["meta"]["payment_description"];
+		$mobile      = $feed["meta"]["payment_mobile"];
+		$name        = $feed["meta"]["payment_name"];
+		$email       = $feed["meta"]["payment_email"];
 
 		$Desc1       = ! empty( $description ) ? str_replace( [
 			'{entry_id}',
@@ -220,8 +220,8 @@ class IDPayPayment extends Helpers {
 	public static function reject( $entry, $form, $Message = '' ) {
 		$entryId      = $entry['id'];
 		$formId       = $form['id'];
-		$translate =  'خطایی رخ داده است. به نظر میرسد این خطا به علت مبلغ ارسالی اشتباه باشد';
-		$Message      = ! empty( $Message ) ? $Message : __($translate, 'gravityformsIDPay' ) ;
+		$translate    = 'خطایی رخ داده است. به نظر میرسد این خطا به علت مبلغ ارسالی اشتباه باشد';
+		$Message      = ! empty( $Message ) ? $Message : __( $translate, 'gravityformsIDPay' );
 		$confirmation = __( 'متاسفانه نمیتوانیم به درگاه متصل شویم. علت : ', 'gravityformsIDPay' ) . $Message;
 
 		$entry                   = GFPersian_Payments::get_entry( $entryId );
@@ -248,11 +248,11 @@ class IDPayPayment extends Helpers {
 
 		$output = "{$anchor} ";
 		if ( ! empty( $confirmation ) ) {
-			$output = GFCommon::replace_variables( $confirmation, $form, $entry,false,true, $nl2br );
+			$output = GFCommon::replace_variables( $confirmation, $form, $entry, false, true, $nl2br );
 			$output .= "
                 <div id='gform_confirmation_wrapper_{$formId}' class='gform_confirmation_wrapper {$cssClass}'>
                     <div id='gform_confirmation_message_{$formId}' 
-                    class='gform_confirmation_message_{$formId} gform_confirmation_message'>" .$output .'
+                    class='gform_confirmation_message_{$formId} gform_confirmation_message'>" . $output . '
                     </div>
                 </div>';
 		}

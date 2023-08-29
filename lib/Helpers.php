@@ -171,12 +171,12 @@ class Helpers {
 
 	public static function isNotApprovedGettingTransaction( $entryId, $form_id ) {
 
-		$entry       = GFPersian_Payments::get_entry( $entryId );
+		$entry         = GFPersian_Payments::get_entry( $entryId );
 		$paymentMethod = self::dataGet( $entry, 'payment_method' );
 		$condition1    = apply_filters( 'gf_gateway_IDPay_return', apply_filters( 'gf_gateway_verify_return', false ) );
-		$condition2    = (! self::is_gravityforms_supported() ) || is_wp_error( $entry ) ;
-		$condition3    = (! is_numeric( (int) $form_id )) || (! is_numeric( (int) $entryId ));
-		$condition4    =  empty( $paymentMethod ) || $paymentMethod != 'IDPay' ;
+		$condition2    = ( ! self::is_gravityforms_supported() ) || is_wp_error( $entry );
+		$condition3    = ( ! is_numeric( (int) $form_id ) ) || ( ! is_numeric( (int) $entryId ) );
+		$condition4    = empty( $paymentMethod ) || $paymentMethod != 'IDPay';
 
 		return $condition1 || $condition2 || $condition3 || $condition4;
 
@@ -302,25 +302,25 @@ class Helpers {
 	public static function readDataFromRequest( $config ) {
 		return [
 			"form_id" => absint( rgpost( "IDPay_formId" ) ),
-			"meta" => [
-				"description" => rgpost( "IDPay_description" ),
+			"meta"    => [
+				"description"         => rgpost( "IDPay_description" ),
 				"payment_description" => rgpost( "IDPay_payment_description" ),
-				"payment_email" => rgpost( "IDPay_payment_email" ),
-				"payment_mobile" => rgpost( "IDPay_payment_mobile" ),
-				"payment_name" => rgpost( "IDPay_payment_name" ),
-				"confirmation" => rgpost( "IDPay_payment_confirmation" ),
-				"addon" => [
-					"post_create" => [
-						"success_payment" => (bool) rgpost( "IDPay_addon_post_create_success_payment" ) ,
-						"no_payment" => false,
+				"payment_email"       => rgpost( "IDPay_payment_email" ),
+				"payment_mobile"      => rgpost( "IDPay_payment_mobile" ),
+				"payment_name"        => rgpost( "IDPay_payment_name" ),
+				"confirmation"        => rgpost( "IDPay_payment_confirmation" ),
+				"addon"               => [
+					"post_create"       => [
+						"success_payment" => (bool) rgpost( "IDPay_addon_post_create_success_payment" ),
+						"no_payment"      => false,
 					],
-					"post_update" => [
-						"success_payment" => (bool) rgpost( "IDPay_addon_post_update_success_payment" ) ,
-						"no_payment" => false,
+					"post_update"       => [
+						"success_payment" => (bool) rgpost( "IDPay_addon_post_update_success_payment" ),
+						"no_payment"      => false,
 					],
 					"user_registration" => [
-						"success_payment" => (bool) rgpost( "IDPay_addon_user_reg_success_payment" ) ,
-						"no_payment" => (bool) rgpost( "IDPay_addon_user_reg_no_payment" ),
+						"success_payment" => (bool) rgpost( "IDPay_addon_user_reg_success_payment" ),
+						"no_payment"      => (bool) rgpost( "IDPay_addon_user_reg_no_payment" ),
 					],
 				],
 			]
@@ -467,7 +467,7 @@ class Helpers {
 			'label51'            => translate( "تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد", self::$domain ),
 			'label52'            => translate( "غیر فعال سازی درگاه IDPay", self::$domain ),
 			'label53'            => translate( "تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد . آیا همچنان مایل به غیر فعالسازی میباشید؟", self::$domain ),
-			'labelCountFeed'            => translate( "مجموع تعداد فید ها : ", self::$domain ),
+			'labelCountFeed'     => translate( "مجموع تعداد فید ها : ", self::$domain ),
 			'labelSelectGravity' => translate( "از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain ),
 			'labelNotSupprt'     => sprintf( __( "درگاه IDPay نیاز به گرویتی فرم نسخه %s دارد. برای بروز رسانی هسته گرویتی فرم به %s مراجعه نمایید.", self::$domain ), $feedId, $formName ),
 		];
@@ -809,50 +809,48 @@ class Helpers {
 		}
 	}
 
-	public static function prepareFrontEndTools()
-	{
+	public static function prepareFrontEndTools() {
 		include_once self::getBasePath() . '/resources/js/scripts.php';
 		include_once self::getBasePath() . '/resources/css/styles.php';
 	}
 
-	public static function getBasePath()
-	{
-		$baseDir = WP_PLUGIN_DIR;
+	public static function getBasePath() {
+		$baseDir   = WP_PLUGIN_DIR;
 		$pluginDir = self::PLUGIN_FOLDER;
-		return	"{$baseDir}/{$pluginDir}";
+
+		return "{$baseDir}/{$pluginDir}";
 	}
 
-	public static function loadPagination($methodEntity)
-	{
+	public static function loadPagination( $methodEntity ) {
 		global $wp;
-		$currentUrl =  add_query_arg( $_SERVER['QUERY_STRING'] , '' , admin_url( $wp->request ) . 'admin.php' );
+		$currentUrl = add_query_arg( $_SERVER['QUERY_STRING'], '', admin_url( $wp->request ) . 'admin.php' );
 
-		$pageNumber = rgget( 'page_number' ) != '' ? sanitize_text_field(rgget( 'page_number' )) : 1;
-		$methodName = "{$methodEntity}Count";
-		$count = IDPayDB::{$methodName}();
-		$limit = 50;
-		$min = $pageNumber == 1 ? 0 : ($pageNumber - 1) * $limit;
-		$max = $pageNumber * $limit;
+		$pageNumber     = rgget( 'page_number' ) != '' ? sanitize_text_field( rgget( 'page_number' ) ) : 1;
+		$methodName     = "{$methodEntity}Count";
+		$count          = IDPayDB::{$methodName}();
+		$limit          = 50;
+		$min            = $pageNumber == 1 ? 0 : ( $pageNumber - 1 ) * $limit;
+		$max            = $pageNumber * $limit;
 		$paginationHtml = "<ul style='display: flex;justify-content: center'>";
-		$fPage = $pageNumber + 1;
-		$bPage = $pageNumber - 1;
-		if($pageNumber > 1){
+		$fPage          = $pageNumber + 1;
+		$bPage          = $pageNumber - 1;
+		if ( $pageNumber > 1 ) {
 			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$bPage'>صفحه قبل</a></li>";
 		}
-		if ((($count/$limit)/$pageNumber) > 1){
+		if ( ( ( $count / $limit ) / $pageNumber ) > 1 ) {
 			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$fPage'>صفحه بعد</a></li>";
 		}
 
 		$paginationHtml .= '</ul>';
 
 
-		return	(object) [
+		return (object) [
 			'query' => (object) [
-				'min' => $min,
-				'max' => $max,
+				'min'   => $min,
+				'max'   => $max,
 				'count' => $count
 			],
-			'html' => $paginationHtml,
+			'html'  => $paginationHtml,
 		];
 	}
 

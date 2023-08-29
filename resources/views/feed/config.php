@@ -14,7 +14,7 @@ $gfStatusBarMessage    = '';
 // Section Check Updated Fields And Updating
 if ( ! rgempty( "gf_IDPay_submit" ) ) {
 	check_admin_referer( "update", "gf_IDPay_feed" );
-	$idpayConfig           = self::readDataFromRequest( $idpayConfig );
+	$idpayConfig = self::readDataFromRequest( $idpayConfig );
 	//$idpayConfig['meta']   = self::makeSafeDataForDb( $idpayConfig );
 	$gfStatusBarMessage    = self::generateStatusBarMessage( $formId );
 	$isSubmitDataForUpdate = true;
@@ -74,7 +74,7 @@ $optionsForms           = $gfFormFeedSelect->options;
 
 <div class="wrap gforms_edit_form gf_browser_gecko"></div>
 <h2 class="gf_admin_page_title">
-    <?php echo $dictionary->label1 ?>
+	<?php echo $dictionary->label1 ?>
 	<?php if ( ! empty( $formId ) ) { ?>
         <span class="gf_admin_page_subtitle">
             <span class="gf_admin_page_formid"><?php echo $dictionary->label3 ?></span>

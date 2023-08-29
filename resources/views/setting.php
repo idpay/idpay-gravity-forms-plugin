@@ -6,7 +6,7 @@ $dictionary       = self::loadDictionary( '', '' );
 $isActive         = get_option( "gf_IDPay_configured" ) ? "checked='checked'" : "";
 $gatewayName      = gform_tooltip( 'gateway_name' );
 $gatewayTitle     = sanitize_text_field( rgar( $settings, 'gname' ) ) ?
-                    sanitize_text_field( $settings["gname"] ) : 'IDPay';
+	sanitize_text_field( $settings["gname"] ) : 'IDPay';
 $apiKey           = sanitize_text_field( rgar( $settings, 'api_key' ) );
 $isActive2        = rgar( $settings, 'sandbox' ) ? "checked='checked'" : "";
 $uninstall_button = '<input  style="font-family:tahoma !important;" type="submit" name="uninstall" value="' .
