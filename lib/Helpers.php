@@ -286,18 +286,18 @@ class Helpers {
 		return true;
 	}
 
-	public static function SearchFormName( $feedId ) {
-		$dbFeeds  = (array) IDPayDB::getFeeds();
-		$formName = '';
-		foreach ( $dbFeeds as $dbFeed ) {
-			$dbFeedId = self::dataGet( $dbFeed, 'id' );
-			if ( $dbFeedId == $feedId ) {
-				$formName = self::dataGet( $dbFeed, 'form_title' );
-			}
-		}
-
-		return $formName;
-	}
+//	public static function SearchFormName( $formId ) {
+//		$dbFeeds  = (array) IDPayDB::getForm($formId);
+//		$formName = '';
+//		foreach ( $dbFeeds as $dbFeed ) {
+//			$dbFeedId = self::dataGet( $dbFeed, 'id' );
+//			if ( $dbFeedId == $feedId ) {
+//				$formName = self::dataGet( $dbFeed, 'form_title' );
+//			}
+//		}
+//
+//		return $formName;
+//	}
 
 	public static function readDataFromRequest( $config ) {
 		return [
@@ -467,6 +467,7 @@ class Helpers {
 			'label51'            => translate( "تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد", self::$domain ),
 			'label52'            => translate( "غیر فعال سازی درگاه IDPay", self::$domain ),
 			'label53'            => translate( "تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد . آیا همچنان مایل به غیر فعالسازی میباشید؟", self::$domain ),
+			'label54'            => translate( "شما هیچ تراکنشی در این فید نداشته اید", self::$domain ),
 			'labelCountFeed'     => translate( "مجموع تعداد فید ها : ", self::$domain ),
 			'labelSelectGravity' => translate( "از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain ),
 			'labelNotSupprt'     => sprintf( __( "درگاه IDPay نیاز به گرویتی فرم نسخه %s دارد. برای بروز رسانی هسته گرویتی فرم به %s مراجعه نمایید.", self::$domain ), $feedId, $formName ),
@@ -821,13 +822,13 @@ class Helpers {
 		return "{$baseDir}/{$pluginDir}";
 	}
 
-	public static function loadPagination( $methodEntity ) {
+	public static function loadPagination( $methodEntity,$filters = [] ) {
 		global $wp;
 		$currentUrl = add_query_arg( $_SERVER['QUERY_STRING'], '', admin_url( $wp->request ) . 'admin.php' );
 
 		$pageNumber     = rgget( 'page_number' ) != '' ? sanitize_text_field( rgget( 'page_number' ) ) : 1;
 		$methodName     = "{$methodEntity}Count";
-		$count          = IDPayDB::{$methodName}();
+		$count          = empty($filters) ? IDPayDB::{$methodName}() : IDPayDB::{$methodName}($filters);
 		$limit          = 50;
 		$min            = $pageNumber == 1 ? 0 : ( $pageNumber - 1 ) * $limit;
 		$max            = $pageNumber * $limit;

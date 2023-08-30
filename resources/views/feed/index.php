@@ -15,7 +15,8 @@ $checkSettingsNotExistsHtml = "<tr><td colspan='5'
 
 
 /* Load Data And Pagination Section */
-$pagination            = self::loadPagination( IDPayDB::METHOD_FEEDS );
+$filters = (object) [];
+$pagination            = self::loadPagination( IDPayDB::METHOD_FEEDS, $filters );
 $settings              = IDPayDB::getFeeds( $pagination );
 $checkSettingsExits    = is_array( $settings ) && sizeof( $settings ) > 0;
 $checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' : $checkSettingsNotExistsHtml;

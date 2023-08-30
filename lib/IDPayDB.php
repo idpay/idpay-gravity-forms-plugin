@@ -2,9 +2,104 @@
 
 class IDPayDB {
 	public static $author = "IDPay";
-	public const METHOD_FEEDS = 'getFeeds';
-	public const METHOD_TRANSACTIONS = 'getFeeds';
 
+	public const METHOD_FEEDS = 'getFeeds';
+	public const METHOD_TRANSACTIONS = 'getTransactions';
+
+	public const QUERY_TRANSACTIONS = 'QUERY_TRANSACTIONS';
+	public const QUERY_ANALYTICS = 'QUERY_ANALYTICS';
+	public const QUERY_COUNT_TRANSACTION = 'QUERY_COUNT_TRANSACTION';
+	public const QUERY_COUNT_FEED = 'QUERY_COUNT_FEED';
+	public const QUERY_DELETE_IDPAY = 'QUERY_DELETE_IDPAY';
+	public const QUERY_FEED_BY_ID = 'QUERY_FEED_BY_ID';
+	public const QUERY_DELETE_FEED = 'QUERY_DELETE_FEED';
+	public const QUERY_FEED = 'QUERY_FEED';
+	public const QUERY_FEEDS = 'QUERY_FEEDS';
+	public const QUERY_FORM = 'QUERY_FORM';
+
+
+
+	public static function prepareQuery( $type ,$filters) {
+		$transactionTableName = self::getTransactionTableName();
+		$formTable    = RGFormsModel::get_form_table_name();
+		$IDPayTable = self::getTableName();
+
+		switch ( $type ) {
+			case self::QUERY_ANALYTICS : return " SELECT status, sum(payment_amount) revenue, count(id) transactions 
+						                            FROM {$transactionTableName}
+												    WHERE form_id={$filters->formId} 
+										              AND status='active' 
+										              AND is_fulfilled=1 
+										              AND payment_method='IDPay'
+										           GROUP BY status";
+
+			case self::QUERY_COUNT_FEED : return " SELECT count(*) as count 
+ 								   					FROM {$IDPayTable}";
+
+			case self::QUERY_FEED_BY_ID : return "SELECT * 
+												  FROM {$IDPayTable} 
+												  WHERE form_id={$filters->formId}";
+
+			case self::QUERY_DELETE_FEED : return "DELETE FROM {$IDPayTable} WHERE id={$filters->id}";
+
+			case self::QUERY_FEED : return "SELECT id, form_id, is_active, meta FROM {$IDPayTable} WHERE id={$filters->id}";
+
+			case self::QUERY_FEEDS : return "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
+							                       FROM (
+							                             SELECT * 
+							                             FROM {$IDPayTable} 
+							                                 LIMIT {$filters->limitRowsMin},{$filters->limitRowsMax} 
+							                           ) s
+							                       INNER JOIN {$formTable} f 
+							                           ON s.form_id = f.id  
+												   ORDER BY s.id";
+
+			case self::QUERY_FORM : return "SELECT title as form_title FROM {$formTable} WHERE id={$filters->formId}";
+
+			case self::QUERY_DELETE_IDPAY : return "DROP TABLE IF EXISTS {$IDPayTable}";
+
+			case self::QUERY_COUNT_TRANSACTION : return " SELECT count(*) as count 
+						                                   FROM {$transactionTableName} 
+						                                   WHERE form_id={$filters->formId} 
+							                               AND payment_method='IDPay'";
+
+
+			case self::QUERY_TRANSACTIONS :
+				return " SELECT *****  
+ 						 FROM {$transactionTableName} ";
+		}
+	}
+
+	public static function castAndNormalizeDto( $dto, $type ) {
+		if ( ! is_array( $dto ) ) {
+			return [];
+		}
+
+		if ( $type == self::QUERY_ANALYTICS ) {
+			$list = [];
+			foreach ( $dto as $item ) {
+				$status          = $item["status"];
+				$revenue         = ! empty( $item["revenue"] ) ? $item["revenue"] : 0;
+				$transactions    = ! empty( $item["transactions"] ) ? $item["transactions"] : 0;
+				$list[ $status ] = [ "revenue" => $revenue, "transactions" => $transactions ];
+			}
+
+			return $list;
+		}
+		elseif ($type == self::QUERY_COUNT_TRANSACTION || $type == self::QUERY_COUNT_FEED)
+		{
+			return !empty($dto) == true ? ( (int) $dto[0]['count'] ) : 0;
+		}
+		else {
+			return $dto;
+		}
+	}
+
+	public static function runQuery( $query, $type ) {
+		global $wpdb;
+		$results = $wpdb->get_results( $query, ARRAY_A );
+		return self::castAndNormalizeDto( $results, $type );
+	}
 
 	public static function unSerializeDto( $dto ) {
 		$count = sizeof( $dto );
@@ -13,22 +108,6 @@ class IDPayDB {
 		}
 
 		return $dto;
-	}
-
-	public static function castAndNormalizeDto( $dto ) {
-		if ( ! is_array( $dto ) ) {
-			return [];
-		}
-
-		$list = [];
-		foreach ( $dto as $item ) {
-			$status          = $item["status"];
-			$revenue         = ! empty( $item["revenue"] ) ? $item["revenue"] : 0;
-			$transactions    = ! empty( $item["transactions"] ) ? $item["transactions"] : 0;
-			$list[ $status ] = [ "revenue" => $revenue, "transactions" => $transactions ];
-		}
-
-		return $list;
 	}
 
 	public static function getActiveFeed( $form ) {
@@ -40,15 +119,6 @@ class IDPayDB {
 		);
 
 		return $configs;
-	}
-
-	public static function getFeedByFormId( $formId ) {
-		global $wpdb;
-		$tableName = self::getTableName();
-		$query     = "SELECT * FROM {$tableName} WHERE form_id={$formId}";
-		$results   = $wpdb->get_results( $query, ARRAY_A );
-
-		return ! empty( $results ) == true ? self::unSerializeDto( $results ) : [];
 	}
 
 	public static function getTableName() {
@@ -74,54 +144,6 @@ class IDPayDB {
 		}
 
 		return $id;
-	}
-
-	public static function deleteFeed( $id ) {
-		global $wpdb;
-		$tableName = self::getTableName();
-		$query     = "DELETE FROM {$tableName} WHERE id={$id}";
-		$wpdb->query( $query );
-	}
-
-	public static function getFeed( $id ) {
-		global $wpdb;
-		$tableName = self::getTableName();
-		$query     = "SELECT id, form_id, is_active, meta FROM {$tableName} WHERE id={$id}";
-		$results   = $wpdb->get_results( $query, ARRAY_A );
-		$results   = ! empty( $results ) == true ? self::unSerializeDto( $results ) : [];
-
-		return $results[0];
-	}
-
-	public static function getFeeds( $pagination ) {
-		global $wpdb;
-		$limitRowsMin = ! empty( $pagination->query->min ) ? $pagination->query->min : 0;
-		$limitRowsMax = ! empty( $pagination->query->max ) ? $pagination->query->max : $pagination->query->count;
-		$IDPayTable   = self::getTableName();
-		$formTable    = RGFormsModel::get_form_table_name();
-		$query        = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
-                  FROM ( SELECT * FROM {$IDPayTable} LIMIT {$limitRowsMin},{$limitRowsMax} ) s
-                  INNER JOIN {$formTable} f ON s.form_id = f.id  ORDER BY s.id";
-		$results      = $wpdb->get_results( $query, ARRAY_A );
-
-		return ! empty( $results ) == true ? self::unSerializeDto( $results ) : [];
-	}
-
-	public static function getFeedsCount() {
-		global $wpdb;
-		$IDPayTable = self::getTableName();
-		$formTable  = RGFormsModel::get_form_table_name();
-		$query      = "SELECT count(*) as count FROM {$IDPayTable}";
-		$results    = $wpdb->get_results( $query, ARRAY_A );
-
-		return ! empty( $results ) == true ? (int) $results[0]['count'] : 0;
-	}
-
-	public static function dropTable() {
-		global $wpdb;
-		$tableName = self::getTableName();
-		$query     = "DROP TABLE IF EXISTS {$tableName}";
-		$wpdb->query( $query );
 	}
 
 	public static function getTransactionTableName() {
@@ -170,29 +192,82 @@ class IDPayDB {
 
 	}
 
-	public static function runAnalyticsQuery( $query ) {
-		global $wpdb;
-		$transactionTableName = self::getTransactionTableName();
-		$query                = sprintf( $query, $transactionTableName );
-		$results              = $wpdb->get_results( $query, ARRAY_A );
+	public static function getFeeds( $pagination ) {
 
-		return self::castAndNormalizeDto( $results );
-	}
+		$limitRowsMin = ! empty( $pagination->query->min ) ? $pagination->query->min : 0;
+		$limitRowsMax = ! empty( $pagination->query->max ) ? $pagination->query->max : $pagination->query->count;
 
-	public static function prepareAnalyticsQuery() {
-		return " SELECT status, sum(payment_amount) revenue, count(id) transactions FROM %s ";
+		$type  = self::QUERY_FEEDS;
+		$filters = (object)[
+			'limitRowsMin' => $limitRowsMin,
+			'limitRowsMax' => $limitRowsMax,
+		];
+		$query = self::prepareQuery( $type,$filters );
+		$results = self::runQuery( $query, $type );
+		return ! empty( $results ) == true ? self::unSerializeDto( $results ) : [];
 	}
 
 	public static function getAnalyticsTotalTransactions( $formId ) {
-		$query = self::prepareAnalyticsQuery();
-		$query .= "
-			  WHERE form_id={$formId} 
-	            AND status='active' 
-	            AND is_fulfilled=1 
-	            AND payment_method='IDPay'
-	          GROUP BY status";
-
-		return self::runAnalyticsQuery( $query );
+		$type  = self::QUERY_ANALYTICS;
+		$filters = (object)[ 'formId' => $formId];
+		$query = self::prepareQuery( $type,$filters );
+		return self::runQuery( $query, $type );
 	}
+
+	public static function getTransactionsCount( $filters ) {
+		$type  = self::QUERY_COUNT_TRANSACTION;
+		$filters = (object)[ 'formId' => $filters->formId];
+		$query = self::prepareQuery( $type,$filters );
+		return self::runQuery( $query, $type );
+	}
+
+	public static function getFeedsCount() {
+		$type  = self::QUERY_COUNT_FEED;
+		$filters = (object)[];
+		$query = self::prepareQuery( $type , $filters );
+		return self::runQuery( $query, $type );
+	}
+
+	public static function dropTable() {
+
+		$type  = self::QUERY_DELETE_IDPAY;
+		$filters = (object)[];
+		$query = self::prepareQuery( $type , $filters );
+		return self::runQuery( $query, $type );
+	}
+
+	public static function getFeedByFormId( $formId ) {
+		$type  = self::QUERY_FEED_BY_ID;
+		$filters = (object)[ 'formId' => $formId];
+		$query = self::prepareQuery( $type,$filters );
+		$results =  self::runQuery( $query, $type );
+		return ! empty( $results ) == true ? self::unSerializeDto( $results ) : [];
+	}
+
+	public static function deleteFeed( $id ) {
+		$type  = self::QUERY_DELETE_FEED;
+		$filters = (object)[ 'id' => $id];
+		$query = self::prepareQuery( $type,$filters );
+		$results =  self::runQuery( $query, $type );
+	}
+
+	public static function getFeed( $id ) {
+		$type  = self::QUERY_FEED;
+		$filters = (object)[ 'id' => $id];
+		$query = self::prepareQuery( $type,$filters );
+		$results =  self::runQuery( $query, $type );
+		$results   = ! empty( $results ) == true ? self::unSerializeDto( $results ) : [];
+		return $results[0];
+	}
+
+	public static function getForm( $formId ) {
+		$type  = self::QUERY_FORM;
+		$filters = (object)[ 'formId' => $formId];
+		$query = self::prepareQuery( $type,$filters );
+		$results =  self::runQuery( $query, $type );
+		return $results[0];
+	}
+
+	public static function getTransactions( $pagination ) {}
 
 }

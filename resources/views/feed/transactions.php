@@ -2,27 +2,21 @@
 self::prepareFrontEndTools();
 self::checkSupportedGravityVersion();
 
-$operation                  = self::checkSubmittedOperation();
 $dictionary                 = self::loadDictionary( '', '' );
 $addNewHtml                 = "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
 $addOption                  = get_option( "gf_IDPay_configured" ) == true ? $addNewHtml : '';
-$list_action                = wp_nonce_field( 'list_action', 'gf_IDPay_list' );
-$addFeedOption              = ! get_option( "gf_IDPay_configured" ) ?
-	"<tr><td colspan='5' 
-        style='padding:20px;'>{$dictionary->label31}</td></tr>" : '';
-$checkSettingsNotExistsHtml = "<tr><td colspan='5' 
-        style='padding:20px;'>شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید</td></tr>";
+$checkSettingsNotExistsHtml = "<tr><td colspan='5' style='padding:20px;'>{$dictionary->label54}</td></tr>";
 
 /* Load Data And Pagination Section */
-$pagination            = self::loadPagination( IDPayDB::METHOD_FEEDS );
-$settings              = IDPayDB::getFeeds( $pagination );
+$filters = (object) ['formId' => rgget('id') ?? 0];
+$pagination            = self::loadPagination( IDPayDB::METHOD_TRANSACTIONS , $filters );
+$settings              = IDPayDB::getFeed( $pagination );
 $checkSettingsExits    = is_array( $settings ) && sizeof( $settings ) > 0;
 $checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' : $checkSettingsNotExistsHtml;
 /* Load Data And Pagination Section */
 
 ?>
 
-<?php echo $operation ?>
 <div class="wrap">
     <h2>
 		<?php echo $dictionary->label22 ?>
@@ -32,7 +26,6 @@ $checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' :
     </h2>
 
     <form id="confirmation_list_form" method="post">
-		<?php echo $list_action ?>
         <input type="hidden" id="action" name="action"/>
         <input type="hidden" id="action_argument" name="action_argument"/>
         <div class="tablenav">
@@ -68,7 +61,6 @@ $checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' :
             </thead>
             <tbody class="list:user user-list">
 			<?php
-			echo $addFeedOption;
 			if ( $checkSettingsExits ) {
 				foreach ( $settings as $setting ) {
 					$settingId     = $setting["id"];

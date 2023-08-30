@@ -5,8 +5,9 @@ self::setStylePage();
 $feedId                = ! rgempty( "IDPay_setting_id" ) ? rgpost( "IDPay_setting_id" ) : absint( rgget( "id" ) );
 $idpayConfig           = ! empty( $feedId ) ? IDPayDB::getFeed( $feedId ) : null;
 $formId                = ! empty( rgget( 'fid' ) ) ? rgget( 'fid' ) : ( ! empty( $idpayConfig ) ? $idpayConfig["form_id"] : null );
-$formName              = self::SearchFormName( $feedId );
-$dictionary            = self::loadDictionary( $feedId, $formName );
+$form                  = !empty($formId) ? IDPayDB::getForm( $formId ) : null ;
+$formTitle = !empty($form) ? $form['form_title'] : '';
+$dictionary            = self::loadDictionary( $feedId, $formTitle );
 $isSubmitDataForUpdate = false;
 $gfStatusBarMessage    = '';
 //End Section
