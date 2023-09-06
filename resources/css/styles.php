@@ -28,27 +28,44 @@
     .C3 {
         padding:13px 3px;width:30px !important;
     }
+
     .C4 {
-        cursor:pointer !important;
+        cursor: pointer !important;
     }
+
     .C5 {
         display: flex !important;
         justify-content: center !important;
     }
+
     .C6 {
-        color : black !important;
+        color: black !important;
     }
-    .Cw25{
-        width:25px !important;
+    .C7 {
+        width: 350px !important;
+        text-align: left !important;
+        direction: ltr !important;
     }
-    .Cw50{
-        width:50px !important;
+    .C8 {
+        padding:6px !important;
     }
-    .Cw65{
-        width:65px !important;
+
+    .Cw25 {
+        width: 25px !important;
+    }
+
+    .Cw50 {
+        width: 50px !important;
+    }
+
+    .Cw65 {
+        width: 65px !important;
     }
     .Cw100{
         width:100px !important;
+    }
+.Cw350{
+        width:350px !important;
     }
 
 </style>

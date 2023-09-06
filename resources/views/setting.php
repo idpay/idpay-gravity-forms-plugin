@@ -1,22 +1,22 @@
 <?php
-self::prepareFrontEndTools();
-self::checkSubmittedUnistall();
-$settings         = self::checkSubmittedConfigDataAndLoadSetting();
-$dictionary       = self::loadDictionary('', '');
-$isActive         = get_option("gf_IDPay_configured") ? "checked='checked'" : "";
-$gatewayName      = gform_tooltip('gateway_name');
-$gatewayTitle     = sanitize_text_field(rgar($settings, 'gname')) ?
-    sanitize_text_field($settings["gname"]) : 'IDPay';
-$apiKey           = sanitize_text_field(rgar($settings, 'api_key'));
-$isActive2        = rgar($settings, 'sandbox') ? "checked='checked'" : "";
-$uninstall_button = '<input  style="font-family:tahoma !important;" type="submit" name="uninstall" value="' .
-                    $dictionary->label52 . '" class="button" onclick="return confirm(\'' .
-                    $dictionary->label53 . '\');"/>';
+Helpers::prepareFrontEndTools();
+Helpers::checkSubmittedUnistall();
+$settings     = Helpers::checkSubmittedConfigDataAndLoadSetting();
+$dictionary   = Helpers::loadDictionary('', '');
+$condition1 = ! empty($_POST);
+$condition2 = isset($_GET['subview']) && $_GET['subview'] == 'gf_IDPay' && isset($_GET['updated']);
+$isActive     = get_option("gf_IDPay_configured") ? "checked='checked'" : "";
+$gatewayName  = gform_tooltip('gateway_name');
+$title        = sanitize_text_field(rgar($settings, 'gname'));
+$gatewayTitle = $title ? sanitize_text_field($settings["gname"]) : 'IDPay';
+$apiKey       = sanitize_text_field(rgar($settings, 'api_key'));
+$isActive2    = rgar($settings, 'sandbox') ? "checked='checked'" : "";
+$uninstallHtml = '<input class="button" type="submit" name="uninstall" value="%s" onclick="return confirm(%s%s%s);" />';
+$uninstallHtml = sprintf($uninstallHtml, $dictionary->label52, "'", $dictionary->label53, "'");
+$message = "<div class='updated fade C8'>{$dictionary->label41}</div>";
 
-if (! empty($_POST)) {
-    echo '<div class="updated fade" style="padding:6px">' . $dictionary->label41 . '</div>';
-} elseif (isset($_GET['subview']) && $_GET['subview'] == 'gf_IDPay' && isset($_GET['updated'])) {
-    echo '<div class="updated fade" style="padding:6px">' . $dictionary->label41 . '</div>';
+if ($condition1 || $condition2) {
+    echo $message;
 }
 ?>
 
@@ -46,8 +46,8 @@ if (! empty($_POST)) {
                 </label>
             </th>
             <td>
-                <input style="width:350px;" type="text" id="gf_IDPay_gname" name="gf_IDPay_gname"
-                       value="<?php echo $gatewayTitle; ?>"/>
+                <input class="Cw350" type="text" id="gf_IDPay_gname"
+                       name="gf_IDPay_gname" value="<?php echo $gatewayTitle; ?>"/>
             </td>
         </tr>
         <tr>
@@ -55,7 +55,7 @@ if (! empty($_POST)) {
                 <label for="gf_IDPay_api_key"><?php echo $dictionary->label46 ?></label>
             </th>
             <td>
-                <input style="width:350px;text-align:left;direction:ltr !important" type="text" id="gf_IDPay_api_key"
+                <input class="C7" type="text" id="gf_IDPay_api_key"
                        name="gf_IDPay_api_key" value="<?php echo $apiKey ?>"/>
             </td>
         </tr>
@@ -70,8 +70,8 @@ if (! empty($_POST)) {
         </tr>
         <tr>
             <td colspan="2">
-                <input style="font-family:tahoma !important;" type="submit" class="button-primary"
-                       name="gf_IDPay_submit" value="<?php echo $dictionary->label49 ?>"/>
+                <input type="submit" class="button" name="gf_IDPay_submit"
+                       value="<?php echo $dictionary->label49 ?>"/>
             </td>
         </tr>
     </table>
@@ -83,7 +83,7 @@ if (! empty($_POST)) {
         <div class="delete-alert alert_red">
             <h3><i class="fa fa-exclamation-triangle gf_invalid"></i><?php echo $dictionary->label50 ?></h3>
             <div class="gf_delete_notice"><?php echo $dictionary->label51 ?></div>
-            <?php echo apply_filters("gform_IDPay_uninstall_button", $uninstall_button); ?>
+            <?php echo apply_filters("gform_IDPay_uninstall_button", $uninstallHtml); ?>
         </div>
     <?php } ?>
 </form>

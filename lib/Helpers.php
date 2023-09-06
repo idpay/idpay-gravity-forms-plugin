@@ -470,7 +470,7 @@ class Helpers
             'label49'            => translate("ذخیره تنظیمات", self::$domain),
             'label50'            => translate("غیر فعالسازی افزونه دروازه پرداخت IDPay", self::$domain),
             'label51'            => translate("تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد", self::$domain),
-            'label52'            => translate("غیر فعال سازی درگاه IDPay", self::$domain),
+            'label52'            => translate("غیر فعال سازی درگاه", self::$domain),
             'label53'            => translate("تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد . آیا همچنان مایل به غیر فعالسازی میباشید؟", self::$domain),
             'label54'            => translate("شما هیچ تراکنشی در این فید نداشته اید", self::$domain),
             'label55'            => translate("تنظیم مجدد درگاه", self::$domain),
