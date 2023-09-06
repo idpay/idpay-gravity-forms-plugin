@@ -1,71 +1,73 @@
 <?php
 //Section Load Necessary Variables
-self::prepareFrontEndTools();
-self::setStylePage();
-$feedId                = ! rgempty("IDPay_setting_id") ? rgpost("IDPay_setting_id") : absint(rgget("id"));
-$idpayConfig           = ! empty($feedId) ? IDPayDB::getFeed($feedId) : null;
-$formId                = ! empty(rgget('fid')) ? rgget('fid') : ( ! empty($idpayConfig) ? $idpayConfig["form_id"] : null );
-$form                  = !empty($formId) ? IDPayDB::getForm($formId) : null ;
-$formTitle = !empty($form) ? $form['form_title'] : '';
-$dictionary            = self::loadDictionary($feedId, $formTitle);
+Helpers::prepareFrontEndTools();
+Helpers::setStylePage();
 $isSubmitDataForUpdate = false;
 $gfStatusBarMessage    = '';
+$fId                   = rgget('fid');
+$settingId             = rgempty("IDPay_setting_id");
+$feedId                = ! $settingId ? rgpost("IDPay_setting_id") : absint(rgget("id"));
+$config                = ! empty($feedId) ? IDPayDB::getFeed($feedId) : null;
+$formId                = Helpers::calcFormId($fId, $config);
+$form                  = ! empty($formId) ? IDPayDB::getForm($formId) : null;
+$formTitle             = ! empty($form) ? $form['form_title'] : '';
+$dictionary            = Helpers::loadDictionary($feedId, $formTitle);
 //End Section
 
 // Section Check Updated Fields And Updating
 if (! rgempty("gf_IDPay_submit")) {
     check_admin_referer("update", "gf_IDPay_feed");
-    $idpayConfig = self::readDataFromRequest($idpayConfig);
-    //$idpayConfig['meta']   = self::makeSafeDataForDb( $idpayConfig );
-    $gfStatusBarMessage    = self::generateStatusBarMessage($formId);
+    $config                = Helpers::readDataFromRequest($config);
+    $gfStatusBarMessage    = Helpers::generateStatusBarMessage($formId);
     $isSubmitDataForUpdate = true;
-    self::updateConfigAndRedirectPage($feedId, $idpayConfig);
+    Helpers::updateConfigAndRedirectPage($feedId, $config);
 }
 // End Section
 
 //Section Check Security And Validate
 $form                = ! empty($formId) ? RGFormsModel::get_form_meta($formId) : [];
-$setUpdatedMessage   = rgget('updated') == 'true' ? self::makeUpdateMessageBar($feedId) : false;
+$setUpdatedMessage   = rgget('updated') == 'true' && Helpers::makeUpdateMessageBar($feedId);
 $menu_items          = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($formId), $formId);
 $formMeta            = GFFormsModel::get_form_meta($formId);
-$hasPriceFieldInForm = self::checkSetPriceForForm($form, $formId);
+$hasPriceFieldInForm = Helpers::checkSetPriceForForm($form, $formId);
 // End Section
 
 // LoadConfigValues
-$isPostCreateSuccessPay         = self::dataGet($idpayConfig, 'meta.addon.post_create.success_payment');
+$gfSysFieldName_CustomerName   = 'IDPay_payment_name';
+$gfSysFieldName_CustomerEmail  = 'IDPay_payment_email';
+$gfSysFieldName_CustomerDesc   = 'IDPay_payment_description';
+$gfSysFieldName_CustomerMobile = 'IDPay_payment_mobile';
+$defaultDescription            = "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
+$isPostCreateSuccessPay        = Helpers::dataGet($config, 'meta.addon.post_create.success_payment');
+$isPostUpdateSuccessPay        = Helpers::dataGet($config, 'meta.addon.post_update.success_payment');
+$isUserRegSuccessPay           = Helpers::dataGet($config, 'meta.addon.user_registration.success_payment');
+$isUserRegNoPay                = Helpers::dataGet($config, 'meta.addon.user_registration.no_payment');
+$isUseCustomConfirmation       = Helpers::dataGet($config, 'meta.confirmation');
+$description                   = Helpers::dataGet($config, 'meta.description');
+$selectedCustomerName          = Helpers::dataGet($config, 'meta.payment_name');
+$selectedCustomerEmail         = Helpers::dataGet($config, 'meta.payment_email');
+$selectedCustomerDesc          = Helpers::dataGet($config, 'meta.payment_description');
+$selectedCustomerMobile        = Helpers::dataGet($config, 'meta.payment_mobile');
+$customerName                  = Helpers::getVal($form, $gfSysFieldName_CustomerName, $selectedCustomerName);
+$customerEmail                 = Helpers::getVal($form, $gfSysFieldName_CustomerEmail, $selectedCustomerEmail);
+$customerDesc                  = Helpers::getVal($form, $gfSysFieldName_CustomerDesc, $selectedCustomerDesc);
+$customerMobile                = Helpers::getVal($form, $gfSysFieldName_CustomerMobile, $selectedCustomerMobile);
+
 $isCheckedPostCreateSuccessPay  = $isPostCreateSuccessPay == true ? "checked='checked'" : "";
-$isPostUpdateSuccessPay         = self::dataGet($idpayConfig, 'meta.addon.post_update.success_payment');
 $isCheckedPostUpdateSuccessPay  = $isPostUpdateSuccessPay == true ? "checked='checked'" : "";
-$isUserRegSuccessPay            = self::dataGet($idpayConfig, 'meta.addon.user_registration.success_payment');
 $isCheckedUserRegSuccessPay     = $isUserRegSuccessPay == true ? "checked='checked'" : "";
-$isUserRegNoPay                 = self::dataGet($idpayConfig, 'meta.addon.user_registration.no_payment');
 $isCheckedUserRegNoPay          = $isUserRegNoPay == true ? "checked='checked'" : "";
-$isUseCustomConfirmation        = self::dataGet($idpayConfig, 'meta.confirmation');
 $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
-$description                    = self::dataGet($idpayConfig, "meta.description");
-$defaultDescription             = "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
 $descriptionText                = ! empty($description) ? $description : $defaultDescription;
-$gfSysFieldName_CustomerName    = 'IDPay_payment_name';
-$selectedCustomerName           = $idpayConfig["meta"]["payment_name"] ?? '';
-$customerName                   = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerName, $selectedCustomerName);
-$gfSysFieldName_CustomerEmail   = 'IDPay_payment_email';
-$selectedCustomerEmail          = $idpayConfig["meta"]["payment_email"] ?? '';
-$customerEmail                  = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerEmail, $selectedCustomerEmail);
-$gfSysFieldName_CustomerDesc    = 'IDPay_payment_description';
-$selectedCustomerDesc           = $idpayConfig["meta"]["payment_description"] ?? '';
-$customerDesc                   = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerDesc, $selectedCustomerDesc);
-$gfSysFieldName_CustomerMobile  = 'IDPay_payment_mobile';
-$selectedCustomerMobile         = $idpayConfig["meta"]["payment_mobile"] ?? '';
-$customerMobile                 = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerMobile, $selectedCustomerMobile);
-do_action(self::$author . '_gform_gateway_config', $idpayConfig, $form);
-do_action(self::$author . '_gform_IDPay_config', $idpayConfig, $form);
+do_action(Helpers::$author . '_gform_gateway_config', $config, $form);
+do_action(Helpers::$author . '_gform_IDPay_config', $config, $form);
 // End Section : LoadConfigValues
 
 /* Section FeedFormSelect
   - load all forms to select for define or update this feed
   - And Manage show or hide for display in form for user
 */
-$gfFormFeedSelect       = self::generateFeedSelectForm($formId);
+$gfFormFeedSelect       = Helpers::generateFeedSelectForm($formId);
 $VisibleFieldFormSelect = $gfFormFeedSelect->visible;
 $VisibleConfigForm      = $gfFormFeedSelect->visible == '' ? 'style="display:none !important"' : '';
 $optionsForms           = $gfFormFeedSelect->options;

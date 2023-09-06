@@ -265,17 +265,6 @@ class Helpers
         return false;
     }
 
-//  public static function makeSafeDataForDb( $idpayConfig ) {
-//      $safeData = [];
-//      $metas    = self::dataGet( $idpayConfig, 'meta' );
-//      foreach ( $metas as $key => $val ) {
-//          $value            = ! is_array( $val ) ? sanitize_text_field( $val ) : array_map( 'sanitize_text_field', $val );
-//          $safeData[ $key ] = $value;
-//      }
-//
-//      return $safeData;
-//  }
-
     public static function updateConfigAndRedirectPage($feedId, $data)
     {
         $idpayConfig = apply_filters(self::$author . '_gform_gateway_save_config', $data);
@@ -348,7 +337,7 @@ class Helpers
         return true;
     }
 
-    public static function loadSavedOrDefaultValue($form, $fieldName, $selectedValue)
+    public static function getVal($form, $fieldName, $selectedValue)
     {
 
         $fields = null;
@@ -863,5 +852,8 @@ class Helpers
         return "{$baseDir}/{$pluginDir}";
     }
 
-
+    public static function calcFormId($fId, $config)
+    {
+        return ! empty($fId) ? $fId : ( ! empty($config) ? $config["form_id"] : null );
+    }
 }
