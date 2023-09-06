@@ -472,11 +472,14 @@ class Helpers
             'label51'            => translate("تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد", self::$domain),
             'label52'            => translate("غیر فعال سازی درگاه", self::$domain),
             'label53'            => translate("تذکر : بعد از غیرفعالسازی تمامی اطلاعات مربوط به IDPay حذف خواهد شد . آیا همچنان مایل به غیر فعالسازی میباشید؟", self::$domain),
-            'label54'            => translate("شما هیچ تراکنشی در این فید نداشته اید", self::$domain),
+
             'label55'            => translate("تنظیم مجدد درگاه", self::$domain),
             'add'            => translate("افزودن جدید", self::$domain),
+            'back'            => translate("بازگشت", self::$domain),
             'feedNotExists'            => translate("شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید", self::$domain),
+            'transNotExists'            => translate("شما هیچ تراکنشی در این فید نداشته اید", self::$domain),
             'labelCountFeed'     => translate("مجموع تعداد فید ها : ", self::$domain),
+            'labelCountTrans'     => translate("مجموع تعداد تراکنش ها : ", self::$domain),
             'labelSelectGravity' => translate("از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain),
             'labelNotSupprt'     => sprintf(__("درگاه IDPay نیاز به گرویتی فرم نسخه %s دارد. برای بروز رسانی هسته گرویتی فرم به %s مراجعه نمایید.", self::$domain), $feedId, $formName),
         ];

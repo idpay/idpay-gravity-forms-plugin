@@ -5,7 +5,7 @@ class IDPayDB
     public static $author = "IDPay";
 
     public const FEEDS = 'getFeeds';
-    public const METHOD_TRANSACTIONS = 'getTransactions';
+    public const TRANSACTIONS = 'getTransactions';
 
     public const QUERY_TRANSACTIONS = 'QUERY_TRANSACTIONS';
     public const QUERY_ANALYTICS = 'QUERY_ANALYTICS';
@@ -292,6 +292,7 @@ class IDPayDB
 
     public static function getTransactions($pagination)
     {
+		return [];
     }
 
     public static function getWithPaginate($methodName, $filters)

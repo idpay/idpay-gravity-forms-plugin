@@ -46,7 +46,7 @@ $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['C']  : '' ;
                     <option value='delete'><?php echo $dictionary->label25 ?></option>
                 </select>
                 <input type="submit" class="button" value="اعمال"/>
-                <button class='button' disabled style="color : black !important;">
+                <button class='button C6'>
                     <?php echo $dictionary->labelCountFeed . $feeds->query->count; ?>
                 </button>
             </div>
