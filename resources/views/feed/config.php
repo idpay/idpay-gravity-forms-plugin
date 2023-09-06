@@ -2,70 +2,70 @@
 //Section Load Necessary Variables
 self::prepareFrontEndTools();
 self::setStylePage();
-$feedId                = ! rgempty( "IDPay_setting_id" ) ? rgpost( "IDPay_setting_id" ) : absint( rgget( "id" ) );
-$idpayConfig           = ! empty( $feedId ) ? IDPayDB::getFeed( $feedId ) : null;
-$formId                = ! empty( rgget( 'fid' ) ) ? rgget( 'fid' ) : ( ! empty( $idpayConfig ) ? $idpayConfig["form_id"] : null );
-$form                  = !empty($formId) ? IDPayDB::getForm( $formId ) : null ;
+$feedId                = ! rgempty("IDPay_setting_id") ? rgpost("IDPay_setting_id") : absint(rgget("id"));
+$idpayConfig           = ! empty($feedId) ? IDPayDB::getFeed($feedId) : null;
+$formId                = ! empty(rgget('fid')) ? rgget('fid') : ( ! empty($idpayConfig) ? $idpayConfig["form_id"] : null );
+$form                  = !empty($formId) ? IDPayDB::getForm($formId) : null ;
 $formTitle = !empty($form) ? $form['form_title'] : '';
-$dictionary            = self::loadDictionary( $feedId, $formTitle );
+$dictionary            = self::loadDictionary($feedId, $formTitle);
 $isSubmitDataForUpdate = false;
 $gfStatusBarMessage    = '';
 //End Section
 
 // Section Check Updated Fields And Updating
-if ( ! rgempty( "gf_IDPay_submit" ) ) {
-	check_admin_referer( "update", "gf_IDPay_feed" );
-	$idpayConfig = self::readDataFromRequest( $idpayConfig );
-	//$idpayConfig['meta']   = self::makeSafeDataForDb( $idpayConfig );
-	$gfStatusBarMessage    = self::generateStatusBarMessage( $formId );
-	$isSubmitDataForUpdate = true;
-	self::updateConfigAndRedirectPage( $feedId, $idpayConfig );
+if (! rgempty("gf_IDPay_submit")) {
+    check_admin_referer("update", "gf_IDPay_feed");
+    $idpayConfig = self::readDataFromRequest($idpayConfig);
+    //$idpayConfig['meta']   = self::makeSafeDataForDb( $idpayConfig );
+    $gfStatusBarMessage    = self::generateStatusBarMessage($formId);
+    $isSubmitDataForUpdate = true;
+    self::updateConfigAndRedirectPage($feedId, $idpayConfig);
 }
 // End Section
 
 //Section Check Security And Validate
-$form                = ! empty( $formId ) ? RGFormsModel::get_form_meta( $formId ) : [];
-$setUpdatedMessage   = rgget( 'updated' ) == 'true' ? self::makeUpdateMessageBar( $feedId ) : false;
-$menu_items          = apply_filters( 'gform_toolbar_menu', GFForms::get_toolbar_menu_items( $formId ), $formId );
-$formMeta            = GFFormsModel::get_form_meta( $formId );
-$hasPriceFieldInForm = self::checkSetPriceForForm( $form, $formId );
+$form                = ! empty($formId) ? RGFormsModel::get_form_meta($formId) : [];
+$setUpdatedMessage   = rgget('updated') == 'true' ? self::makeUpdateMessageBar($feedId) : false;
+$menu_items          = apply_filters('gform_toolbar_menu', GFForms::get_toolbar_menu_items($formId), $formId);
+$formMeta            = GFFormsModel::get_form_meta($formId);
+$hasPriceFieldInForm = self::checkSetPriceForForm($form, $formId);
 // End Section
 
 // LoadConfigValues
-$isPostCreateSuccessPay         = self::dataGet( $idpayConfig, 'meta.addon.post_create.success_payment' );
+$isPostCreateSuccessPay         = self::dataGet($idpayConfig, 'meta.addon.post_create.success_payment');
 $isCheckedPostCreateSuccessPay  = $isPostCreateSuccessPay == true ? "checked='checked'" : "";
-$isPostUpdateSuccessPay         = self::dataGet( $idpayConfig, 'meta.addon.post_update.success_payment' );
+$isPostUpdateSuccessPay         = self::dataGet($idpayConfig, 'meta.addon.post_update.success_payment');
 $isCheckedPostUpdateSuccessPay  = $isPostUpdateSuccessPay == true ? "checked='checked'" : "";
-$isUserRegSuccessPay            = self::dataGet( $idpayConfig, 'meta.addon.user_registration.success_payment' );
+$isUserRegSuccessPay            = self::dataGet($idpayConfig, 'meta.addon.user_registration.success_payment');
 $isCheckedUserRegSuccessPay     = $isUserRegSuccessPay == true ? "checked='checked'" : "";
-$isUserRegNoPay                 = self::dataGet( $idpayConfig, 'meta.addon.user_registration.no_payment' );
+$isUserRegNoPay                 = self::dataGet($idpayConfig, 'meta.addon.user_registration.no_payment');
 $isCheckedUserRegNoPay          = $isUserRegNoPay == true ? "checked='checked'" : "";
-$isUseCustomConfirmation        = self::dataGet( $idpayConfig, 'meta.confirmation' );
+$isUseCustomConfirmation        = self::dataGet($idpayConfig, 'meta.confirmation');
 $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
-$description                    = self::dataGet( $idpayConfig, "meta.description" );
+$description                    = self::dataGet($idpayConfig, "meta.description");
 $defaultDescription             = "پرداخت برای فرم شماره {form_id} با عنوان فرم {form_title}";
-$descriptionText                = ! empty( $description ) ? $description : $defaultDescription;
+$descriptionText                = ! empty($description) ? $description : $defaultDescription;
 $gfSysFieldName_CustomerName    = 'IDPay_payment_name';
 $selectedCustomerName           = $idpayConfig["meta"]["payment_name"] ?? '';
-$customerName                   = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerName, $selectedCustomerName );
+$customerName                   = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerName, $selectedCustomerName);
 $gfSysFieldName_CustomerEmail   = 'IDPay_payment_email';
 $selectedCustomerEmail          = $idpayConfig["meta"]["payment_email"] ?? '';
-$customerEmail                  = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerEmail, $selectedCustomerEmail );
+$customerEmail                  = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerEmail, $selectedCustomerEmail);
 $gfSysFieldName_CustomerDesc    = 'IDPay_payment_description';
 $selectedCustomerDesc           = $idpayConfig["meta"]["payment_description"] ?? '';
-$customerDesc                   = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerDesc, $selectedCustomerDesc );
+$customerDesc                   = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerDesc, $selectedCustomerDesc);
 $gfSysFieldName_CustomerMobile  = 'IDPay_payment_mobile';
 $selectedCustomerMobile         = $idpayConfig["meta"]["payment_mobile"] ?? '';
-$customerMobile                 = self::loadSavedOrDefaultValue( $form, $gfSysFieldName_CustomerMobile, $selectedCustomerMobile );
-do_action( self::$author . '_gform_gateway_config', $idpayConfig, $form );
-do_action( self::$author . '_gform_IDPay_config', $idpayConfig, $form );
+$customerMobile                 = self::loadSavedOrDefaultValue($form, $gfSysFieldName_CustomerMobile, $selectedCustomerMobile);
+do_action(self::$author . '_gform_gateway_config', $idpayConfig, $form);
+do_action(self::$author . '_gform_IDPay_config', $idpayConfig, $form);
 // End Section : LoadConfigValues
 
 /* Section FeedFormSelect
   - load all forms to select for define or update this feed
   - And Manage show or hide for display in form for user
 */
-$gfFormFeedSelect       = self::generateFeedSelectForm( $formId );
+$gfFormFeedSelect       = self::generateFeedSelectForm($formId);
 $VisibleFieldFormSelect = $gfFormFeedSelect->visible;
 $VisibleConfigForm      = $gfFormFeedSelect->visible == '' ? 'style="display:none !important"' : '';
 $optionsForms           = $gfFormFeedSelect->options;
@@ -75,20 +75,20 @@ $optionsForms           = $gfFormFeedSelect->options;
 
 <div class="wrap gforms_edit_form gf_browser_gecko"></div>
 <h2 class="gf_admin_page_title">
-	<?php echo $dictionary->label1 ?>
-	<?php if ( ! empty( $formId ) ) { ?>
+    <?php echo $dictionary->label1 ?>
+    <?php if (! empty($formId)) { ?>
         <span class="gf_admin_page_subtitle">
             <span class="gf_admin_page_formid"><?php echo $dictionary->label3 ?></span>
             <span class="gf_admin_page_formid"><?php echo $dictionary->label2 ?></span>
         </span>
-	<?php } ?>
+    <?php } ?>
 </h2>
 
 <a class="button add-new-h2" href="admin.php?page=gf_settings&subview=gf_IDPay"
    style="margin:8px 9px;"><?php echo $dictionary->label4 ?>
 </a>
-<?php if ( $isSubmitDataForUpdate ) {
-	echo $gfStatusBarMessage;
+<?php if ($isSubmitDataForUpdate) {
+    echo $gfStatusBarMessage;
 } ?>
 
 <div id="gform_tab_group" class="gform_tab_group vertical_tabs">
@@ -97,7 +97,7 @@ $optionsForms           = $gfFormFeedSelect->options;
             <div id="form_settings" class="gform_panel gform_panel_form_settings">
 
                 <form method="post" action="" id="gform_form_settings">
-					<?php wp_nonce_field( "update", "gf_IDPay_feed" ) ?>
+                    <?php wp_nonce_field("update", "gf_IDPay_feed") ?>
                     <input type="hidden" value="<?php echo $feedId ?>" name="IDPay_setting_id"/>
 
                     <!-- Form Select Form For Feed -->
@@ -117,10 +117,10 @@ $optionsForms           = $gfFormFeedSelect->options;
                     <!-- Form Select Form For Feed -->
 
                     <!-- Form Other Configs Fields -->
-					<?php if ( empty( $hasPriceFieldInForm ) ) { ?>
+                    <?php if (empty($hasPriceFieldInForm)) { ?>
                         <div class="gf_IDPay_invalid_form gfIDPayInvalidProduct" id="gf_IDPay_invalid_product_form">
-							<?php echo $dictionary->label7 ?></div>
-					<?php } else { ?>
+                            <?php echo $dictionary->label7 ?></div>
+                    <?php } else { ?>
                         <table <?php echo $VisibleConfigForm ?>
                                 class="form-table gforms_form_settings"
                                 id="IDPay_field_group">
@@ -131,7 +131,7 @@ $optionsForms           = $gfFormFeedSelect->options;
                                 <td class="IDPay_customer_fields_name">
                                     <br><span class="description"><?php echo $dictionary->labelSelectGravity ?></span>
                                     <br><br>
-									<?php echo $customerName ?>
+                                    <?php echo $customerName ?>
                                     <hr>
                                 </td>
                             </tr>
@@ -141,7 +141,7 @@ $optionsForms           = $gfFormFeedSelect->options;
                                 <td class="IDPay_customer_fields_email">
                                     <br><span class="description"><?php echo $dictionary->labelSelectGravity ?></span>
                                     <br><br>
-									<?php echo $customerEmail; ?>
+                                    <?php echo $customerEmail; ?>
                                     <hr>
                                 </td>
                             </tr>
@@ -151,7 +151,7 @@ $optionsForms           = $gfFormFeedSelect->options;
                                 <td class="IDPay_customer_fields_desc">
                                     <br><span class="description"><?php echo $dictionary->labelSelectGravity ?></span>
                                     <br><br>
-									<?php echo $customerDesc; ?>
+                                    <?php echo $customerDesc; ?>
                                     <hr>
                                 </td>
                             </tr>
@@ -161,7 +161,7 @@ $optionsForms           = $gfFormFeedSelect->options;
                                 <td class="IDPay_customer_fields_mobile">
                                     <br><span class="description"><?php echo $dictionary->labelSelectGravity ?></span>
                                     <br><br>
-									<?php echo $customerMobile; ?>
+                                    <?php echo $customerMobile; ?>
                                     <hr>
                                 </td>
                             </tr>
@@ -242,7 +242,7 @@ $optionsForms           = $gfFormFeedSelect->options;
                             </tbody>
                         </table>
                         <!-- Form Other Configs Fields -->
-					<?php } ?>
+                    <?php } ?>
                 </form>
             </div>
         </div>

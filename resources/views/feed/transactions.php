@@ -3,16 +3,14 @@ self::prepareFrontEndTools();
 self::checkSupportedGravityVersion();
 
 $dictionary                 = self::loadDictionary( '', '' );
-$addNewHtml                 = "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>افزودن جدید</a>";
-$addOption                  = get_option( "gf_IDPay_configured" ) == true ? $addNewHtml : '';
-$checkSettingsNotExistsHtml = "<tr><td colspan='5' style='padding:20px;'>{$dictionary->label54}</td></tr>";
+$checkTransactionNotExistsHtml = "<tr><td colspan='5' style='padding:20px;'>{$dictionary->label54}</td></tr>";
 
 /* Load Data And Pagination Section */
 $filters = (object) ['formId' => rgget('id') ?? 0];
 $pagination            = self::loadPagination( IDPayDB::METHOD_TRANSACTIONS , $filters );
 $settings              = IDPayDB::getFeed( $pagination );
 $checkSettingsExits    = is_array( $settings ) && sizeof( $settings ) > 0;
-$checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' : $checkSettingsNotExistsHtml;
+$checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' : $checkTransactionNotExistsHtml;
 /* Load Data And Pagination Section */
 
 ?>
@@ -20,7 +18,6 @@ $checkSettingsNotExits = is_array( $settings ) && sizeof( $settings ) > 0 ? '' :
 <div class="wrap">
     <h2>
 		<?php echo $dictionary->label22 ?>
-		<?php echo $addOption ?>
         <a class="button button-primary" style="text-align: center;display: inline-block;margin: 0;"
            href="admin.php?page=gf_settings&subview=gf_IDPay"><?php echo $dictionary->label26 ?></a>
     </h2>
