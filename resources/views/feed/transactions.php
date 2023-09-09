@@ -34,21 +34,41 @@ $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['A']  : '' ;
         <table class="wp-list-table widefat fixed striped toplevel_page_gf_edit_forms">
             <thead>
             <tr>
-                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label29 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->labelRow ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label55 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label56 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label57 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label58 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label59 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label60 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label61 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label62 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label63 ?></th>
+                <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label64 ?></th>
             </tr>
             </thead>
             <tbody class="list:user user-list">
             <?php
             if ($checkDataExists) {
-                foreach ($data as $setting) {
-                    $settingId     = $setting["id"];
-                    $settingFormId = $setting["form_id"];
-                    ?>
+                $counter = 1 ;
+                foreach ($data as $row) { ?>
                     <tr class='author-self status-inherit'>
-                        <td><?php echo $settingId ?></td>
-                        <td><strong></strong></td>
+                        <td><?php echo $counter ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'id', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'form_id', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'transaction_id', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'payment_amount', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'currency', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'payment_status', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'payment_method', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'source_url', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'date_created', '-') ?></td>
+                        <td><?php echo Helpers::dataGet($row, 'payment_date', '-') ?></td>
                     </tr>
-                <?php }
+
+                    <?php
+                    $counter = $counter + 1 ;
+                }
             } ?>
             <!-- End ForEach -->
             <?php echo $checkSettingsNotExits; ?>

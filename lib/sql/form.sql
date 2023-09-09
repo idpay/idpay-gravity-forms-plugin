@@ -1,0 +1,1 @@
+SELECT title as form_title FROM %s WHERE id=%s

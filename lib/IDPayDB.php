@@ -18,6 +18,12 @@ class IDPayDB
     public const QUERY_FEEDS = 'QUERY_FEEDS';
     public const QUERY_FORM = 'QUERY_FORM';
 
+    public static function getSqlQuery($filename)
+    {
+        $basePath = plugin_dir_url(__FILE__). 'sql';
+        return file_get_contents("{$basePath}/{$filename}.sql");
+    }
+
 
 
     public static function prepareQuery($type, $filters)
@@ -28,56 +34,77 @@ class IDPayDB
 
         switch ($type) {
             case self::QUERY_ANALYTICS:
-                return " SELECT status, sum(payment_amount) revenue, count(id) transactions 
-						                            FROM {$transactionTableName}
-												    WHERE form_id={$filters->formId} 
-										              AND status='active' 
-										              AND is_fulfilled=1 
-										              AND payment_method='IDPay'
-										           GROUP BY status";
+                return sprintf(
+                    self::getSqlQuery('analytics'),
+                    $transactionTableName,
+                    $filters->formId
+                );
 
             case self::QUERY_COUNT_FEED:
-                return " SELECT count(*) as count 
- 								   					FROM {$IDPayTable}";
+                return sprintf(
+                    self::getSqlQuery('count_feed'),
+                    $IDPayTable
+                );
 
             case self::QUERY_FEED_BY_ID:
-                return "SELECT * 
-												  FROM {$IDPayTable} 
-												  WHERE form_id={$filters->formId}";
+                return sprintf(
+                    self::getSqlQuery('feed_by_id'),
+                    $IDPayTable,
+                    $filters->formId
+                );
 
             case self::QUERY_DELETE_FEED:
-                return "DELETE FROM {$IDPayTable} WHERE id={$filters->id}";
+                return sprintf(
+                    self::getSqlQuery('delete_feed'),
+                    $IDPayTable,
+                    $filters->id
+                );
 
             case self::QUERY_FEED:
-                return "SELECT id, form_id, is_active, meta FROM {$IDPayTable} WHERE id={$filters->id}";
+                return sprintf(
+                    self::getSqlQuery('feed'),
+                    $IDPayTable,
+                    $filters->id
+                );
 
             case self::QUERY_FEEDS:
-                return "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
-							                       FROM (
-							                             SELECT * 
-							                             FROM {$IDPayTable} 
-							                                 LIMIT {$filters->limitRowsMin},{$filters->limitRowsMax} 
-							                           ) s
-							                       INNER JOIN {$formTable} f 
-							                           ON s.form_id = f.id  
-												   ORDER BY s.id";
+                return sprintf(
+                    self::getSqlQuery('feeds'),
+                    $IDPayTable,
+                    $filters->limitRowsMin,
+                    $filters->limitRowsMax,
+                    $formTable
+                );
 
             case self::QUERY_FORM:
-                return "SELECT title as form_title FROM {$formTable} WHERE id={$filters->formId}";
+                return sprintf(
+                    self::getSqlQuery('form'),
+                    $formTable,
+                    $filters->formId
+                );
 
             case self::QUERY_DELETE_IDPAY:
-                return "DROP TABLE IF EXISTS {$IDPayTable}";
+                return sprintf(
+                    self::getSqlQuery('delete_idpay'),
+                    $IDPayTable
+                );
 
             case self::QUERY_COUNT_TRANSACTION:
-                return " SELECT count(*) as count 
-						                                   FROM {$transactionTableName} 
-						                                   WHERE form_id={$filters->formId} 
-							                               AND payment_method='IDPay'";
+                return sprintf(
+                    self::getSqlQuery('count_transactions'),
+                    $transactionTableName,
+                    $filters->formId
+                );
 
 
             case self::QUERY_TRANSACTIONS:
-                return " SELECT *****  
- 						 FROM {$transactionTableName} ";
+                return sprintf(
+                    self::getSqlQuery('transactions'),
+                    $transactionTableName,
+                    $filters->formId,
+                    $filters->limitRowsMin,
+                    $filters->limitRowsMax
+                );
         }
     }
 
@@ -207,7 +234,7 @@ class IDPayDB
         }
     }
 
-    public static function getFeeds($pagination)
+    public static function getFeeds($pagination, $filters)
     {
 
         $limitRowsMin = ! empty($pagination->query->min) ? $pagination->query->min : 0;
@@ -283,27 +310,43 @@ class IDPayDB
 
     public static function getForm($formId)
     {
-        $type  = self::QUERY_FORM;
-        $filters = (object)[ 'formId' => $formId];
-        $query = self::prepareQuery($type, $filters);
-        $results =  self::runQuery($query, $type);
+        $type    = self::QUERY_FORM;
+        $filters = (object) [ 'formId' => $formId ];
+        $query   = self::prepareQuery($type, $filters);
+        $results = self::runQuery($query, $type);
+
         return $results[0];
     }
 
-    public static function getTransactions($pagination)
+
+    public static function getTransactions($pagination, $filters)
     {
-		return [];
+
+        $limitRowsMin = ! empty($pagination->query->min) ? $pagination->query->min : 0;
+        $limitRowsMax = ! empty($pagination->query->max) ? $pagination->query->max : $pagination->query->count;
+
+        $type    = self::QUERY_TRANSACTIONS;
+        $filters = (object) [
+            'limitRowsMin' => $limitRowsMin,
+            'limitRowsMax' => $limitRowsMax,
+            'formId' => $filters->formId
+        ];
+        $query   = self::prepareQuery($type, $filters);
+        $results = self::runQuery($query, $type);
+
+        return ! empty($results) == true ? $results : [];
     }
+
 
     public static function getWithPaginate($methodName, $filters)
     {
         $pagination = self::loadPagination($methodName, $filters);
-        $data = self::loadData($methodName, $pagination);
+        $data       = self::loadData($methodName, $pagination, $filters);
 
         return (object) [
             'query' => (object) [
-                'min'   => $pagination->query->min,
-                'max'   => $pagination->query->max,
+                'min'     => $pagination->query->min,
+                'max'     => $pagination->query->max,
                 'count'   => $pagination->query->count,
             ],
             'data' => $data,
@@ -311,9 +354,9 @@ class IDPayDB
         ];
     }
 
-    public static function loadData($methodName, $pagination)
+    public static function loadData($methodName, $pagination, $filters = [])
     {
-        return self::{$methodName}($pagination);
+        return self::{$methodName}($pagination, $filters);
     }
 
     public static function loadPagination($methodName, $filters)
