@@ -28,13 +28,13 @@ class IDPayPayment extends Helpers
             $amount = self::dataGet($data, 'amount');
             date_default_timezone_set("Asia/Tehran");
 
-            $entry["payment_amount"]   = (float) $amount;
             $entry["payment_date"]     = date_create()->format('Y-m-d H:i:s');
-            $entry["transaction_id"]   = null;
+            $entry["payment_amount"]   = (float) $amount;
             $entry["payment_status"]   = "Processing";
             $entry["payment_method"]   = "IDPay";
             $entry["is_fulfilled"]     = 0;
-            $entry["transaction_type"] = self::dataGet($data, 'gravityType');
+            $entry["transaction_id"]   = null;
+            $entry["transaction_type"] = null;
             GFAPI::update_entry($entry);
             $entry      = GFPersian_Payments::get_entry($entryId);
             $ReturnPath = self::Return_URL($formId, $entryId);
@@ -104,8 +104,6 @@ class IDPayPayment extends Helpers
         }
         $feed        = self::getFeed($form);
         $feedId      = $feed['id'];
-        $feedType    = self::dataGet($feed, 'meta.type') == "subscription" ? "subscription" : "payment";
-        $gravityType = self::getGravityTransactionTypeCode($feedType);
         $gatewayName = self::getGatewayName();
         $amount      = self::checkout($form, $entry);
 
@@ -113,10 +111,10 @@ class IDPayPayment extends Helpers
         gform_update_meta($entryId, 'payment_type', 'form');
         gform_update_meta($entryId, 'payment_gateway', $gatewayName);
 
-        return self::process($amount, $gravityType, $feed, $entry, $form, $ajax);
+        return self::process($amount, $feed, $entry, $form, $ajax);
     }
 
-    public static function process($amount, $gravityType, $feed, $entry, $form, $ajax)
+    public static function process($amount, $feed, $entry, $form, $ajax)
     {
         $formId = $form['id'];
 
@@ -136,7 +134,6 @@ class IDPayPayment extends Helpers
                 'transactionType' => 'Purchase',
                 'data'            => [
                     'amount'      => self::fixPrice($amount, $form, $entry),
-                    'gravityType' => $gravityType,
                     'mobile'      => self::dataGet($data, 'mobile'),
                     'name'        => self::dataGet($data, 'name'),
                     'mail'        => self::dataGet($data, 'mail'),
@@ -150,8 +147,6 @@ class IDPayPayment extends Helpers
     {
         $formId      = $form['id'];
         $feed        = self::getFeed($form);
-        $feedType    = self::dataGet($feed, 'meta.type') == "subscription" ? "subscription" : "payment";
-        $gravityType = self::getGravityTransactionTypeCode($feedType);
 
         $amount = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_price_' . $formId);
         $amount = apply_filters(self::$author . "_gform_custom_gateway_price_{$formId}", apply_filters(self::$author . "_gform_custom_gateway_price", $amount, $form, $entry), $form, $entry);
@@ -175,7 +170,7 @@ class IDPayPayment extends Helpers
         gform_update_meta($entryId, 'payment_gateway', self::getGatewayName());
         gform_update_meta($entryId, 'payment_type', 'custom');
 
-        return self::process($amount, $gravityType, $feed, $entry, $form, $ajax);
+        return self::process($amount, $feed, $entry, $form, $ajax);
     }
 
     public static function processFree($entry, $formId, $ajax)

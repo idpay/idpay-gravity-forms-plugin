@@ -13,11 +13,11 @@ class IDPayVerify extends Helpers
         $entryId       = self::dataGet($entry, 'id');
         $user          = self::loadUser();
 
-        $entry["transaction_type"] = self::getTransactionType($config);
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]   = $transactionId;
         $entry["payment_status"]   = 'Failed';
-        $entry["payment_amount"]   = 0;
+        $entry["transaction_type"] = null;
+        $entry["payment_amount"]   = $pricing->money;
         $entry["is_fulfilled"]     = 0;
         GFAPI::update_entry($entry);
 
@@ -147,7 +147,7 @@ class IDPayVerify extends Helpers
         $entry["transaction_id"]   = $transactionId;
         $entry["transaction_type"] = self::getTransactionType($config);
         $entry["payment_status"]   = $status;
-        $entry["payment_amount"]   = null;
+        $entry["payment_amount"]   = 0;
         $entry["payment_method"]   = "NoGateway";
         $entry["is_fulfilled"]     = null;
         GFAPI::update_entry($entry);

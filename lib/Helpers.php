@@ -514,9 +514,9 @@ class Helpers
     public static function getTypeFeed($setting)
     {
         if (isset($setting["meta"]["type"]) && $setting["meta"]["type"] == 'subscription') {
-            return "خرید محصول + عضویت کاربر";
+            return " پرداخت/خرید + ثبت نام کاربر";
         } else {
-            return "خرید محصول";
+            return "پرداخت/خرید";
         }
     }
 
