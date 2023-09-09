@@ -64,7 +64,7 @@ class IDPayVerify extends Helpers
 
     public static function acceptPurchase($transaction, $entry, $form, $request, $pricing, $config)
     {
-        $status        = self::getTransactionType($config) == 1 ? 'Paid' : 'Active';
+        $status        = 'Paid';
         $transactionId = $request->trackId ?? '';
         $statusCode    = $transaction->status ?? 0;
         $statusDesc    = self::getStatus($statusCode);
@@ -72,10 +72,10 @@ class IDPayVerify extends Helpers
         $user          = self::loadUser();
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
-        $entry["transaction_id"]   = $transactionId;
-        $entry["transaction_type"] = self::getTransactionType($config);
-        $entry["payment_status"]   = $status;
         $entry["payment_amount"]   = $transaction->amount;
+        $entry["transaction_id"]   = $transactionId;
+        $entry["payment_status"]   = $status;
+        $entry["transaction_type"] = null;
         $entry["is_fulfilled"]     = 1;
         GFAPI::update_entry($entry);
 
@@ -135,7 +135,7 @@ class IDPayVerify extends Helpers
 
     public static function acceptFree($transaction, $entry, $form, $request, $pricing, $config)
     {
-        $status        = self::getTransactionType($config) == 1 ? 'Paid' : 'Active';
+        $status        = 'Paid';
         $transactionId = $request->trackId ?? '';
         $statusCode    = $transaction->status ?? 0;
         $statusDesc    = self::getStatus($statusCode);
@@ -145,10 +145,10 @@ class IDPayVerify extends Helpers
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]   = $transactionId;
-        $entry["transaction_type"] = self::getTransactionType($config);
+        $entry["payment_method"]   = "NoGateway";
         $entry["payment_status"]   = $status;
         $entry["payment_amount"]   = 0;
-        $entry["payment_method"]   = "NoGateway";
+        $entry["transaction_type"] = null;
         $entry["is_fulfilled"]     = null;
         GFAPI::update_entry($entry);
 

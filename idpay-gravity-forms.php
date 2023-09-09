@@ -77,8 +77,10 @@ class GF_Gateway_IDPay extends Helpers
             add_action('wp_ajax_gf_IDPay_update_feed_active', array( __CLASS__, 'update_feed_active' ));
         }
         if (get_option("gf_IDPay_configured")) {
-            add_filter("gform_disable_post_creation", array( __CLASS__, "delay_posts" ), 10, 3);
-            add_filter("gform_is_delayed_pre_process_feed", array( __CLASS__, "delay_addons" ), 10, 4);
+            /* Idont Know Working */
+            add_filter("gform_disable_post_creation", array( __CLASS__, "setDelayedActivity" ), 10, 3);
+            add_filter("gform_is_delayed_pre_process_feed", array( __CLASS__, "setDelayedGravityAddons" ), 10, 4);
+            /* Idont Know Working */
             add_filter("gform_confirmation", array( __CLASS__, "doPayment" ), 1000, 4);
             add_action('wp', array( __CLASS__, 'doVerify' ), 5);
             add_filter("gform_submit_button", array( __CLASS__, "alter_submit_button" ), 10, 2);
@@ -100,7 +102,33 @@ class GF_Gateway_IDPay extends Helpers
 
     public static function doVerify()
     {
-       return IDPayVerify::doVerify();
+        return IDPayVerify::doVerify();
+    }
+
+    public static function setDelayedActivity($is_disabled, $form, $entry)
+    {
+        $config = IDPayDB::getActiveFeed($form);
+        return ! empty($config) ? true : $is_disabled;
+    }
+
+    public static function setDelayedGravityAddons($is_delayed, $form, $entry, $slug)
+    {
+        $config = IDPayDB::getActiveFeed($form);
+        $delayedFor = self::makeListDelayedAddons($config);
+
+        if (! empty($config)) {
+            if ($slug == 'gravityformsuserregistration') {
+                return $delayedFor['userRegistration'];
+            } elseif ($slug == 'gravityformsadvancedpostcreation') {
+                return $delayedFor['postCreate'];
+            } elseif ($slug == 'post-update-addon-gravity-forms') {
+                return $delayedFor['postUpdate'];
+            } else {
+                return $is_delayed;
+            }
+        }
+
+        return $is_delayed;
     }
 
     public static function loadFeedList()
@@ -116,7 +144,7 @@ class GF_Gateway_IDPay extends Helpers
         if ($view == "edit") {
             require_once(self::getBasePath() . '/resources/views/feed/config.php');
         } elseif ($view == "stats") {
-	        require_once(self::getBasePath() . '/resources/views/feed/transactions.php');
+            require_once(self::getBasePath() . '/resources/views/feed/transactions.php');
         } else {
             require_once(self::getBasePath() . '/resources/views/feed/index.php');
         }
@@ -276,43 +304,6 @@ class GF_Gateway_IDPay extends Helpers
         $plugins[ basename(dirname(__FILE__)) ] = "IDPay";
 
         return $plugins;
-    }
-
-    public static function delay_posts($is_disabled, $form, $entry)
-    {
-
-        $config = IDPayDB::getActiveFeed($form);
-
-        if (! empty($config) && is_array($config) && $config) {
-            return true;
-        }
-
-        return $is_disabled;
-    }
-
-    public static function delay_addons($is_delayed, $form, $entry, $slug)
-    {
-
-        $config = IDPayDB::getActiveFeed($form);
-
-        if (! empty($config["meta"]) && is_array($config["meta"]) && $config = $config["meta"]) {
-            $user_registration_slug = apply_filters('gf_user_registration_slug', 'gravityformsuserregistration');
-
-            if ($slug != $user_registration_slug && ! empty($config["addon"]) && $config["addon"] == 'true') {
-                $flag = true;
-            } elseif ($slug == $user_registration_slug && ! empty($config["type"]) && $config["type"] == "subscription") {
-                $flag = true;
-            }
-
-            if (! empty($flag)) {
-                $fulfilled = gform_get_meta($entry['id'], $slug . '_is_fulfilled');
-                $processed = gform_get_meta($entry['id'], 'processed_feeds');
-
-                $is_delayed = empty($fulfilled) && rgempty($slug, $processed);
-            }
-        }
-
-        return $is_delayed;
     }
 
     public static function update_feed_active()

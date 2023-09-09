@@ -126,11 +126,6 @@ class Helpers
         return $confirmation;
     }
 
-    public static function getGravityTransactionTypeCode($type): int
-    {
-        return $type == "subscription" ? 2 : 1;
-    }
-
     public static function checkOneConfirmationExists($confirmation, $form, $entry, $ajax): bool
     {
         if (apply_filters(
@@ -513,11 +508,33 @@ class Helpers
 
     public static function getTypeFeed($setting)
     {
-        if (isset($setting["meta"]["type"]) && $setting["meta"]["type"] == 'subscription') {
-            return " پرداخت/خرید + ثبت نام کاربر";
-        } else {
-            return "پرداخت/خرید";
+        $label = " پرداخت/خرید ";
+        $activeAddons = self::makeListDelayedAddons($setting);
+
+        if (self::dataGet($activeAddons, 'postCreate')) {
+            $label = $label . "+ ایجاد پست ";
         }
+        if (self::dataGet($activeAddons, 'postUpdate')) {
+            $label = $label . "+ آپدیت پست ";
+        }
+        if (self::dataGet($activeAddons, 'userRegistration')) {
+            $label = $label . "+ ثبت نام کاربر ";
+        }
+
+        return $label;
+    }
+
+    public static function makeListDelayedAddons($config)
+    {
+        $config = self::dataGet($config, 'meta.addon');
+        $postCreate = self::dataGet($config, 'post_create');
+        $postUpdate = self::dataGet($config, 'post_update');
+        $userRegistration = self::dataGet($config, 'user_registration');
+        return [
+            'postCreate' => $postCreate['success_payment'] || $postCreate['no_payment'],
+            'postUpdate' => $postUpdate['success_payment'] || $postUpdate['no_payment'],
+            'userRegistration' => $userRegistration['success_payment'] || $userRegistration['no_payment'],
+        ];
     }
 
     public static function checkSubmittedOperation()
@@ -635,11 +652,6 @@ class Helpers
             'id'       => $user_id,
             'username' => $user_name
         ];
-    }
-
-    public static function getTransactionType($config)
-    {
-        return $config["meta"]["type"] == 'subscription' ? 2 : 1;
     }
 
     public static function getOrderTotal($form, $entry)
