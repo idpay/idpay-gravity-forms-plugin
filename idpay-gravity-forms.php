@@ -24,6 +24,7 @@ require_once( 'lib/Helpers.php' );
 require_once( 'lib/JDate.php' );
 require_once( 'lib/IDPayPayment.php' );
 require_once( 'lib/IDPayVerify.php' );
+require_once( 'lib/IDPayOperation.php' );
 
 class GF_Gateway_IDPay extends Helpers {
 	public static $author = "IDPay";
@@ -38,13 +39,13 @@ class GF_Gateway_IDPay extends Helpers {
 		$condition3 = version_compare( GF_PERSIAN_VERSION, '2.3.1', '<' );
 
 		if ( $condition1 || $condition2 || $condition3 ) {
-			add_action( 'admin_notices', [ __CLASS__, 'admin_notice_persian_gf' ] );
+			add_action( 'admin_notices', [ __CLASS__, 'reportPreRequiredPersianGravityForm' ] );
 
 			return false;
 		}
 
 		if ( ! self::is_gravityforms_supported() ) {
-			add_action( 'admin_notices', [ __CLASS__, 'admin_notice_gf_support' ] );
+			add_action( 'admin_notices', [ __CLASS__, 'reportPreRequiredGravityForm' ] );
 
 			return false;
 		}
@@ -73,7 +74,7 @@ class GF_Gateway_IDPay extends Helpers {
 				);
 			}
 
-			if ( self::is_IDPay_page() ) {
+			if ( Helpers::checkCurrentPageForIDPAY() ) {
 				wp_enqueue_script( 'sack' );
 				self::setup();
 			}
@@ -88,7 +89,7 @@ class GF_Gateway_IDPay extends Helpers {
 
 			add_filter( "gform_confirmation", [ __CLASS__, "doPayment" ], 1000, 4 );
 			add_action( 'wp', [ __CLASS__, 'doVerify' ], 5 );
-			add_filter( "gform_submit_button", [ __CLASS__, "alter_submit_button" ], 10, 2 );
+			add_filter( "gform_submit_button", [ __CLASS__, "makeButtonSubmitForm" ], 10, 2 );
 		}
 
 		add_filter( "gform_logging_supported", [ __CLASS__, "set_logging_supported" ] );
@@ -154,79 +155,48 @@ class GF_Gateway_IDPay extends Helpers {
 		require_once( self::getBasePath() . '/resources/views/setting.php' );
 	}
 
-	public static function alter_submit_button( $button_input, $form ) {
+	public static function makeButtonSubmitForm( $button_input, $form ) {
+
+        $buttonHtml = $button_input;
+		$formId = self::dataGet($form,'id');
 		$dictionary = Helpers::loadDictionary( '', '' );
 		Helpers::prepareFrontEndTools();
 
-		/* check has pricing form  */
-		$has_product = false;
-		if ( isset( $form["fields"] ) ) {
-			foreach ( $form["fields"] as $field ) {
-				$shipping_field = GFAPI::get_fields_by_type( $form, [ 'shipping' ] );
-				if ( $field["type"] == "product" || ! empty( $shipping_field ) ) {
-					$has_product = true;
-					break;
-				}
-			}
-		}
-
-		/* check  exist feed in idpay */
+		$hasPriceFieldInForm  = Helpers::checkSetPriceForForm($form, $formId);
+		$ImageUrl = plugins_url( '/resources/images/logo.svg', __FILE__ );
 		$config     = IDPayDB::getActiveFeed( $form );
-		$pluginPath = plugins_url( '/resources/images/logo.svg', __FILE__ );
 		$formId     = $form['id'];
 
-		if ( $has_product && ! empty( $config ) ) {
-
-			/* add idpay-logo side button */
-			$button_input .= sprintf(
+		if ( $hasPriceFieldInForm && ! empty( $config ) ) {
+			$buttonHtml .= sprintf(
 				'<div class="idpay-logo C9" id="idpay-pay-id-%1$s"><img class="C10" src="%2$s">%3$s</div>',
 				$formId,
-				$pluginPath,
+				$ImageUrl,
 				$dictionary->labelPayment
 			);
-
 		}
 
-		return $button_input;
+		return $buttonHtml;
 	}
 
 	protected static function hasPermission( $permission = 'gravityforms_IDPay' ) {
-		if ( ! function_exists( 'wp_get_current_user' ) ) {
-			include( ABSPATH . "wp-includes/pluggable.php" );
-		}
-
-		return GFCommon::current_user_can_any( $permission );
-	}
-
-	private static function is_IDPay_page() {
-		$current_page    = in_array( trim( rgget( "page" ) ), [ 'gf_IDPay', 'IDPay' ] );
-		$current_view    = in_array( trim( rgget( "view" ) ), [ 'gf_IDPay', 'IDPay' ] );
-		$current_subview = in_array( trim( rgget( "subview" ) ), [ 'gf_IDPay', 'IDPay' ] );
-
-		return $current_page || $current_view || $current_subview;
+		return IDPayOperation::hasPermission($permission);
 	}
 
 	private static function setup() {
-		if ( get_option( "gf_IDPay_version" ) != self::$version ) {
-			IDPayDB::upgrade();
-			update_option( "gf_IDPay_version", self::$version );
-		}
+        IDPayOperation::setup();
 	}
 
 	private static function deactivation() {
-		delete_option( "gf_IDPay_version" );
+		IDPayOperation::deactivation();
 	}
 
-	public static function admin_notice_persian_gf() {
-		$class   = 'notice notice-error';
-		$message = sprintf( __( "برای استفاده از نسخه جدید درگاه پرداخت آیدی پی برای گرویتی فرم، نصب بسته فارسی ساز نسخه 2.3.1 به بالا الزامی است. برای نصب فارسی ساز %sکلیک کنید%s.", "gravityformsIDPay" ), '<a href="' . admin_url( "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884" ) . '">', '</a>' );
-		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $message );
+	public static function reportPreRequiredPersianGravityForm() {
+		IDPayOperation::reportPreRequiredPersianGravityForm();
 	}
 
-	public static function admin_notice_gf_support() {
-		$class   = 'notice notice-error';
-		$message = sprintf( __( "درگاه IDPay نیاز به گرویتی فرم نسخه %s به بالا دارد. برای بروز رسانی هسته گرویتی فرم به %sسایت گرویتی فرم فارسی%s مراجعه نمایید .", "gravityformsIDPay" ), self::$min_gravityforms_version, "<a href='http://gravityforms.ir/11378' target='_blank'>", "</a>" );
-		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $message );
+	public static function reportPreRequiredGravityForm() {
+		IDPayOperation::reportPreRequiredGravityForm();
 	}
 
 	public static function gravityformsIDPay( $form, $entry ) {
@@ -539,19 +509,6 @@ class GF_Gateway_IDPay extends Helpers {
 			sprintf( __( "اطلاعات تراکنش به صورت دستی ویرایش شد . وضعیت : %s - مبلغ : %s - کد رهگیری : %s - تاریخ : %s", "gravityformsIDPay" ),
 				$new_status, GFCommon::to_money( $entry["payment_amount"], $entry["currency"] ),
 				$payment_transaction, $entry["payment_date"] ) );
-	}
-
-	public static function uninstall() {
-		if ( ! self::hasPermission( "gravityforms_IDPay_uninstall" ) ) {
-			die( __( "شما مجوز کافی برای این کار را ندارید . سطح دسترسی شما پایین تر از حد مجاز است . ", "gravityformsIDPay" ) );
-		}
-		IDPayDB::dropTable();
-		delete_option( "gf_IDPay_settings" );
-		delete_option( "gf_IDPay_configured" );
-		delete_option( "gf_IDPay_version" );
-		$plugin = basename( dirname( __FILE__ ) ) . "/index.php";
-		deactivate_plugins( $plugin );
-		update_option( 'recently_activated', [ $plugin => time() ] + (array) get_option( 'recently_activated' ) );
 	}
 
 	protected static function get_base_url() {

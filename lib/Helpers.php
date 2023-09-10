@@ -493,6 +493,8 @@ class Helpers
             'labelOn'    => translate("درگاه غیر فعال است", self::$domain),
             'labelOff'    => translate("درگاه غیر فعال است", self::$domain),
             'labelAjaxErr'    => translate("خطای Ajax رخ داده است", self::$domain),
+            'labelDontPermission'    => translate("شما مجوز کافی برای این کار را ندارید . سطح دسترسی شما پایین تر از حد مجاز است .", self::$domain),
+            'labelHintPersianGravity'    => translate("درگاه آیدی پی برای گرویتی فرم، نصب بسته فارسی ساز نسخه 2.3.1 به بالا الزامی است", self::$domain),
         ];
     }
 
@@ -574,18 +576,6 @@ class Helpers
         }
 
         return '';
-    }
-
-    public static function checkSubmittedUnistall()
-    {
-        $dictionary = self::loadDictionary('', '');
-        if (rgpost("uninstall")) {
-            check_admin_referer("uninstall", "gf_IDPay_uninstall");
-            self::uninstall();
-            echo '<div class="updated fade" style="padding:20px;">' . $dictionary->label34 . '</div>';
-
-            return;
-        }
     }
 
     public static function checkSubmittedConfigDataAndLoadSetting()
@@ -920,5 +910,14 @@ class Helpers
 		}
 	    return '-';
     }
+
+	public static function checkCurrentPageForIDPAY() {
+		$condition = [ 'gf_IDPay', 'IDPay' ];
+		$currentPage    = in_array( trim( rgget( 'page' ) ), $condition );
+		$currentView    = in_array( trim( rgget( 'view' ) ), $condition );
+		$currentSubview = in_array( trim( rgget( 'subview' ) ), $condition );
+
+		return $currentPage || $currentView || $currentSubview;
+	}
 
 }

@@ -58,6 +58,9 @@
         vertical-align: middle !important;
         width: 70px !important;
     }
+    .C11 {
+        padding:20px !important;
+    }
 
     .Cw25 {
         width: 25px !important;

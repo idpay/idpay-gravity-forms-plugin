@@ -1,6 +1,6 @@
 <?php
 Helpers::prepareFrontEndTools();
-Helpers::checkSubmittedUnistall();
+IDPayOperation::checkSubmittedUnistall();
 
 $settings     = Helpers::checkSubmittedConfigDataAndLoadSetting();
 $dictionary   = Helpers::loadDictionary('', '');
@@ -80,7 +80,7 @@ if ($condition1 || $condition2) {
 </form>
 <form action="" method="post">
     <?php wp_nonce_field("uninstall", "gf_IDPay_uninstall"); ?>
-    <?php if (self::hasPermission("gravityforms_IDPay_uninstall")) { ?>
+    <?php if (IDPayOperation::hasPermission("gravityforms_IDPay_uninstall")) { ?>
         <div class="hr-divider"></div>
         <div class="delete-alert alert_red">
             <h3><i class="fa fa-exclamation-triangle gf_invalid"></i><?php echo $dictionary->label50 ?></h3>
