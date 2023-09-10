@@ -205,23 +205,19 @@ class IDPayDB
         global $wpdb;
         $oldTable         = $wpdb->prefix . "rg_IDPay";
         $tableName        = self::getTableName();
-        $queryShowTable   = "SHOW TABLES LIKE '{$oldTable}'";
-        $queryRenameTable = "ALTER TABLE {$oldTable} RENAME {$tableName}";
+        $queryShowTable   = sprintf( self::getSqlQuery('show_table'), $oldTable );
+        $queryRenameTable = sprintf( self::getSqlQuery('alter_table'), $oldTable, $tableName );
         $existsTable      = ! empty($wpdb->get_var($queryShowTable));
         $charset          = ! empty($wpdb->charset) ? $wpdb->charset : null;
         $collate          = ! empty($wpdb->collate) ? $wpdb->collate : null;
         $options          = ! empty($charset) ? "DEFAULT CHARACTER SET {$charset}" : "";
         $options          .= ! empty($collate) ? " COLLATE {$collate}" : "";
 
-        $queryCreateTable = "CREATE TABLE IF NOT EXISTS {$tableName} (
-              id mediumint(8) unsigned not null auto_increment,
-              form_id mediumint(8) unsigned not null,
-              is_active tinyint(1) not null default 1,
-              meta longtext,
-              PRIMARY KEY  (id),
-              KEY form_id (form_id)
-		) {$options};";
-
+        $queryCreateTable = sprintf(
+			self::getSqlQuery('create'),
+			$tableName,
+			$options
+        );
 
         if ($existsTable == true) {
             $wpdb->query($queryRenameTable);

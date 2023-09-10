@@ -21,6 +21,7 @@ add_action('init', array( 'GF_Gateway_IDPay', 'init' ));
 
 require_once('lib/IDPayDB.php');
 require_once('lib/Helpers.php');
+require_once('lib/JDate.php');
 require_once('lib/IDPayPayment.php');
 require_once('lib/IDPayVerify.php');
 

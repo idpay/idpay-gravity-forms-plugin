@@ -1,8 +1,10 @@
 <?php
 Helpers::prepareFrontEndTools();
 Helpers::checkSubmittedUnistall();
+
 $settings     = Helpers::checkSubmittedConfigDataAndLoadSetting();
 $dictionary   = Helpers::loadDictionary('', '');
+
 $condition1 = ! empty($_POST);
 $condition2 = isset($_GET['subview']) && $_GET['subview'] == 'gf_IDPay' && isset($_GET['updated']);
 $isActive     = get_option("gf_IDPay_configured") ? "checked='checked'" : "";

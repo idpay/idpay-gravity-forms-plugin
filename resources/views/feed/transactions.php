@@ -12,6 +12,7 @@ $data                  = $feeds->data;
 $checkDataExists       = ! empty($data) && count($data) > 0;
 $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['A']  : '' ;
 /* Load Data And Pagination Section */
+
 ?>
 
 <div class="wrap">
@@ -51,19 +52,26 @@ $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['A']  : '' ;
             <?php
             if ($checkDataExists) {
                 $counter = 1 ;
-                foreach ($data as $row) { ?>
+
+                foreach ($data as $row) {
+                    $created = Helpers::getJalaliDateTime(Helpers::dataGet($row, 'date_created', '-'));
+                    $paymentDate = Helpers::getJalaliDateTime(Helpers::dataGet($row, 'payment_date', '-'));
+                    $status = Helpers::dataGet($row, 'payment_status', '-');
+                    $colorStatus = Helpers::makeStatusColor($status);
+
+                    ?>
                     <tr class='author-self status-inherit'>
                         <td><?php echo $counter ?></td>
                         <td><?php echo Helpers::dataGet($row, 'id', '-') ?></td>
                         <td><?php echo Helpers::dataGet($row, 'form_id', '-') ?></td>
                         <td><?php echo Helpers::dataGet($row, 'transaction_id', '-') ?></td>
-                        <td><?php echo Helpers::dataGet($row, 'payment_amount', '-') ?></td>
+                        <td style="color:darkgreen"><?php echo Helpers::dataGet($row, 'payment_amount', '-') ?></td>
                         <td><?php echo Helpers::dataGet($row, 'currency', '-') ?></td>
-                        <td><?php echo Helpers::dataGet($row, 'payment_status', '-') ?></td>
+                        <td <?php echo $colorStatus ?>><?php echo $status ?></td>
                         <td><?php echo Helpers::dataGet($row, 'payment_method', '-') ?></td>
                         <td><?php echo Helpers::dataGet($row, 'source_url', '-') ?></td>
-                        <td><?php echo Helpers::dataGet($row, 'date_created', '-') ?></td>
-                        <td><?php echo Helpers::dataGet($row, 'payment_date', '-') ?></td>
+                        <td><?php echo $created ?></td>
+                        <td><?php echo $paymentDate ?></td>
                     </tr>
 
                     <?php

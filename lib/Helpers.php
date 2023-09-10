@@ -881,4 +881,38 @@ class Helpers
     {
         return ! empty($fId) ? $fId : ( ! empty($config) ? $config["form_id"] : null );
     }
+
+	public static function makeStatusColor($status)
+    {
+		switch ($status){
+			case 'Processing':
+				return "style='color: orange;'";
+			case 'Paid':
+				return "style='color: green;'";
+			case 'Failed':
+				return "style='color: red;'";
+			default:
+				return "style='color: black;'";
+		}
+
+    }
+
+	 public static function getJalaliDateTime($dateTime)
+    {
+		if(!empty($dateTime) && $dateTime != '-'){
+	    $jDateConvertor = JDate::getInstance();
+	    $y =  DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('Y');
+	    $m =   DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('m');
+	    $d =    DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('j');
+	    $time = DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('H:i:s');
+	    $jalaliDateTime =  $jDateConvertor->gregorian_to_persian($y,$m,$d);
+		$jalaliY = (string) $jalaliDateTime[0] ;
+		$jalaliM = (string) $jalaliDateTime[1] ;
+		$jalaliD = (string) $jalaliDateTime[2] ;
+
+		return "{$jalaliY}-{$jalaliM}-{$jalaliD} {$time}";
+		}
+	    return '-';
+    }
+
 }
