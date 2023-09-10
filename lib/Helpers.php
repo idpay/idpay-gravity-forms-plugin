@@ -487,6 +487,12 @@ class Helpers
             'labelRow'    => translate("ردیف", self::$domain),
             'labelSelectGravity' => translate("از فیلدهای موجود در فرم گراویتی یکی را انتخاب کنید", self::$domain),
             'labelNotSupprt'     => sprintf(__("درگاه IDPay نیاز به گرویتی فرم نسخه %s دارد. برای بروز رسانی هسته گرویتی فرم به %s مراجعه نمایید.", self::$domain), $feedId, $formName),
+            'labelSettingsTab'    => translate("درگاه IDPay", self::$domain),
+            'labelSettingsTitle'    => translate("تنظیمات درگاه IDPay", self::$domain),
+            'labelPayment'    => translate("پرداخت امن با آیدی پی", self::$domain),
+            'labelOn'    => translate("درگاه غیر فعال است", self::$domain),
+            'labelOff'    => translate("درگاه غیر فعال است", self::$domain),
+            'labelAjaxErr'    => translate("خطای Ajax رخ داده است", self::$domain),
         ];
     }
 

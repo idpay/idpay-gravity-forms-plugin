@@ -49,6 +49,15 @@
     .C8 {
         padding:6px !important;
     }
+    .C9 {
+        font-size: 14px !important;;
+        padding: 5px 0 !important;;
+    }
+    .C10 {
+        display: inline-block !important;
+        vertical-align: middle !important;
+        width: 70px !important;
+    }
 
     .Cw25 {
         width: 25px !important;
