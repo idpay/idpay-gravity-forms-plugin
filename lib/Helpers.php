@@ -494,7 +494,8 @@ class Helpers
             'labelOff'    => translate("درگاه غیر فعال است", self::$domain),
             'labelAjaxErr'    => translate("خطای Ajax رخ داده است", self::$domain),
             'labelDontPermission'    => translate("شما مجوز کافی برای این کار را ندارید . سطح دسترسی شما پایین تر از حد مجاز است .", self::$domain),
-            'labelHintPersianGravity'    => translate("درگاه آیدی پی برای گرویتی فرم، نصب بسته فارسی ساز نسخه 2.3.1 به بالا الزامی است", self::$domain),
+            'labelHintPersianGravity'    => translate("آیدی پی برای گرویتی فرم، نصب بسته فارسی ساز نسخه 2.3.1 به بالا الزامی است", self::$domain),
+            'labelHintGravity'    => translate("آیدی پی به گرویتی فرم نسخه %s به بالا دارد.  به سایت گرویتی فرم مراجعه نمایید", self::$domain),
         ];
     }
 

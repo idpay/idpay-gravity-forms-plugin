@@ -4,6 +4,7 @@ class IDPayOperation
 {
     public static $author = "IDPay";
 	public static $version = "1.0.5";
+	public static $min_gravityforms_version = "1.9.10";
 
 	public static function setup() {
 		if ( get_option( "gf_IDPay_version" ) != self::$version ) {
@@ -44,16 +45,19 @@ class IDPayOperation
 
 	public static function reportPreRequiredPersianGravityForm() {
 		$dictionary = Helpers::loadDictionary('','');
-		$adminUrl = admin_url( "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884" );
+		$url = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884";
+		$adminUrl = admin_url( $url );
 		$html = "<a href='{$adminUrl}'>{$dictionary->labelHintPersianGravity}</a>";
 		$class   = 'notice notice-error';
 		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $html );
 	}
 
 	public static function reportPreRequiredGravityForm() {
+		$dictionary = Helpers::loadDictionary('','');
+		$html = "<a href='https://gravityforms.ir/11378' target='_blank'>{$dictionary->labelHintGravity}</a>";
+		$html = sprintf($html,self::$min_gravityforms_version);
 		$class   = 'notice notice-error';
-		$message = sprintf( __( "درگاه IDPay نیاز به گرویتی فرم نسخه %s به بالا دارد. برای بروز رسانی هسته گرویتی فرم به %sسایت گرویتی فرم فارسی%s مراجعه نمایید .", "gravityformsIDPay" ), self::$min_gravityforms_version, "<a href='http://gravityforms.ir/11378' target='_blank'>", "</a>" );
-		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $message );
+		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $html );
 	}
 
 	public static function hasPermission( $permission = 'gravityforms_IDPay' ) {
