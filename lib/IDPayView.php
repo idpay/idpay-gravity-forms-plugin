@@ -1,92 +1,74 @@
 <?php
 
-class IDPayOperation
+class IDPayView
 {
-    public static $author = "IDPay";
-	public static $version = "1.0.5";
-	public static $min_gravityforms_version = "1.9.10";
-	public static $domainAlternative = "gravityforms_IDPay";
-	public static $domainAlternativeUnistall = "gravityforms_IDPay_uninstall";
+	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
+	public const VIEW_CONFIG = "config";
+	public const VIEW_TRANSACTION = "transactions";
+	public const VIEW_FEEDS = "index";
+	public const VIEW_SETTING = "setting";
 
 
-	public static function setup() {
-		if ( get_option( "gf_IDPay_version" ) != self::$version ) {
-			IDPayDB::upgrade();
-			update_option( "gf_IDPay_version", self::$version );
+	public static function route($view = null) {
+		$view = empty($view) ? rgget( "view" ) : $view;
+		$basePath = Helpers::getBasePath();
+		$folder = '/resources/views/feed';
+		$page = self::VIEW_FEEDS;
+		$page = $view == 'edit' ? self::VIEW_CONFIG : $page;
+		$page = $view == 'stats' ? self::VIEW_TRANSACTION : $page;
+		$page = $view == 'setting' ? self::VIEW_SETTING : $page;
+
+		$complete = "{$basePath}{$folder}/{$page}.php";
+		GFFormSettings::page_header();
+		require_once($complete);
+		GFFormSettings::page_footer();
+	}
+
+	public static function addIdpayToNavigation( $menus ) {
+		$handler = [ IDPayView::class, "route" ];
+		$menus[] = [
+			"name"       => "gf_IDPay",
+			"label"      => __( "IDPay", "gravityformsIDPay" ),
+			"callback"   => $handler,
+			"permission" => IDPayOperation::PERMISSION_ADMIN
+		];
+
+		return $menus;
+	}
+
+	public static function addIdpayToToolbar( $menu_items ) {
+		$menu_items[] = ['name'  => 'IDPay','label' => 'IDPay',];
+		return $menu_items;
+	}
+
+	public static function viewSetting() {
+		 IDPayView::route('setting');
+	}
+
+	public static function renderButtonSubmitForm( $button_input, $form ) {
+
+		$buttonHtml = $button_input;
+		$formId = Helpers::dataGet($form,'id');
+		$dictionary = Helpers::loadDictionary( '', '' );
+		Helpers::prepareFrontEndTools();
+
+		$hasPriceFieldInForm  = Helpers::checkSetPriceForForm($form, $formId);
+		$basePath = IDPayView::PLUGIN_FOLDER;
+		$file = '/resources/images/logo.svg';
+		$ImageUrl =  plugins_url("{$basePath}{$file}");
+		$config     = IDPayDB::getActiveFeed( $form );
+
+		if ( $hasPriceFieldInForm && ! empty( $config ) ) {
+			$buttonHtml .= sprintf(
+				'<div class="idpay-logo C9" id="idpay-pay-id-%1$s"><img class="C10" src="%2$s">%3$s</div>',
+				$formId,
+				$ImageUrl,
+				$dictionary->labelPayment
+			);
 		}
+
+		return $buttonHtml;
 	}
 
-	public static function checkSubmittedUnistall()
-	{
-		$dictionary = Helpers::loadDictionary('', '');
-		if (rgpost("uninstall")) {
-			check_admin_referer("uninstall", "gf_IDPay_uninstall");
-			self::uninstall();
-			echo  "<div class='updated fade C11'>{$dictionary->label34}</div>";
-		}
-	}
-
-	public static function uninstall() {
-		$dictionary = Helpers::loadDictionary('','');
-		$plugin = basename( dirname( __FILE__ ) ) . "/index.php";
-		$condition = ! self::hasPermission( "gravityforms_IDPay_uninstall" );
-		$value = [ $plugin => time() ] + (array) get_option( 'recently_activated' );
-		if ($condition) {
-			die($dictionary->labelDontPermission);
-		}
-		IDPayDB::dropTable();
-		delete_option( "gf_IDPay_settings" );
-		delete_option( "gf_IDPay_configured" );
-		delete_option( "gf_IDPay_version" );
-		deactivate_plugins( $plugin );
-		update_option( 'recently_activated', $value );
-	}
-
-	public static function deactivation() {
-		delete_option( "gf_IDPay_version" );
-	}
-
-	public static function reportPreRequiredPersianGravityForm() {
-		$dictionary = Helpers::loadDictionary('','');
-		$url = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884";
-		$adminUrl = admin_url( $url );
-		$html = "<a href='{$adminUrl}'>{$dictionary->labelHintPersianGravity}</a>";
-		$class   = 'notice notice-error';
-		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $html );
-	}
-
-	public static function reportPreRequiredGravityForm() {
-		$dictionary = Helpers::loadDictionary('','');
-		$html = "<a href='https://gravityforms.ir/11378' target='_blank'>{$dictionary->labelHintGravity}</a>";
-		$html = sprintf($html,self::$min_gravityforms_version);
-		$class   = 'notice notice-error';
-		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $html );
-	}
-
-	public static function hasPermission( $permission = 'gravityforms_IDPay' ) {
-		if ( ! function_exists( 'wp_get_current_user' ) ) {
-			include( ABSPATH . "wp-includes/pluggable.php" );
-		}
-
-		return GFCommon::current_user_can_any( $permission );
-	}
-
-	public static function addPermission() {
-		global $wp_roles;
-		foreach ( get_editable_roles() as $role => $details ) {
-			$condition1 = $role == 'administrator';
-			$condition2 = in_array( 'gravityforms_edit_forms', $details['capabilities'] );
-
-			if ($condition1 || $condition2) {
-				$wp_roles->add_cap( $role, self::$domainAlternative );
-				$wp_roles->add_cap( $role, self::$domainAlternativeUnistall );
-			}
-		}
-	}
-
-	public static function MembersCapabilities($caps) {
-		$existsPermissions = [ self::$domainAlternative, self::$domainAlternativeUnistall ];
-		return array_merge( $caps, $existsPermissions);
-	}
 
 }

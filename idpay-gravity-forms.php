@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Plugin Name: IDPay gateway - Gravity Forms
+ * Plugin Name: IDPay For Wp Gravity Forms
  * Author: IDPay
- * Description: <a href="https://idpay.ir">IDPay</a> secure payment gateway for Gravity Forms.
- * Version: 1.1.2
+ * Description: IDPay is Secure Payment Gateway For Wp Gravity Forms.
+ * Version: 2.0.0
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
@@ -14,10 +14,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-register_activation_hook( __FILE__, [ 'GF_Gateway_IDPay', "addPermission" ] );
-register_deactivation_hook( __FILE__, [ 'GF_Gateway_IDPay', "deactivation" ] );
-
-add_action( 'init', [ 'GF_Gateway_IDPay', 'init' ] );
+const IDPAY_PLUGIN_CLASS = 'GF_Gateway_IDPay';
+register_activation_hook( __FILE__, [ IDPAY_PLUGIN_CLASS, "addPermission" ] );
+register_deactivation_hook( __FILE__, [ IDPAY_PLUGIN_CLASS, "deactivation" ] );
+add_action('init', [ IDPAY_PLUGIN_CLASS, 'init']);
 
 require_once( 'lib/IDPayDB.php' );
 require_once( 'lib/Helpers.php' );
@@ -25,14 +25,14 @@ require_once( 'lib/JDate.php' );
 require_once( 'lib/IDPayPayment.php' );
 require_once( 'lib/IDPayVerify.php' );
 require_once( 'lib/IDPayOperation.php' );
+require_once( 'lib/IDPayView.php' );
+
 
 class GF_Gateway_IDPay extends Helpers {
 	public static $author = "IDPay";
 	public static $version = "1.0.5";
 	public static $min_gravityforms_version = "1.9.10";
 	public static $domain = "gravityformsIDPay";
-	public static $domainAlternative = "gravityforms_IDPay";
-	public static $domainAlternativeUnistall = "gravityforms_IDPay_uninstall";
 
 	public static function init() {
 		$dictionary = Helpers::loadDictionary( '', '' );
@@ -41,74 +41,72 @@ class GF_Gateway_IDPay extends Helpers {
 		$condition3 = version_compare( GF_PERSIAN_VERSION, '2.3.1', '<' );
 
 		if ( $condition1 || $condition2 || $condition3 ) {
-			add_action( 'admin_notices', [ __CLASS__, 'reportPreRequiredPersianGravityForm' ] );
-
+			add_action( 'admin_notices', [ IDPayOperation::class, 'reportPreRequiredPersianGravityForm' ] );
 			return false;
 		}
 
-		if ( ! self::is_gravityforms_supported() ) {
-			add_action( 'admin_notices', [ __CLASS__, 'reportPreRequiredGravityForm' ] );
-
+		if ( ! IDPayOperation::checkApprovedGravityFormVersion() ) {
+			 add_action( 'admin_notices', [ IDPayOperation::class, 'reportPreRequiredGravityForm' ] );
 			return false;
 		}
 
-		add_filter( 'members_get_capabilities', [ __CLASS__, "members_get_capabilities" ] );
+		add_filter( 'members_get_capabilities', [ IDPayOperation::class, "MembersCapabilities" ] );
+        $adminPermission = IDPayOperation::PERMISSION_ADMIN;
 
-		if ( is_admin() && self::hasPermission() ) {
-			add_filter( 'gform_tooltips', [ __CLASS__, 'tooltips' ] );
-			add_filter( 'gform_addon_navigation', [ __CLASS__, 'menu' ] );
+		if ( is_admin() && IDPayOperation::hasPermission($adminPermission)  ) {
+
+			add_action( 'wp_ajax_gf_IDPay_update_feed_active', [ __CLASS__, 'update_feed_active' ] );
+			add_filter( 'gform_addon_navigation', [ IDPayView::class, 'addIdpayToNavigation' ] );
 			add_action( 'gform_entry_info', [ __CLASS__, 'payment_entry_detail' ], 4, 2 );
 			add_action( 'gform_after_update_entry', [ __CLASS__, 'update_payment_entry' ], 4, 2 );
 
 			if ( get_option( "gf_IDPay_configured" ) ) {
-				add_filter( 'gform_form_settings_menu', [ __CLASS__, 'toolbar' ], 10, 2 );
-				add_action( 'gform_form_settings_page_IDPay', [ __CLASS__, 'loadFeedList' ] );
+				add_filter( 'gform_form_settings_menu', [ IDPayView::class, 'addIdpayToToolbar' ], 10, 2 );
+				add_action( 'gform_form_settings_page_IDPay', [ IDPayView::class, 'route' ] );
 			}
 
 			if ( rgget( "page" ) == "gf_settings" ) {
+                $handler = [ IDPayView::class, 'viewSetting' ];
 				RGForms::add_settings_page(
 					[
 						'name'      => 'gf_IDPay',
 						'tab_label' => $dictionary->labelSettingsTab,
 						'title'     => $dictionary->labelSettingsTitle,
-						'handler'   => [ __CLASS__, 'loadSettingPage' ],
+						'handler'   => $handler,
 					]
 				);
 			}
 
 			if ( Helpers::checkCurrentPageForIDPAY() ) {
 				wp_enqueue_script( 'sack' );
-				self::setup();
+				IDPayOperation::setup();
 			}
-			add_action( 'wp_ajax_gf_IDPay_update_feed_active', [ __CLASS__, 'update_feed_active' ] );
-		}
-		if ( get_option( "gf_IDPay_configured" ) ) {
 
-			/* Idont Know Working */
+		}
+
+		if ( get_option( "gf_IDPay_configured" ) ) {
 			add_filter( "gform_disable_post_creation", [ __CLASS__, "setDelayedActivity" ], 10, 3 );
 			add_filter( "gform_is_delayed_pre_process_feed", [ __CLASS__, "setDelayedGravityAddons" ], 10, 4 );
-			/* Idont Know Working */
-
-			add_filter( "gform_confirmation", [ __CLASS__, "doPayment" ], 1000, 4 );
-			add_action( 'wp', [ __CLASS__, 'doVerify' ], 5 );
-			add_filter( "gform_submit_button", [ __CLASS__, "makeButtonSubmitForm" ], 10, 2 );
+			add_filter( "gform_confirmation", [ IDPayPayment::class, "doPayment" ], 1000, 4 );
+			add_action( 'wp', [ IDPayVerify::class, 'doVerify' ], 5 );
+			add_filter( "gform_submit_button", [ IDPayView::class, "renderButtonSubmitForm" ], 10, 2 );
 		}
 
-		add_filter( "gform_logging_supported", [ __CLASS__, "set_logging_supported" ] );
-		add_filter( 'gf_payment_gateways', [ __CLASS__, 'gravityformsIDPay' ], 2 );
+		add_filter( "gform_logging_supported", [ __CLASS__, "setLogSystem" ] );
+		add_filter( 'gf_payment_gateways', [ __CLASS__, 'setDefaultSys' ], 2 );
 		do_action( 'gravityforms_gateways' );
-		do_action( self::$domainAlternative );
-		add_filter( 'gform_admin_pre_render', [ __CLASS__, 'merge_tags_keys' ] );
+		do_action( 'setDefaultSys' );
+		add_filter( 'gform_admin_pre_render', [ __CLASS__, 'preRenderScript' ] );
 
 		return 'completed';
 	}
 
-	public static function doPayment( $confirmation, $form, $entry, $ajax ) {
-		return IDPayPayment::doPayment( $confirmation, $form, $entry, $ajax );
+	public static function addPermission() {
+        IDPayOperation::addPermission();
 	}
 
-	public static function doVerify() {
-		return IDPayVerify::doVerify();
+	public static function deactivation() {
+		IDPayOperation::deactivation();
 	}
 
 	public static function setDelayedActivity( $is_disabled, $form, $entry ) {
@@ -136,72 +134,10 @@ class GF_Gateway_IDPay extends Helpers {
 		return $is_delayed;
 	}
 
-	public static function loadFeedList() {
-		GFFormSettings::page_header();
-		require_once( self::getBasePath() . '/resources/views/feed/index.php' );
-		GFFormSettings::page_footer();
-	}
 
-	public static function routeFeedPage() {
-		$view = rgget( "view" );
-		if ( $view == "edit" ) {
-			require_once( self::getBasePath() . '/resources/views/feed/config.php' );
-		} elseif ( $view == "stats" ) {
-			require_once( self::getBasePath() . '/resources/views/feed/transactions.php' );
-		} else {
-			require_once( self::getBasePath() . '/resources/views/feed/index.php' );
-		}
-	}
 
-	public static function loadSettingPage() {
-		require_once( self::getBasePath() . '/resources/views/setting.php' );
-	}
 
-	public static function makeButtonSubmitForm( $button_input, $form ) {
-
-        $buttonHtml = $button_input;
-		$formId = self::dataGet($form,'id');
-		$dictionary = Helpers::loadDictionary( '', '' );
-		Helpers::prepareFrontEndTools();
-
-		$hasPriceFieldInForm  = Helpers::checkSetPriceForForm($form, $formId);
-		$ImageUrl = plugins_url( '/resources/images/logo.svg', __FILE__ );
-		$config     = IDPayDB::getActiveFeed( $form );
-		$formId     = $form['id'];
-
-		if ( $hasPriceFieldInForm && ! empty( $config ) ) {
-			$buttonHtml .= sprintf(
-				'<div class="idpay-logo C9" id="idpay-pay-id-%1$s"><img class="C10" src="%2$s">%3$s</div>',
-				$formId,
-				$ImageUrl,
-				$dictionary->labelPayment
-			);
-		}
-
-		return $buttonHtml;
-	}
-
-	protected static function hasPermission( $permission = 'gravityforms_IDPay' ) {
-		return IDPayOperation::hasPermission($permission);
-	}
-
-	private static function setup() {
-        IDPayOperation::setup();
-	}
-
-	private static function deactivation() {
-		IDPayOperation::deactivation();
-	}
-
-	public static function reportPreRequiredPersianGravityForm() {
-		IDPayOperation::reportPreRequiredPersianGravityForm();
-	}
-
-	public static function reportPreRequiredGravityForm() {
-		IDPayOperation::reportPreRequiredGravityForm();
-	}
-
-	public static function gravityformsIDPay( $form, $entry ) {
+	public static function setDefaultSys( $form, $entry ) {
 		$dictionary = Helpers::loadDictionary('','');
 		$baseClass = __CLASS__;
 		$author    = self::$author;
@@ -221,50 +157,38 @@ class GF_Gateway_IDPay extends Helpers {
 			, $form, $entry );
 	}
 
-	public static function addPermission() {
-		IDPayOperation::addPermission();
-	}
-
-	public static function members_get_capabilities( $caps ) {
-        $existsPermissions = [ self::$domainAlternative, self::$domainAlternativeUnistall ];
-		return array_merge( $caps, $existsPermissions);
-	}
-
-	public static function tooltips( $tooltips ) {
-		$tooltips["gateway_name"] = __( "تذکر مهم : این قسمت برای نمایش به بازدید کننده می باشد و لطفا جهت جلوگیری از مشکل و تداخل آن را فقط یکبار تنظیم نمایید و از تنظیم مکرر آن خود داری نمایید .", "gravityformsIDPay" );
-
-		return $tooltips;
-	}
-
-	public static function menu( $menus ) {
-		$permission = self::$domainAlternative;
-		if ( ! empty( $permission ) ) {
-			$menus[] = [
-				"name"       => "gf_IDPay",
-				"label"      => __( "IDPay", "gravityformsIDPay" ),
-				"callback"   => [ __CLASS__, "routeFeedPage" ],
-				"permission" => $permission
-			];
-		}
-
-		return $menus;
-	}
-
-	public static function toolbar( $menu_items ) {
-		$menu_items[] = [
-			'name'  => 'IDPay',
-			'label' => __( 'IDPay', 'gravityformsIDPay' )
-		];
-
-		return $menu_items;
-	}
-
-	public static function set_logging_supported( $plugins ) {
+	public static function setLogSystem( $plugins ) {
 		$plugins[ basename( dirname( __FILE__ ) ) ] = "IDPay";
 
 		return $plugins;
 	}
+	public static function preRenderScript( $form )
+	{
 
+		if ( GFCommon::is_entry_detail() ) {
+			return $form;
+		}
+		?>
+
+        <script type="text/javascript">
+            gform.addFilter('gform_merge_tags',
+                function (mergeTags, elementId, hideAllFields, excludeFieldTypes, isPrepop, option) {
+                    mergeTags['gf_idpay'] = {
+                        label: 'آیدی پی',
+                        tags: [
+                            {tag: '{idpay_payment_result}', label: 'نتیجه پرداخت آیدی پی'}
+                        ]
+                    };
+                    return mergeTags;
+                });
+        </script>
+
+		<?php
+		return $form;
+	}
+
+
+    /* -------------------------------------- Not Refactore ---------------------------------------- */
 	public static function update_feed_active() {
 		check_ajax_referer( 'gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active' );
 		$id   = absint( rgpost( 'feed_id' ) );
@@ -508,29 +432,6 @@ class GF_Gateway_IDPay extends Helpers {
 				$payment_transaction, $entry["payment_date"] ) );
 	}
 
-	protected static function get_base_url() {
-		return plugins_url( null, __FILE__ );
-	}
+	/* -------------------------------------- Not Refactore ---------------------------------------- */
 
-	public static function merge_tags_keys( $form ) {
-
-		if ( GFCommon::is_entry_detail() ) {
-			return $form;
-		}
-		?>
-
-        <script type="text/javascript">
-            gform.addFilter('gform_merge_tags', function (mergeTags, elementId, hideAllFields, excludeFieldTypes, isPrepop, option) {
-                mergeTags['gf_idpay'] = {
-                    label: 'آیدی پی',
-                    tags: [
-                        {tag: '{idpay_payment_result}', label: 'نتیجه پرداخت آیدی پی'}
-                    ]
-                };
-                return mergeTags;
-            });
-        </script>
-		<?php
-		return $form;
-	}
 }

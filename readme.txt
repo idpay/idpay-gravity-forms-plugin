@@ -1,10 +1,10 @@
 === Title & Descriptions ===
 
-title : IDPay for WP Gravity Forms
+title : IDPay For Wp Gravity Forms
 Tags: gravityforms, gravity-forms, payment, idpay, gateway, آیدی پی
-Stable tag: 1.1.2
+Stable tag: 2.0.0
 Tested up to: 6.1
-Contributors: MimDeveloper.Tv (Mohammad-Malek), imikiani, meysamrazmi, vispa
+Contributors: MimDeveloper.Tv (Mohammad-Malek)
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,12 @@ For doing a transaction through IDPay gateway, you must have an API Key. You can
 * If you need to use this plugin in Test mode, Select the "Sandbox" checkbox.
 
 == Changelog ==
+
+== 2.0.0, STP 11, 2023 ==
+* New Version Plugin And Many Add Features
+* Fix All Problems
+* Update Structures
+* Tested Up With Wordpress 6.3.1 And GravityForm 2.7.12
 
 == 1.1.2, Nov 13, 2022 ==
 * Tested Up With Wordpress 6.1 And GravityForm 2.6.3

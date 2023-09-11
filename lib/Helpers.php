@@ -186,19 +186,11 @@ class Helpers
         $entry         = GFPersian_Payments::get_entry($entryId);
         $paymentMethod = self::dataGet($entry, 'payment_method');
         $condition1    = apply_filters('gf_gateway_IDPay_return', apply_filters('gf_gateway_verify_return', false));
-        $condition2    = ( ! self::is_gravityforms_supported() ) || is_wp_error($entry);
+        $condition2    = ( ! IDPayOperation::checkApprovedGravityFormVersion() ) || is_wp_error($entry);
         $condition3    = ( ! is_numeric((int) $form_id) ) || ( ! is_numeric((int) $entryId) );
         $condition4    = empty($paymentMethod) || $paymentMethod != 'IDPay';
 
         return $condition1 || $condition2 || $condition3 || $condition4;
-    }
-
-    public static function is_gravityforms_supported(): bool
-    {
-        $condition1 = class_exists("GFCommon");
-        $condition2 = (bool) version_compare(GFCommon::$version, self::$min_gravityforms_version, ">=");
-
-        return $condition1 && $condition2;
     }
 
     public static function getApiKey()
@@ -507,7 +499,7 @@ class Helpers
     {
         $label1 = self::$min_gravityforms_version;
         $label2 = "<a href='http://gravityforms.ir' target='_blank'>سایت گرویتی فرم فارسی</a>";
-        if (! self::is_gravityforms_supported()) {
+        if (! IDPayOperation::checkApprovedGravityFormVersion()) {
             return self::loadDictionary($label1, $label2)->labelNotSupprt;
         }
 
