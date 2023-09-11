@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-register_activation_hook( __FILE__, [ 'GF_Gateway_IDPay', "add_permissions" ] );
+register_activation_hook( __FILE__, [ 'GF_Gateway_IDPay', "addPermission" ] );
 register_deactivation_hook( __FILE__, [ 'GF_Gateway_IDPay', "deactivation" ] );
 
 add_action( 'init', [ 'GF_Gateway_IDPay', 'init' ] );
@@ -31,6 +31,8 @@ class GF_Gateway_IDPay extends Helpers {
 	public static $version = "1.0.5";
 	public static $min_gravityforms_version = "1.9.10";
 	public static $domain = "gravityformsIDPay";
+	public static $domainAlternative = "gravityforms_IDPay";
+	public static $domainAlternativeUnistall = "gravityforms_IDPay_uninstall";
 
 	public static function init() {
 		$dictionary = Helpers::loadDictionary( '', '' );
@@ -95,7 +97,7 @@ class GF_Gateway_IDPay extends Helpers {
 		add_filter( "gform_logging_supported", [ __CLASS__, "set_logging_supported" ] );
 		add_filter( 'gf_payment_gateways', [ __CLASS__, 'gravityformsIDPay' ], 2 );
 		do_action( 'gravityforms_gateways' );
-		do_action( 'gravityforms_IDPay' );
+		do_action( self::$domainAlternative );
 		add_filter( 'gform_admin_pre_render', [ __CLASS__, 'merge_tags_keys' ] );
 
 		return 'completed';
@@ -200,37 +202,32 @@ class GF_Gateway_IDPay extends Helpers {
 	}
 
 	public static function gravityformsIDPay( $form, $entry ) {
+		$dictionary = Helpers::loadDictionary('','');
 		$baseClass = __CLASS__;
 		$author    = self::$author;
 		$class     = "{$baseClass}|{$author}";
 		$IDPay     = [
-			'class' => $class,
-			'title' => __( 'IDPay', 'gravityformsIDPay' ),
-			'param' => [
-				'email'  => __( 'ایمیل', 'gravityformsIDPay' ),
-				'mobile' => __( 'موبایل', 'gravityformsIDPay' ),
-				'desc'   => __( 'توضیحات', 'gravityformsIDPay' )
-			]
-		];
+                        'class' => $class,
+                        'title' => $dictionary->labelIdpay,
+                        'param' => [
+                            'email'  =>  $dictionary->labelEmail,
+                            'mobile' =>  $dictionary->labelMobile,
+                            'desc'   =>  $dictionary->labelDesc,
+			        ]
+		      ];
 
 		return apply_filters( self::$author . '_gf_IDPay_detail',
 			apply_filters( self::$author . '_gf_gateway_detail', $IDPay, $form, $entry )
 			, $form, $entry );
 	}
 
-	public static function add_permissions() {
-		global $wp_roles;
-		$editable_roles = get_editable_roles();
-		foreach ( $editable_roles as $role => $details ) {
-			if ( $role == 'administrator' || in_array( 'gravityforms_edit_forms', $details['capabilities'] ) ) {
-				$wp_roles->add_cap( $role, 'gravityforms_IDPay' );
-				$wp_roles->add_cap( $role, 'gravityforms_IDPay_uninstall' );
-			}
-		}
+	public static function addPermission() {
+		IDPayOperation::addPermission();
 	}
 
 	public static function members_get_capabilities( $caps ) {
-		return array_merge( $caps, [ "gravityforms_IDPay", "gravityforms_IDPay_uninstall" ] );
+        $existsPermissions = [ self::$domainAlternative, self::$domainAlternativeUnistall ];
+		return array_merge( $caps, $existsPermissions);
 	}
 
 	public static function tooltips( $tooltips ) {
@@ -240,7 +237,7 @@ class GF_Gateway_IDPay extends Helpers {
 	}
 
 	public static function menu( $menus ) {
-		$permission = "gravityforms_IDPay";
+		$permission = self::$domainAlternative;
 		if ( ! empty( $permission ) ) {
 			$menus[] = [
 				"name"       => "gf_IDPay",

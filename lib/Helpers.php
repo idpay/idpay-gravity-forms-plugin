@@ -496,6 +496,10 @@ class Helpers
             'labelDontPermission'    => translate("شما مجوز کافی برای این کار را ندارید . سطح دسترسی شما پایین تر از حد مجاز است .", self::$domain),
             'labelHintPersianGravity'    => translate("آیدی پی برای گرویتی فرم، نصب بسته فارسی ساز نسخه 2.3.1 به بالا الزامی است", self::$domain),
             'labelHintGravity'    => translate("آیدی پی به گرویتی فرم نسخه %s به بالا دارد.  به سایت گرویتی فرم مراجعه نمایید", self::$domain),
+            'labelIdpay'    => translate("IDPay", self::$domain),
+            'labelEmail'    => translate("ایمیل", self::$domain),
+            'labelMobile'    => translate("موبایل", self::$domain),
+            'labelDesc'    => translate("توضیحات", self::$domain),
         ];
     }
 

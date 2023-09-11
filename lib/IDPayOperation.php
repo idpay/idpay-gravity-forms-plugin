@@ -5,6 +5,9 @@ class IDPayOperation
     public static $author = "IDPay";
 	public static $version = "1.0.5";
 	public static $min_gravityforms_version = "1.9.10";
+	public static $domainAlternative = "gravityforms_IDPay";
+	public static $domainAlternativeUnistall = "gravityforms_IDPay_uninstall";
+
 
 	public static function setup() {
 		if ( get_option( "gf_IDPay_version" ) != self::$version ) {
@@ -68,6 +71,18 @@ class IDPayOperation
 		return GFCommon::current_user_can_any( $permission );
 	}
 
+	public static function addPermission() {
+		global $wp_roles;
+		foreach ( get_editable_roles() as $role => $details ) {
+			$condition1 = $role == 'administrator';
+			$condition2 = in_array( 'gravityforms_edit_forms', $details['capabilities'] );
+
+			if ($condition1 || $condition2) {
+				$wp_roles->add_cap( $role, self::$domainAlternative );
+				$wp_roles->add_cap( $role, self::$domainAlternativeUnistall );
+			}
+		}
+	}
 
 
 }
