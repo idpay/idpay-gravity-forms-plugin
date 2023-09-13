@@ -167,6 +167,13 @@ class IDPayDB
         return $wpdb->prefix . "gf_IDPay";
     }
 
+	public static function SaveOrUpdateFeed() {
+		check_ajax_referer( 'gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active' );
+		$id   = absint( rgpost( 'feed_id' ) );
+		$feed = IDPayDB::getFeed( $id );
+		IDPayDB::updateFeed( $id, $feed["form_id"], $feed["meta"] );
+	}
+
     public static function updateFeed($id, $formId, $setting)
     {
         global $wpdb;

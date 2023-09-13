@@ -27,7 +27,6 @@ require_once( 'lib/IDPayVerify.php' );
 require_once( 'lib/IDPayOperation.php' );
 require_once( 'lib/IDPayView.php' );
 
-
 class GF_Gateway_IDPay extends Helpers {
 	public static $author = "IDPay";
 	public static $version = "1.0.5";
@@ -55,7 +54,7 @@ class GF_Gateway_IDPay extends Helpers {
 
 		if ( is_admin() && IDPayOperation::hasPermission($adminPermission)  ) {
 
-			add_action( 'wp_ajax_gf_IDPay_update_feed_active', [ __CLASS__, 'update_feed_active' ] );
+			add_action( 'wp_ajax_gf_IDPay_update_feed_active', [ IDPayDB::class, 'SaveOrUpdateFeed' ] );
 			add_filter( 'gform_addon_navigation', [ IDPayView::class, 'addIdpayToNavigation' ] );
 			add_action( 'gform_entry_info', [ __CLASS__, 'payment_entry_detail' ], 4, 2 );
 			add_action( 'gform_after_update_entry', [ __CLASS__, 'update_payment_entry' ], 4, 2 );
@@ -134,9 +133,6 @@ class GF_Gateway_IDPay extends Helpers {
 		return $is_delayed;
 	}
 
-
-
-
 	public static function setDefaultSys( $form, $entry ) {
 		$dictionary = Helpers::loadDictionary('','');
 		$baseClass = __CLASS__;
@@ -162,6 +158,7 @@ class GF_Gateway_IDPay extends Helpers {
 
 		return $plugins;
 	}
+
 	public static function preRenderScript( $form )
 	{
 
@@ -187,14 +184,11 @@ class GF_Gateway_IDPay extends Helpers {
 		return $form;
 	}
 
+	public static function getHeaders() {
+		GFFormSettings::page_header();
+    }
 
     /* -------------------------------------- Not Refactore ---------------------------------------- */
-	public static function update_feed_active() {
-		check_ajax_referer( 'gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active' );
-		$id   = absint( rgpost( 'feed_id' ) );
-		$feed = IDPayDB::getFeed( $id );
-		IDPayDB::updateFeed( $id, $feed["form_id"], $feed["meta"] );
-	}
 
 	public static function payment_entry_detail( $formId, $entry ) {
 

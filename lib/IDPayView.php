@@ -1,5 +1,6 @@
 <?php
 
+
 class IDPayView
 {
 	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
@@ -12,16 +13,16 @@ class IDPayView
 	public static function route($view = null) {
 		$view = empty($view) ? rgget( "view" ) : $view;
 		$basePath = Helpers::getBasePath();
-		$folder = '/resources/views/feed';
+		$folder = '/resources/views';
 		$page = self::VIEW_FEEDS;
 		$page = $view == 'edit' ? self::VIEW_CONFIG : $page;
 		$page = $view == 'stats' ? self::VIEW_TRANSACTION : $page;
 		$page = $view == 'setting' ? self::VIEW_SETTING : $page;
 
 		$complete = "{$basePath}{$folder}/{$page}.php";
-		GFFormSettings::page_header();
+		//GF_Gateway_IDPay::getHeaders();
 		require_once($complete);
-		GFFormSettings::page_footer();
+		//GFFormSettings::page_footer();
 	}
 
 	public static function addIdpayToNavigation( $menus ) {
