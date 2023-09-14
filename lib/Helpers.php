@@ -580,9 +580,8 @@ class Helpers
             if (is_array($selected_feeds)) {
                 foreach ($selected_feeds as $feed_id) {
                     IDPayDB::deleteFeed($feed_id);
-
-                    return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
                 }
+	            return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
             }
         }
 
