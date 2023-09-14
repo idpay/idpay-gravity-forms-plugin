@@ -492,6 +492,20 @@ class Helpers
             'labelEmail'    => translate("ایمیل", self::$domain),
             'labelMobile'    => translate("موبایل", self::$domain),
             'labelDesc'    => translate("توضیحات", self::$domain),
+            'labelTransactionData'    => translate("اطلاعات تراکنش آیدی پی:", self::$domain),
+            'noStatus'    => translate("بدون وضعیت", self::$domain),
+            'Paid'    => translate("پرداخت شده / موفق", self::$domain),
+            'Failed'    => translate("لغو/کنسل یا پرداخت نشده", self::$domain),
+            'Processing'    => translate("در انتظار پرداخت", self::$domain),
+            'status'    => translate("وضعیت پرداخت : ", self::$domain),
+            'date'    => translate("تاریخ پرداخت : ", self::$domain),
+            'money'    => translate("مبلغ پرداختی : ", self::$domain),
+            'currecny'    => translate("واحد پولی : ", self::$domain),
+            'track'    => translate("کد رهگیری تراکنش: ", self::$domain),
+            'ipg'    => translate("درگاه پرداخت : آیدی پی", self::$domain),
+            'transId'    => translate("شناسه تراکنش : ", self::$domain),
+            'time'    => translate("زمان پرداخت : ", self::$domain),
+            'report'    => translate("اطلاعات تراکنش ویرایش شد . وضعیت : %s - مبلغ : %s - کد رهگیری : %s - تاریخ : %s", self::$domain),
         ];
     }
 
@@ -875,46 +889,75 @@ class Helpers
         return ! empty($fId) ? $fId : ( ! empty($config) ? $config["form_id"] : null );
     }
 
-	public static function makeStatusColor($status)
+    public static function makeStatusColor($status)
     {
-		switch ($status){
-			case 'Processing':
-				return "style='color: orange;'";
-			case 'Paid':
-				return "style='color: green;'";
-			case 'Failed':
-				return "style='color: red;'";
-			default:
-				return "style='color: black;'";
-		}
-
+        switch ($status) {
+            case 'Processing':
+                return "style='color: orange;'";
+            case 'Paid':
+                return "style='color: green;'";
+            case 'Failed':
+                return "style='color: red;'";
+            default:
+                return "style='color: black;'";
+        }
     }
 
-	 public static function getJalaliDateTime($dateTime)
+    public static function getJalaliDateTime($dateTime)
     {
-		if(!empty($dateTime) && $dateTime != '-'){
-	    $jDateConvertor = JDate::getInstance();
-	    $y =  DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('Y');
-	    $m =   DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('m');
-	    $d =    DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('j');
-	    $time = DateTime::createFromFormat('Y-m-j H:i:s',$dateTime)->format('H:i:s');
-	    $jalaliDateTime =  $jDateConvertor->gregorian_to_persian($y,$m,$d);
-		$jalaliY = (string) $jalaliDateTime[0] ;
-		$jalaliM = (string) $jalaliDateTime[1] ;
-		$jalaliD = (string) $jalaliDateTime[2] ;
+        if (!empty($dateTime) && $dateTime != '-') {
+            $jDateConvertor = JDate::getInstance();
+            $y =  DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('Y');
+            $m =   DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('m');
+            $d =    DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('j');
+            $time = DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('H:i:s');
+            $jalaliDateTime =  $jDateConvertor->gregorian_to_persian($y, $m, $d);
+            $jalaliY = (string) $jalaliDateTime[0] ;
+            $jalaliM = (string) $jalaliDateTime[1] ;
+            $jalaliD = (string) $jalaliDateTime[2] ;
 
-		return "{$jalaliY}-{$jalaliM}-{$jalaliD} {$time}";
-		}
-	    return '-';
+            return "{$jalaliY}-{$jalaliM}-{$jalaliD} {$time}";
+        }
+        return '-';
     }
 
-	public static function checkCurrentPageForIDPAY() {
-		$condition = [ 'gf_IDPay', 'IDPay' ];
-		$currentPage    = in_array( trim( rgget( 'page' ) ), $condition );
-		$currentView    = in_array( trim( rgget( 'view' ) ), $condition );
-		$currentSubview = in_array( trim( rgget( 'subview' ) ), $condition );
+    public static function getMiladiDateTime($dateTime)
+    {
+        if (!empty($dateTime) && $dateTime != '-') {
+            $jDateConvertor = JDate::getInstance();
+            $y =  DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('Y');
+            $m =   DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('m');
+            $d =    DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('j');
+            $time = DateTime::createFromFormat('Y-m-j H:i:s', $dateTime)->format('H:i:s');
+            $jalaliDateTime =  $jDateConvertor->persian_to_gregorian($y, $m, $d);
+            $jalaliY = (string) $jalaliDateTime[0] ;
+            $jalaliM = (string) $jalaliDateTime[1] ;
+            $jalaliD = (string) $jalaliDateTime[2] ;
 
-		return $currentPage || $currentView || $currentSubview;
-	}
+            return "{$jalaliY}-{$jalaliM}-{$jalaliD} {$time}";
+        }
+        return '-';
+    }
 
+    public static function checkCurrentPageForIDPAY()
+    {
+        $condition = [ 'gf_IDPay', 'IDPay' ];
+        $currentPage    = in_array(trim(rgget('page')), $condition);
+        $currentView    = in_array(trim(rgget('view')), $condition);
+        $currentSubview = in_array(trim(rgget('subview')), $condition);
+
+        return $currentPage || $currentView || $currentSubview;
+    }
+
+    public static function checkEntryForIDPay($entry)
+    {
+        $payment_gateway = rgar($entry, "payment_method");
+        return ! empty($payment_gateway) && $payment_gateway == "IDPay";
+    }
+
+    public static function getTypeEntryView()
+    {
+        $condition = ! strtolower(rgpost("save")) || RGForms::post("screen_mode") != "edit";
+        return $condition == true ? 'showView' : 'editView';
+    }
 }
