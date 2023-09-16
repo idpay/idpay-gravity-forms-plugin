@@ -37,6 +37,8 @@ class GF_Gateway_IDPay extends Helpers
     public static function init()
     {
         $dictionary = Helpers::loadDictionary('', '');
+        $setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
+        $enable = Helpers::dataGet($setting,'enable');
         $condition1 = ! class_exists("GFPersian_Payments");
         $condition2 = ! defined('GF_PERSIAN_VERSION');
         $condition3 = version_compare(GF_PERSIAN_VERSION, '2.3.1', '<');
@@ -60,7 +62,7 @@ class GF_Gateway_IDPay extends Helpers
             add_action('gform_entry_info', [ __CLASS__, 'showOrEditPaymentData' ], 4, 2);
             add_action('gform_after_update_entry', [ __CLASS__, 'updatePaymentData' ], 4, 2);
 
-            if (get_option("gf_IDPay_configured")) {
+            if ($enable) {
                 add_filter('gform_form_settings_menu', [ IDPayView::class, 'addIdpayToToolbar' ], 10, 2);
                 add_action('gform_form_settings_page_IDPay', [ IDPayView::class, 'route' ]);
             }
@@ -83,7 +85,7 @@ class GF_Gateway_IDPay extends Helpers
             }
         }
 
-        if (get_option("gf_IDPay_configured")) {
+        if ($enable) {
             add_filter("gform_disable_post_creation", [ __CLASS__, "setDelayedActivity" ], 10, 3);
             add_filter("gform_is_delayed_pre_process_feed", [ __CLASS__, "setDelayedGravityAddons" ], 10, 4);
             add_filter("gform_confirmation", [ IDPayPayment::class, "doPayment" ], 1000, 4);

@@ -10,6 +10,7 @@ class Helpers
     public const NO_PAYMENT = "NO_PAYMENT";
     public const SUCCESS_PAYMENT = "SUCCESS_PAYMENT";
     public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
+    public const KEY_IDPAY = "gf_IDPay_settings";
 
     public static function exists($array, $key): bool
     {
@@ -158,9 +159,9 @@ class Helpers
 
     public static function getGatewayName(): string
     {
-        $settings = get_option("gf_IDPay_settings");
+        $settings = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
 
-        return isset($settings['gname']) ? $settings["gname"] : __('IDPay', 'gravityformsIDPay');
+        return isset($settings['name']) ? $settings["name"] : __('IDPay', 'gravityformsIDPay');
     }
 
     public static function getFeed($form)
@@ -195,7 +196,7 @@ class Helpers
 
     public static function getApiKey()
     {
-        $settings = get_option("gf_IDPay_settings");
+        $settings = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
         $api_key  = $settings["api_key"] ?? '';
 
         return trim($api_key);
@@ -203,7 +204,7 @@ class Helpers
 
     public static function getSandbox()
     {
-        $settings = get_option("gf_IDPay_settings");
+        $settings = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
 
         return $settings["sandbox"] ? "true" : "false";
     }
@@ -436,7 +437,6 @@ class Helpers
             'label28'            => translate(" آیدی فید", self::$domain),
             'label29'            => translate("نوع تراکنش", self::$domain),
             'label30'            => translate("فرم متصل به درگاه", self::$domain),
-            'label31'            => translate("برای شروع باید درگاه فعال باشد . به تنظیمات IDPay بروید .", self::$domain),
             'label32'            => translate("عملیات", self::$domain),
             'label33'            => translate("ویرایش فید", self::$domain),
             'label34'            => translate("حذف", self::$domain),
@@ -474,6 +474,7 @@ class Helpers
             'back'               => translate("بازگشت", self::$domain),
             'feedNotExists'      => translate("شما هیچ فید مشخصی با آیدی پی ندارید . با افزودن جدید یکی بسازید", self::$domain),
             'transNotExists'     => translate("شما هیچ تراکنشی در این فید نداشته اید", self::$domain),
+            'haveToEnable'            => translate("برای شروع باید درگاه فعال باشد . به تنظیمات IDPay بروید .", self::$domain),
             'labelCountFeed'     => translate("مجموع تعداد فید ها : ", self::$domain),
             'labelCountTrans'    => translate("مجموع تعداد تراکنش ها : ", self::$domain),
             'labelRow'    => translate("ردیف", self::$domain),
@@ -581,35 +582,39 @@ class Helpers
                 foreach ($selected_feeds as $feed_id) {
                     IDPayDB::deleteFeed($feed_id);
                 }
-	            return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
+                return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
             }
         }
 
         return '';
     }
 
+    public static function checkNeedToUpgradeVersion($setting)
+    {
+        $version = Helpers::dataGet($setting, 'version');
+        return $version != self::$version ;
+    }
+
     public static function checkSubmittedConfigDataAndLoadSetting()
     {
+        $setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
+
         if (isset($_POST["gf_IDPay_submit"])) {
-            check_admin_referer("update", "gf_IDPay_update");
-            $settings = [
-                "gname"   => rgpost('gf_IDPay_gname'),
-                "api_key" => rgpost('gf_IDPay_api_key'),
-                "sandbox" => rgpost('gf_IDPay_sandbox'),
-            ];
-            update_option("gf_IDPay_settings", array_map('sanitize_text_field', $settings));
-            if (isset($_POST["gf_IDPay_configured"])) {
-                update_option("gf_IDPay_configured", sanitize_text_field($_POST["gf_IDPay_configured"]));
-            } else {
-                delete_option("gf_IDPay_configured");
+            if (Helpers::checkNeedToUpgradeVersion($setting)) {
+                IDPayDB::upgrade();
             }
 
-            return $settings;
-        } else {
-            $settings = get_option("gf_IDPay_settings");
-
-            return $settings;
+            check_admin_referer("update", "gf_IDPay_update");
+            $setting = [
+                "enable"  => sanitize_text_field(rgpost('gf_IDPay_enable')),
+                "name"   => sanitize_text_field(rgpost('gf_IDPay_name')),
+                "api_key" => sanitize_text_field(rgpost('gf_IDPay_api_key')),
+                "sandbox" => sanitize_text_field(rgpost('gf_IDPay_sandbox')),
+                "version" => self::$version,
+            ];
+            Helpers::setGlobalKey(Helpers::KEY_IDPAY, $setting);
         }
+        return $setting;
     }
 
     public static function loadConfigByEntry($entry)
@@ -958,5 +963,21 @@ class Helpers
     {
         $condition = ! strtolower(rgpost("save")) || RGForms::post("screen_mode") != "edit";
         return $condition == true ? 'showView' : 'editView';
+    }
+
+    public static function getGlobalKey($key)
+    {
+        $option = get_option($key);
+        return !empty($option) ? $option : null;
+    }
+
+    public static function deleteGlobalKey($key)
+    {
+        delete_option($key);
+    }
+
+    public static function setGlobalKey($key, $value)
+    {
+        update_option($key, $value);
     }
 }

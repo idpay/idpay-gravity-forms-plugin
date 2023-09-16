@@ -3,14 +3,14 @@ Helpers::prepareFrontEndTools();
 IDPayOperation::checkSubmittedUnistall();
 
 $settings     = Helpers::checkSubmittedConfigDataAndLoadSetting();
+$enable     = Helpers::dataGet($settings,'enable');
 $dictionary   = Helpers::loadDictionary('', '');
 
 $condition1 = ! empty($_POST);
 $condition2 = isset($_GET['subview']) && $_GET['subview'] == 'gf_IDPay' && isset($_GET['updated']);
-$isActive     = get_option("gf_IDPay_configured") ? "checked='checked'" : "";
-$gatewayName  = gform_tooltip('gateway_name');
-$title        = sanitize_text_field(rgar($settings, 'gname'));
-$gatewayTitle = $title ? sanitize_text_field($settings["gname"]) : 'IDPay';
+$isActive     = $enable ? "checked='checked'" : "";
+$title        = sanitize_text_field(rgar($settings, 'name'));
+$gatewayTitle = $title ? sanitize_text_field($settings["name"]) : 'IDPay';
 $apiKey       = sanitize_text_field(rgar($settings, 'api_key'));
 $isActive2    = rgar($settings, 'sandbox') ? "checked='checked'" : "";
 $uninstallHtml = '<input class="button" type="submit" name="uninstall" value="%s" onclick="return confirm(%s%s%s);" />';
@@ -33,23 +33,22 @@ if ($condition1 || $condition2) {
     <table class="form-table">
         <tr>
             <th scope="row">
-                <label for="gf_IDPay_configured"><?php echo $dictionary->label43 ?></label>
+                <label for="gf_IDPay_enable"><?php echo $dictionary->label43 ?></label>
             </th>
             <td>
-                <input <?php echo $isActive ?> type="checkbox" name="gf_IDPay_configured" id="gf_IDPay_configured"/>
-                <label class="inline" for="gf_IDPay_configured"><?php echo $dictionary->label44 ?></label>
+                <input <?php echo $isActive ?> type="checkbox" name="gf_IDPay_enable" id="gf_IDPay_enable"/>
+                <label class="inline" for="gf_IDPay_enable"><?php echo $dictionary->label44 ?></label>
             </td>
         </tr>
         <tr>
             <th scope="row">
-                <label for="gf_IDPay_gname">
+                <label for="gf_IDPay_name">
                     <?php echo $dictionary->label45 ?>
-                    <?php echo $gatewayName ?>
                 </label>
             </th>
             <td>
-                <input class="Cw350" type="text" id="gf_IDPay_gname"
-                       name="gf_IDPay_gname" value="<?php echo $gatewayTitle; ?>"/>
+                <input class="Cw350" type="text" id="gf_IDPay_name"
+                       name="gf_IDPay_name" value="<?php echo $gatewayTitle; ?>"/>
             </td>
         </tr>
         <tr>

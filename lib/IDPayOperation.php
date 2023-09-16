@@ -7,14 +7,39 @@ class IDPayOperation
     public static $min_gravityforms_version = "1.9.10";
     public const PERMISSION_ADMIN = "gfIDPayAdmin";
     public const PERMISSION_UNISTALL = "gfIDPayUninstall";
+    public const SETTING_PAGE_URL = '?page=gf_settings&subview=gf_IDPay';
+    public const GRAVITY_MAIN_PAGE_URL = '?page=gf_edit_forms';
+    public const IDPAY_PLUGIN_FILE='idpay-gravity-forms.php';
+
 
 
     public static function setup()
     {
-        if (get_option("gf_IDPay_version") != self::$version) {
-            IDPayDB::upgrade();
-            update_option("gf_IDPay_version", self::$version);
+            $setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
+            $version = Helpers::dataGet($setting, 'version');
+            $settingPageUrl = self::SETTING_PAGE_URL;
+        if ($version != self::$version && !str_contains($_SERVER['REQUEST_URI'], self::SETTING_PAGE_URL)) {
+            wp_redirect(admin_url("admin.php{$settingPageUrl}"));
         }
+    }
+
+    public static function uninstall()
+    {
+        $dictionary = Helpers::loadDictionary('', '');
+        $basePath = Helpers::PLUGIN_FOLDER;
+        $fileName = self::IDPAY_PLUGIN_FILE;
+        $plugin = "{$basePath}/{$fileName}";
+        $condition = ! self::hasPermission(self::PERMISSION_UNISTALL);
+        $value = [ $plugin => time() ] + (array) Helpers::getGlobalKey('recently_activated');
+        if ($condition) {
+            die($dictionary->labelDontPermission);
+        }
+        IDPayDB::dropTable();
+        Helpers::deleteGlobalKey(Helpers::KEY_IDPAY);
+        deactivate_plugins($plugin);
+        Helpers::setGlobalKey('recently_activated', $value);
+        $gravityMainPageUrl = self::GRAVITY_MAIN_PAGE_URL;
+        wp_redirect(admin_url("admin.php{$gravityMainPageUrl}"));
     }
 
     public static function checkSubmittedUnistall()
@@ -27,27 +52,9 @@ class IDPayOperation
         }
     }
 
-    public static function uninstall()
-    {
-        $dictionary = Helpers::loadDictionary('', '');
-        $plugin = basename(dirname(__FILE__)) . "/index.php";
-        $condition = ! self::hasPermission(self::PERMISSION_UNISTALL);
-        $value = [ $plugin => time() ] + (array) get_option('recently_activated');
-        if ($condition) {
-            die($dictionary->labelDontPermission);
-        }
-        IDPayDB::dropTable();
-        delete_option("gf_IDPay_settings");
-        delete_option("gf_IDPay_configured");
-        delete_option("gf_IDPay_version");
-        deactivate_plugins($plugin);
-        update_option('recently_activated', $value);
-    }
 
     public static function deactivation()
-    {
-        delete_option("gf_IDPay_version");
-    }
+    {}
 
     public static function reportPreRequiredPersianGravityForm()
     {
