@@ -20,11 +20,10 @@ class IDPayDB
 
     public static function getSqlQuery($filename)
     {
-        $basePath = plugin_dir_url(__FILE__). 'sql';
+	    $basePath = Helpers::getBasePath();
+	    $basePath = "{$basePath}/sql";
         return file_get_contents("{$basePath}/{$filename}.sql");
     }
-
-
 
     public static function prepareQuery($type, $filters)
     {

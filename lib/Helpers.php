@@ -394,7 +394,9 @@ class Helpers
 
     public static function loadDictionary()
     {
-	   $dictionary = require 'lang/fa.php';
+	    $basePath = Helpers::getBasePath();
+		$fullPath = "{$basePath}/lang/fa.php";
+	   $dictionary = require $fullPath;
 	   return (object) $dictionary;
     }
 
