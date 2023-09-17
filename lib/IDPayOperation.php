@@ -25,7 +25,7 @@ class IDPayOperation
 
     public static function uninstall()
     {
-        $dictionary = Helpers::loadDictionary('', '');
+        $dictionary = Helpers::loadDictionary();
         $basePath = Helpers::PLUGIN_FOLDER;
         $fileName = self::IDPAY_PLUGIN_FILE;
         $plugin = "{$basePath}/{$fileName}";
@@ -44,7 +44,7 @@ class IDPayOperation
 
     public static function checkSubmittedUnistall()
     {
-        $dictionary = Helpers::loadDictionary('', '');
+        $dictionary = Helpers::loadDictionary();
         if (rgpost("uninstall")) {
             check_admin_referer("uninstall", "gf_IDPay_uninstall");
             self::uninstall();
@@ -58,7 +58,7 @@ class IDPayOperation
 
     public static function reportPreRequiredPersianGravityForm()
     {
-        $dictionary = Helpers::loadDictionary('', '');
+        $dictionary = Helpers::loadDictionary();
         $url = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884";
         $adminUrl = admin_url($url);
         $html = "<a href='{$adminUrl}'>{$dictionary->labelHintPersianGravity}</a>";
@@ -68,7 +68,7 @@ class IDPayOperation
 
     public static function reportPreRequiredGravityForm()
     {
-        $dictionary = Helpers::loadDictionary('', '');
+        $dictionary = Helpers::loadDictionary();
         $html = "<a href='https://gravityforms.ir/11378' target='_blank'>{$dictionary->labelHintGravity}</a>";
         $html = sprintf($html, self::$min_gravityforms_version);
         $class   = 'notice notice-error';

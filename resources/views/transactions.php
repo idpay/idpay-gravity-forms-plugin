@@ -2,7 +2,7 @@
 Helpers::prepareFrontEndTools();
 Helpers::checkSupportedGravityVersion();
 
-$dictionary        = Helpers::loadDictionary('', '');
+$dictionary        = Helpers::loadDictionary();
 $html            = [ 'A' => "<tr><td colspan='5' style='padding:20px;'>{$dictionary->transNotExists}</td></tr>"];
 
 /* Load Data And Pagination Section */

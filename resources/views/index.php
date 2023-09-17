@@ -4,7 +4,7 @@ Helpers::checkSupportedGravityVersion();
 
 /* Load Dictionary And Check Submitted */
 $operation         = Helpers::checkSubmittedOperation();
-$dictionary        = Helpers::loadDictionary('', '');
+$dictionary        = Helpers::loadDictionary();
 $html            = [
   'A' =>  "<a class='add-new-h2' href='admin.php?page=gf_IDPay&view=edit'>{$dictionary->add}</a>",
   'B' => "<tr><td colspan='5' style='padding:20px;direction: rtl'>{$dictionary->haveToEnable}</td></tr>",

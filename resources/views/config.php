@@ -11,7 +11,10 @@ $config                = ! empty($feedId) ? IDPayDB::getFeed($feedId) : null;
 $formId                = Helpers::calcFormId($fId, $config);
 $form                  = ! empty($formId) ? IDPayDB::getForm($formId) : null;
 $formTitle             = ! empty($form) ? $form['form_title'] : '';
-$dictionary            = Helpers::loadDictionary($feedId, $formTitle);
+$dictionary            = Helpers::loadDictionary();
+$translateFeedId = sprintf($dictionary->label2, $feedId);
+$translateFormTitle = sprintf($dictionary->label3, $formTitle);
+
 //End Section
 
 // Section Check Updated Fields And Updating
@@ -80,8 +83,8 @@ $optionsForms           = $gfFormFeedSelect->options;
     <?php echo $dictionary->label1 ?>
     <?php if (! empty($formId)) { ?>
         <span class="gf_admin_page_subtitle">
-            <span class="gf_admin_page_formid"><?php echo $dictionary->label3 ?></span>
-            <span class="gf_admin_page_formid"><?php echo $dictionary->label2 ?></span>
+            <span class="gf_admin_page_formid"><?php echo $translateFormTitle ?></span>
+            <span class="gf_admin_page_formid"><?php echo $translateFeedId ?></span>
         </span>
     <?php } ?>
 </h2>

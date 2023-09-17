@@ -1,5 +1,5 @@
 <?php
-$dictionary = Helpers::loadDictionary('','');
+$dictionary = Helpers::loadDictionary();
 $feedActive =  wp_create_nonce( "gf_IDPay_update_feed_active" );
 ?>
 

@@ -4,7 +4,7 @@ IDPayOperation::checkSubmittedUnistall();
 
 $settings     = Helpers::checkSubmittedConfigDataAndLoadSetting();
 $enable     = Helpers::dataGet($settings,'enable');
-$dictionary   = Helpers::loadDictionary('', '');
+$dictionary   = Helpers::loadDictionary();
 
 $condition1 = ! empty($_POST);
 $condition2 = isset($_GET['subview']) && $_GET['subview'] == 'gf_IDPay' && isset($_GET['updated']);

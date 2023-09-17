@@ -53,7 +53,7 @@ class IDPayView
 
         $buttonHtml = $button_input;
         $formId = Helpers::dataGet($form, 'id');
-        $dictionary = Helpers::loadDictionary('', '');
+        $dictionary = Helpers::loadDictionary();
         Helpers::prepareFrontEndTools();
 
         $hasPriceFieldInForm  = Helpers::checkSetPriceForForm($form, $formId);
@@ -76,7 +76,7 @@ class IDPayView
 
     public static function makeHtmlShowPaymentData($formId, $entry)
     {
-        $dict = Helpers::loadDictionary('', '');
+        $dict = Helpers::loadDictionary();
         $form           = RGFormsModel::get_form_meta($formId);
         $entryId = Helpers::dataGet($entry, 'id');
         $style = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
@@ -108,7 +108,7 @@ class IDPayView
 
     public static function makeHtmlEditPaymentData($formId, $entry)
     {
-        $dict = Helpers::loadDictionary('', '');
+        $dict = Helpers::loadDictionary();
         $form           = RGFormsModel::get_form_meta($formId);
         $entryId = Helpers::dataGet($entry, 'id');
         $style = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";

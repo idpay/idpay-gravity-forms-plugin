@@ -36,7 +36,7 @@ class GF_Gateway_IDPay extends Helpers
 
     public static function init()
     {
-        $dictionary = Helpers::loadDictionary('', '');
+        $dictionary = Helpers::loadDictionary();
         $setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
         $enable = Helpers::dataGet($setting,'enable');
         $condition1 = ! class_exists("GFPersian_Payments");
@@ -141,7 +141,7 @@ class GF_Gateway_IDPay extends Helpers
 
     public static function setDefaultSys($form, $entry)
     {
-        $dictionary = Helpers::loadDictionary('', '');
+        $dictionary = Helpers::loadDictionary();
         $baseClass = __CLASS__;
         $author    = self::$author;
         $class     = "{$baseClass}|{$author}";
@@ -214,7 +214,7 @@ class GF_Gateway_IDPay extends Helpers
         $entry = GFPersian_Payments::get_entry($entry_id);
 
         if (Helpers::checkEntryForIDPay($entry)) {
-            $dict = Helpers::loadDictionary('', '');
+            $dict = Helpers::loadDictionary();
             $user = self::loadUser();
             $payment_status = sanitize_text_field(rgpost("payment_status"));
             $payment_amount       = sanitize_text_field(rgpost("payment_amount"));
