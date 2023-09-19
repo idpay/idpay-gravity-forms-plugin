@@ -30,7 +30,7 @@ require_once('lib/IDPayView.php');
 class GF_Gateway_IDPay extends Helpers
 {
     public static $author = "IDPay";
-    public static $version = "1.0.5";
+    public static $version = "2.0.0";
     public static $min_gravityforms_version = "1.9.10";
     public static $domain = "gravityformsIDPay";
 

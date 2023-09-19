@@ -225,7 +225,9 @@ class IDPayDB
 			$options
         );
 
-		$db = $existsTable == true ? $wpdb->query($queryRenameTable) : dbDelta($queryCreateTable);
+		$existsTable == true ? $wpdb->query($queryRenameTable) : dbDelta($queryCreateTable);
+	    delete_option("gf_IDPay_version");
+
     }
 
     public static function getFeeds($pagination, $filters)
