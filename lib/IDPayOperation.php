@@ -23,6 +23,11 @@ class IDPayOperation
         }
     }
 
+	public static function upgrade()
+	{
+		IDPayDB::upgrade();
+	}
+
     public static function uninstall()
     {
         $dictionary = Helpers::loadDictionary();

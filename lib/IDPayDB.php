@@ -225,15 +225,7 @@ class IDPayDB
 			$options
         );
 
-        if ($existsTable == true) {
-            $wpdb->query($queryRenameTable);
-
-            return 'completed rename table';
-        } else {
-            dbDelta($queryCreateTable);
-
-            return 'completed create table';
-        }
+		$db = $existsTable == true ? $wpdb->query($queryRenameTable) : dbDelta($queryCreateTable);
     }
 
     public static function getFeeds($pagination, $filters)

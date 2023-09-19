@@ -492,7 +492,7 @@ class Helpers
 
         if (isset($_POST["gf_IDPay_submit"])) {
             if (Helpers::checkNeedToUpgradeVersion($setting)) {
-                IDPayDB::upgrade();
+	            IDPayOperation::upgrade();
             }
 
             check_admin_referer("update", "gf_IDPay_update");
