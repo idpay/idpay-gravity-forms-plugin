@@ -20,7 +20,7 @@ $addFeedOption     = $enable == false ? $html['B'] : '';
 
 /* Load Data And Pagination Section */
 $filters               = (object) [];
-$feeds                 = IDPayDB::getWithPaginate(IDPayDB::FEEDS, $filters);
+$feeds                 = IDPayDB::getWithPaginate(Helpers::FEEDS, $filters);
 $data                  = $feeds->data;
 $checkDataExists       = ! empty($data) && count($data) > 0;
 $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['C']  : '' ;

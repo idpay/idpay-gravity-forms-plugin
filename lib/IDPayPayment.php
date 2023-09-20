@@ -2,30 +2,27 @@
 
 class IDPayPayment extends Helpers
 {
-
-    public static $author = "IDPay";
-
     public static function doPayment($confirmation, $form, $entry, $ajax)
     {
         $entryId = $entry['id'];
         $formId  = $form['id'];
 
-        if (! self::checkOneConfirmationExists($confirmation, $form, $entry, $ajax)) {
+        if (! IDPayPayment::checkOneConfirmationExists($confirmation, $form, $entry, $ajax)) {
             return $confirmation;
         }
 
         $resp = null;
         if ($confirmation == 'custom') {
-            $resp = self::handleCustomConfirmation($confirmation, $form, $entry, $ajax);
+            $resp = IDPayPayment::handleCustomConfirmation($confirmation, $form, $entry, $ajax);
         } else {
-            $resp = self::handleAutoConfirmation($confirmation, $form, $entry, $ajax);
+            $resp = IDPayPayment::handleAutoConfirmation($confirmation, $form, $entry, $ajax);
         }
 
-        if (self::dataGet($resp, 'transactionType') == 'Free') {
-            return self::dataGet($resp, 'data.confirmation');
-        } elseif (self::dataGet($resp, 'transactionType') == 'Purchase') {
-            $data   = self::dataGet($resp, 'data');
-            $amount = self::dataGet($data, 'amount');
+        if (Helpers::dataGet($resp, 'transactionType') == 'Free') {
+            return Helpers::dataGet($resp, 'data.confirmation');
+        } elseif (Helpers::dataGet($resp, 'transactionType') == 'Purchase') {
+            $data   = Helpers::dataGet($resp, 'data');
+            $amount = Helpers::dataGet($data, 'amount');
             date_default_timezone_set("Asia/Tehran");
 
             $entry["payment_date"]     = date_create()->format('Y-m-d H:i:s');
@@ -37,36 +34,36 @@ class IDPayPayment extends Helpers
             $entry["transaction_type"] = null;
             GFAPI::update_entry($entry);
             $entry      = GFPersian_Payments::get_entry($entryId);
-            $ReturnPath = self::Return_URL($formId, $entryId);
+            $ReturnPath = IDPayPayment::Return_URL($formId, $entryId);
 
-            if (self::isNotApprovedPrice($amount)) {
-                return self::reject($entry, $form);
+            if (IDPayPayment::isNotApprovedPrice($amount)) {
+                return IDPayPayment::reject($entry, $form);
             }
 
             $paymentDto = [
                 'order_id' => $entryId,
                 'amount'   => $amount,
                 'callback' => $ReturnPath,
-                'name'     => self::dataGet($data, 'name'),
-                'mail'     => self::dataGet($data, 'mail'),
-                'desc'     => self::dataGet($data, 'description'),
-                'phone'    => self::dataGet($data, 'mobile'),
+                'name'     => Helpers::dataGet($data, 'name'),
+                'mail'     => Helpers::dataGet($data, 'mail'),
+                'desc'     => Helpers::dataGet($data, 'description'),
+                'phone'    => Helpers::dataGet($data, 'mobile'),
             ];
 
-            $response       = self::httpRequest('https://api.idpay.ir/v1.1/payment', $paymentDto);
+            $response       = IDPayPayment::httpRequest('https://api.idpay.ir/v1.1/payment', $paymentDto);
             $http_status    = wp_remote_retrieve_response_code($response);
             $result         = json_decode(wp_remote_retrieve_body($response)) ?? null;
-            $errorResponder = self::checkErrorResponse($response, $http_status, $result);
+            $errorResponder = IDPayPayment::checkErrorResponse($response, $http_status, $result);
 
             if (! $errorResponder == false) {
-                $message = self::dataGet($errorResponder, 'message');
+                $message = Helpers::dataGet($errorResponder, 'message');
 
-                return self::reject($entry, $form, $message);
+                return IDPayPayment::reject($entry, $form, $message);
             }
 
             gform_update_meta($entryId, "IdpayTransactionId:$entryId", $result->id);
 
-            return self::redirect_confirmation($result->link, $ajax);
+            return IDPayPayment::redirect_confirmation($result->link, $ajax);
         }
 
         return $confirmation;
@@ -75,7 +72,7 @@ class IDPayPayment extends Helpers
     public static function checkout($form, $entry)
     {
         $formId       = $form['id'];
-        $Amount       = self::getOrderTotal($form, $entry);
+        $Amount       = IDPayPayment::getOrderTotal($form, $entry);
         $applyFilters = [
             [ '_gform_form_gateway_price_', '_gform_form_gateway_price' ],
             [ '_gform_form_IDPay_price_', '_gform_form_IDPay_price' ],
@@ -84,8 +81,8 @@ class IDPayPayment extends Helpers
         ];
         foreach ($applyFilters as $apply) {
             apply_filters(
-                self::$author . "{$apply[0]}{$formId}",
-                apply_filters(self::$author . $apply[1], $Amount, $form, $entry),
+	            Helpers::AUTHOR . "{$apply[0]}{$formId}",
+                apply_filters(Helpers::AUTHOR . $apply[1], $Amount, $form, $entry),
                 $form,
                 $entry
             );
@@ -99,27 +96,27 @@ class IDPayPayment extends Helpers
         $formId  = $form['id'];
         $entryId = $entry['id'];
 
-        if (! self::checkSubmittedForIDPay($formId) || ! self::checkFeedExists($form)) {
+        if (! IDPayPayment::checkSubmittedForIDPay($formId) || ! IDPayPayment::checkFeedExists($form)) {
             return $confirmation;
         }
-        $feed        = self::getFeed($form);
+        $feed        = IDPayPayment::getFeed($form);
         $feedId      = $feed['id'];
-        $gatewayName = self::getGatewayName();
-        $amount      = self::checkout($form, $entry);
+        $gatewayName = IDPayPayment::getGatewayName();
+        $amount      = IDPayPayment::checkout($form, $entry);
 
         gform_update_meta($entryId, 'IDPay_feed_id', $feedId);
         gform_update_meta($entryId, 'payment_type', 'form');
         gform_update_meta($entryId, 'payment_gateway', $gatewayName);
 
-        return self::process($amount, $feed, $entry, $form, $ajax);
+        return IDPayPayment::process($amount, $feed, $entry, $form, $ajax);
     }
 
     public static function process($amount, $feed, $entry, $form, $ajax)
     {
         $formId = $form['id'];
 
-        if (self::checkTypePayment($amount) == 'Free') {
-            $confirmation = self::processFree($entry, $formId, $ajax);
+        if (IDPayPayment::checkTypePayment($amount) == 'Free') {
+            $confirmation = IDPayPayment::processFree($entry, $formId, $ajax);
 
             return [
                 'transactionType' => 'Free',
@@ -127,17 +124,17 @@ class IDPayPayment extends Helpers
                     'confirmation' => $confirmation
                 ]
             ];
-        } elseif (self::checkTypePayment($amount) == 'Purchase') {
-            $data = self::processPurchase($feed, $entry, $form);
+        } elseif (IDPayPayment::checkTypePayment($amount) == 'Purchase') {
+            $data = IDPayPayment::processPurchase($feed, $entry, $form);
 
             return [
                 'transactionType' => 'Purchase',
                 'data'            => [
-                    'amount'      => self::fixPrice($amount, $form, $entry),
-                    'mobile'      => self::dataGet($data, 'mobile'),
-                    'name'        => self::dataGet($data, 'name'),
-                    'mail'        => self::dataGet($data, 'mail'),
-                    'description' => self::dataGet($data, 'description'),
+                    'amount'      => IDPayPayment::fixPrice($amount, $form, $entry),
+                    'mobile'      => Helpers::dataGet($data, 'mobile'),
+                    'name'        => Helpers::dataGet($data, 'name'),
+                    'mail'        => Helpers::dataGet($data, 'mail'),
+                    'description' => Helpers::dataGet($data, 'description'),
                 ]
             ];
         }
@@ -146,16 +143,16 @@ class IDPayPayment extends Helpers
     public static function handleCustomConfirmation($confirmation, $form, $entry, $ajax)
     {
         $formId      = $form['id'];
-        $feed        = self::getFeed($form);
+        $feed        = IDPayPayment::getFeed($form);
 
         $amount = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_price_' . $formId);
-        $amount = apply_filters(self::$author . "_gform_custom_gateway_price_{$formId}", apply_filters(self::$author . "_gform_custom_gateway_price", $amount, $form, $entry), $form, $entry);
-        $amount = apply_filters(self::$author . "_gform_custom_IDPay_price_{$formId}", apply_filters(self::$author . "_gform_custom_IDPay_price", $amount, $form, $entry), $form, $entry);
-        $amount = apply_filters(self::$author . "_gform_gateway_price_{$formId}", apply_filters(self::$author . "_gform_gateway_price", $amount, $form, $entry), $form, $entry);
-        $amount = apply_filters(self::$author . "_gform_IDPay_price_{$formId}", apply_filters(self::$author . "_gform_IDPay_price", $amount, $form, $entry), $form, $entry);
+        $amount = apply_filters(Helpers::AUTHOR . "_gform_custom_gateway_price_{$formId}", apply_filters(Helpers::AUTHOR . "_gform_custom_gateway_price", $amount, $form, $entry), $form, $entry);
+        $amount = apply_filters(Helpers::AUTHOR . "_gform_custom_IDPay_price_{$formId}", apply_filters(Helpers::AUTHOR . "_gform_custom_IDPay_price", $amount, $form, $entry), $form, $entry);
+        $amount = apply_filters(Helpers::AUTHOR . "_gform_gateway_price_{$formId}", apply_filters(Helpers::AUTHOR . "_gform_gateway_price", $amount, $form, $entry), $form, $entry);
+        $amount = apply_filters(Helpers::AUTHOR . "_gform_IDPay_price_{$formId}", apply_filters(Helpers::AUTHOR . "_gform_IDPay_price", $amount, $form, $entry), $form, $entry);
 
         $Description = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_desc_' . $formId);
-        $Description = apply_filters(self::$author . '_gform_IDPay_gateway_desc_', apply_filters(self::$author . '_gform_custom_gateway_desc_', $Description, $form, $entry), $form, $entry);
+        $Description = apply_filters(Helpers::AUTHOR . '_gform_IDPay_gateway_desc_', apply_filters(Helpers::AUTHOR . '_gform_custom_gateway_desc_', $Description, $form, $entry), $form, $entry);
 
         $Name   = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_name_' . $formId);
         $Mail   = gform_get_meta(rgar($entry, 'id'), 'IDPay_part_email_' . $formId);
@@ -167,10 +164,10 @@ class IDPayPayment extends Helpers
         do_action('gf_gateway_request_add_entry', $confirmation, $form, $entry, $ajax);
         do_action('gf_IDPay_request_add_entry', $confirmation, $form, $entry, $ajax);
 
-        gform_update_meta($entryId, 'payment_gateway', self::getGatewayName());
+        gform_update_meta($entryId, 'payment_gateway', IDPayPayment::getGatewayName());
         gform_update_meta($entryId, 'payment_type', 'custom');
 
-        return self::process($amount, $feed, $entry, $form, $ajax);
+        return IDPayPayment::process($amount, $feed, $entry, $form, $ajax);
     }
 
     public static function processFree($entry, $formId, $ajax)
@@ -185,10 +182,10 @@ class IDPayPayment extends Helpers
         GFAPI::update_entry($entry);
 
         $queryArgs1  = [ 'no' => 'true' ];
-        $queryArgs2  = self::Return_URL($formId, $entry['id']);
+        $queryArgs2  = IDPayPayment::Return_URL($formId, $entry['id']);
         $queryParams = add_query_arg($queryArgs1, $queryArgs2);
 
-        return self::redirect_confirmation($queryParams, $ajax);
+        return IDPayPayment::redirect_confirmation($queryParams, $ajax);
     }
 
     public static function processPurchase($feed, $entry, $form)

@@ -2,16 +2,13 @@
 
 class IDPayVerify extends Helpers
 {
-
-    public static $author = "IDPay";
-
     public static function reject($entry, $form, $request, $pricing, $config)
     {
         $transactionId = $request->trackId ?? '';
         $statusCode    = $request->status ?? 0;
-        $statusDesc    = self::getStatus($statusCode);
-        $entryId       = self::dataGet($entry, 'id');
-        $user          = self::loadUser();
+        $statusDesc    = IDPayVerify::getStatus($statusCode);
+        $entryId       = Helpers::dataGet($entry, 'id');
+        $user          = IDPayVerify::loadUser();
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]   = $transactionId;
@@ -67,9 +64,9 @@ class IDPayVerify extends Helpers
         $status        = 'Paid';
         $transactionId = $request->trackId ?? '';
         $statusCode    = $transaction->status ?? 0;
-        $statusDesc    = self::getStatus($statusCode);
-        $entryId       = self::dataGet($entry, 'id');
-        $user          = self::loadUser();
+        $statusDesc    = IDPayVerify::getStatus($statusCode);
+        $entryId       = Helpers::dataGet($entry, 'id');
+        $user          = IDPayVerify::loadUser();
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
         $entry["payment_amount"]   = $transaction->amount;
@@ -126,7 +123,7 @@ class IDPayVerify extends Helpers
             ''
         );
 
-        self::processConfirmations($form, $request, $entry, $note, $status, $config);
+        IDPayVerify::processConfirmations($form, $request, $entry, $note, $status, $config);
         GFPersian_Payments::notification($form, $entry);
         GFPersian_Payments::confirmation($form, $entry, $note);
 
@@ -138,9 +135,9 @@ class IDPayVerify extends Helpers
         $status        = 'Paid';
         $transactionId = $request->trackId ?? '';
         $statusCode    = $transaction->status ?? 0;
-        $statusDesc    = self::getStatus($statusCode);
-        $entryId       = self::dataGet($entry, 'id');
-        $user          = self::loadUser();
+        $statusDesc    = IDPayVerify::getStatus($statusCode);
+        $entryId       = Helpers::dataGet($entry, 'id');
+        $user          = IDPayVerify::loadUser();
 
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
@@ -187,7 +184,7 @@ class IDPayVerify extends Helpers
             ''
         );
 
-        self::processConfirmations($form, $request, $entry, $note, $status, $config);
+	    IDPayVerify::processConfirmations($form, $request, $entry, $note, $status, $config);
         GFPersian_Payments::notification($form, $entry);
         GFPersian_Payments::confirmation($form, $entry, $note);
 
@@ -197,7 +194,7 @@ class IDPayVerify extends Helpers
     public static function prepareFree($entry, $form)
     {
         $transactionId = apply_filters(
-            self::$author . '_gf_rand_transaction_id',
+	        Helpers::AUTHOR . '_gf_rand_transaction_id',
             GFPersian_Payments::transaction_id($entry),
             $form,
             $entry
@@ -215,10 +212,10 @@ class IDPayVerify extends Helpers
 
     public static function preparePurchase($entry, $form, $request, $pricing, $config)
     {
-        $entryId    = self::dataGet($entry, 'id');
+        $entryId    = Helpers::dataGet($entry, 'id');
         $condition1 = $request->status != 10;
         $condition2 = $request->orderId != $entryId;
-        $condition3 = self::isNotDoubleSpending($entryId, $request->orderId, $request->id) != true;
+        $condition3 = Helpers::isNotDoubleSpending($entryId, $request->orderId, $request->id) != true;
 
         if ($condition1 || $condition2 || $condition3) {
             return (object) [
@@ -232,17 +229,17 @@ class IDPayVerify extends Helpers
             ];
         }
 
-        $response       = self::httpRequest('https://api.idpay.ir/v1.1/payment/verify', [
+        $response       = IDPayVerify::httpRequest('https://api.idpay.ir/v1.1/payment/verify', [
             'id'       => $request->id,
             'order_id' => $entryId
         ]);
         $http_status    = wp_remote_retrieve_response_code($response);
         $result         = json_decode(wp_remote_retrieve_body($response)) ?? null;
-        $errorResponder = self::checkErrorResponse($response, $http_status, $result);
+        $errorResponder = IDPayVerify::checkErrorResponse($response, $http_status, $result);
 
         if (! $errorResponder == false) {
-            $message = self::dataGet($errorResponder, 'message');
-            self::reject($entry, $form, $request, $pricing, $config);
+            $message = Helpers::dataGet($errorResponder, 'message');
+	        IDPayVerify::reject($entry, $form, $request, $pricing, $config);
 
             return 'error';
         }
@@ -300,9 +297,9 @@ class IDPayVerify extends Helpers
     public static function doVerify()
     {
 
-        $request = self::getRequestData();
+        $request = IDPayVerify::getRequestData();
 
-        if (empty($request) || self::isNotApprovedGettingTransaction($request->entryId, $request->formId)) {
+        if (empty($request) || IDPayVerify::isNotApprovedGettingTransaction($request->entryId, $request->formId)) {
             return 'error';
         }
 
@@ -310,57 +307,57 @@ class IDPayVerify extends Helpers
         $form        = RGFormsModel::get_form_meta($request->formId);
         $paymentType = gform_get_meta($request->entryId, 'payment_type');
         gform_delete_meta($request->entryId, 'payment_type');
-        $config = self::loadConfig($entry, $form, $paymentType);
+        $config = IDPayVerify::loadConfig($entry, $form, $paymentType);
         if (empty($config)) {
             return 'error';
         }
 
-        $pricing = self::getPriceOrder($paymentType, $entry, $form);
+        $pricing = IDPayVerify::getPriceOrder($paymentType, $entry, $form);
 
-        if (self::checkTypeVerify() == 'Purchase' && ! self::checkApprovedVerifyData($request)) {
-            self::reject($entry, $form, $request, $pricing, $config);
-            self::processAddons($form, $entry, $config, self::NO_PAYMENT);
+        if (IDPayVerify::checkTypeVerify() == 'Purchase' && ! IDPayVerify::checkApprovedVerifyData($request)) {
+	        IDPayVerify::reject($entry, $form, $request, $pricing, $config);
+	        IDPayVerify::processAddons($form, $entry, $config, Helpers::NO_PAYMENT);
 
             return 'error';
         }
 
         $transaction = (object) [];
-        if (self::checkTypeVerify() == 'Free') {
-            $transaction = self::prepareFree($entry, $form);
+        if (IDPayVerify::checkTypeVerify() == 'Free') {
+            $transaction = IDPayVerify::prepareFree($entry, $form);
         }
-        if (self::checkTypeVerify() == 'Purchase') {
-            $transaction = self::preparePurchase($entry, $form, $request, $pricing, $config);
+        if (IDPayVerify::checkTypeVerify() == 'Purchase') {
+            $transaction = IDPayVerify::preparePurchase($entry, $form, $request, $pricing, $config);
         }
 
         if ($transaction == 'error') {
-            self::processAddons($form, $entry, $config, self::NO_PAYMENT);
+	        IDPayVerify::processAddons($form, $entry, $config, Helpers::NO_PAYMENT);
 
             return 'error';
         } elseif ($transaction->statusCode != 100) {
             $data    = (object) [
-                'id'      => self::dataGet($request, 'id'),
-                'status'  => self::dataGet($transaction, 'statusCode'),
-                'trackId' => self::dataGet($request, 'track_id'),
-                'orderId' => self::dataGet($request, 'order_id'),
-                'formId'  => (int) self::dataGet($_GET, 'form_id'),
-                'entryId' => (int) self::dataGet($_GET, 'entry'),
-                'all'     => self::dataGet($transaction, 'response'),
+                'id'      => Helpers::dataGet($request, 'id'),
+                'status'  => Helpers::dataGet($transaction, 'statusCode'),
+                'trackId' => Helpers::dataGet($request, 'track_id'),
+                'orderId' => Helpers::dataGet($request, 'order_id'),
+                'formId'  => (int) Helpers::dataGet($_GET, 'form_id'),
+                'entryId' => (int) Helpers::dataGet($_GET, 'entry'),
+                'all'     => Helpers::dataGet($transaction, 'response'),
             ];
             $request = $data;
-            self::reject($entry, $form, $request, $pricing, $config);
-            self::processAddons($form, $entry, $config, self::NO_PAYMENT);
+	        IDPayVerify::reject($entry, $form, $request, $pricing, $config);
+	        IDPayVerify::processAddons($form, $entry, $config, Helpers::NO_PAYMENT);
 
             return 'error';
         }
 
-        if (self::checkTypeVerify() == 'Free') {
-            self::acceptFree($transaction, $entry, $form, $request, $pricing, $config);
+        if (IDPayVerify::checkTypeVerify() == 'Free') {
+	        IDPayVerify::acceptFree($transaction, $entry, $form, $request, $pricing, $config);
         }
-        if (self::checkTypeVerify() == 'Purchase') {
-            self::acceptPurchase($transaction, $entry, $form, $request, $pricing, $config);
+        if (IDPayVerify::checkTypeVerify() == 'Purchase') {
+	        IDPayVerify::acceptPurchase($transaction, $entry, $form, $request, $pricing, $config);
         }
 
-        self::processAddons($form, $entry, $config, self::SUCCESS_PAYMENT);
+	    IDPayVerify::processAddons($form, $entry, $config, Helpers::SUCCESS_PAYMENT);
 
         return true;
     }

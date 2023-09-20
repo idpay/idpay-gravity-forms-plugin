@@ -7,7 +7,7 @@ $html            = [ 'A' => "<tr><td colspan='5' style='padding:20px;'>{$diction
 
 /* Load Data And Pagination Section */
 $filters = (object) ['formId' => rgget('id') ?? 0];
-$feeds                 = IDPayDB::getWithPaginate(IDPayDB::TRANSACTIONS, $filters);
+$feeds                 = IDPayDB::getWithPaginate(Helpers::TRANSACTIONS, $filters);
 $data                  = $feeds->data;
 $checkDataExists       = ! empty($data) && count($data) > 0;
 $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['A']  : '' ;

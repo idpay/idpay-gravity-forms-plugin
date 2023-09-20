@@ -62,8 +62,8 @@ $isCheckedUserRegSuccessPay     = $isUserRegSuccessPay == true ? "checked='check
 $isCheckedUserRegNoPay          = $isUserRegNoPay == true ? "checked='checked'" : "";
 $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
 $descriptionText                = ! empty($description) ? $description : $defaultDescription;
-do_action(Helpers::$author . '_gform_gateway_config', $config, $form);
-do_action(Helpers::$author . '_gform_IDPay_config', $config, $form);
+do_action(Helpers::AUTHOR . '_gform_gateway_config', $config, $form);
+do_action(Helpers::AUTHOR . '_gform_IDPay_config', $config, $form);
 // End Section : LoadConfigValues
 
 /* Section FeedFormSelect

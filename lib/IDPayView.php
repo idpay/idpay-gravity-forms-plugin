@@ -1,24 +1,17 @@
 <?php
 
 
-class IDPayView
+class IDPayView extends Helpers
 {
-    public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
-    public const VIEW_CONFIG = "config";
-    public const VIEW_TRANSACTION = "transactions";
-    public const VIEW_FEEDS = "index";
-    public const VIEW_SETTING = "setting";
-
-
     public static function route($view = null)
     {
         $view = empty($view) ? rgget("view") : $view;
         $basePath = Helpers::getBasePath();
         $folder = '/resources/views';
-        $page = self::VIEW_FEEDS;
-        $page = $view == 'edit' ? self::VIEW_CONFIG : $page;
-        $page = $view == 'stats' ? self::VIEW_TRANSACTION : $page;
-        $page = $view == 'setting' ? self::VIEW_SETTING : $page;
+        $page = Helpers::VIEW_FEEDS;
+        $page = $view == 'edit' ? Helpers::VIEW_CONFIG : $page;
+        $page = $view == 'stats' ? Helpers::VIEW_TRANSACTION : $page;
+        $page = $view == 'setting' ? Helpers::VIEW_SETTING : $page;
 
         $complete = "{$basePath}{$folder}/{$page}.php";
         require_once($complete);
@@ -31,7 +24,7 @@ class IDPayView
             "name"       => "gf_IDPay",
             "label"      => __("IDPay", "gravityformsIDPay"),
             "callback"   => $handler,
-            "permission" => IDPayOperation::PERMISSION_ADMIN
+            "permission" => Helpers::PERMISSION_ADMIN
         ];
 
         return $menus;
@@ -57,7 +50,7 @@ class IDPayView
         Helpers::prepareFrontEndTools();
 
         $hasPriceFieldInForm  = Helpers::checkSetPriceForForm($form, $formId);
-        $basePath = IDPayView::PLUGIN_FOLDER;
+        $basePath = Helpers::PLUGIN_FOLDER;
         $file = '/resources/images/logo.svg';
         $ImageUrl =  plugins_url("{$basePath}{$file}");
         $config     = IDPayDB::getActiveFeed($form);

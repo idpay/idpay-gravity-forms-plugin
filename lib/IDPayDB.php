@@ -1,23 +1,7 @@
 <?php
 
-class IDPayDB
+class IDPayDB extends Helpers
 {
-    public static $author = "IDPay";
-
-    public const FEEDS = 'getFeeds';
-    public const TRANSACTIONS = 'getTransactions';
-
-    public const QUERY_TRANSACTIONS = 'QUERY_TRANSACTIONS';
-    public const QUERY_ANALYTICS = 'QUERY_ANALYTICS';
-    public const QUERY_COUNT_TRANSACTION = 'QUERY_COUNT_TRANSACTION';
-    public const QUERY_COUNT_FEED = 'QUERY_COUNT_FEED';
-    public const QUERY_DELETE_IDPAY = 'QUERY_DELETE_IDPAY';
-    public const QUERY_FEED_BY_ID = 'QUERY_FEED_BY_ID';
-    public const QUERY_DELETE_FEED = 'QUERY_DELETE_FEED';
-    public const QUERY_FEED = 'QUERY_FEED';
-    public const QUERY_FEEDS = 'QUERY_FEEDS';
-    public const QUERY_FORM = 'QUERY_FORM';
-
     public static function getSqlQuery($filename)
     {
 	    $basePath = Helpers::getBasePath();
@@ -27,78 +11,78 @@ class IDPayDB
 
     public static function prepareQuery($type, $filters)
     {
-        $transactionTableName = self::getTransactionTableName();
+        $transactionTableName = IDPayDB::getTransactionTableName();
         $formTable    = RGFormsModel::get_form_table_name();
-        $IDPayTable = self::getTableName();
+        $IDPayTable = IDPayDB::getTableName();
 
         switch ($type) {
-            case self::QUERY_ANALYTICS:
+            case Helpers::QUERY_ANALYTICS:
                 return sprintf(
-                    self::getSqlQuery('analytics'),
+	                IDPayDB::getSqlQuery('analytics'),
                     $transactionTableName,
                     $filters->formId
                 );
 
-            case self::QUERY_COUNT_FEED:
+            case Helpers::QUERY_COUNT_FEED:
                 return sprintf(
-                    self::getSqlQuery('count_feed'),
+	                IDPayDB::getSqlQuery('count_feed'),
                     $IDPayTable
                 );
 
-            case self::QUERY_FEED_BY_ID:
+            case Helpers::QUERY_FEED_BY_ID:
                 return sprintf(
-                    self::getSqlQuery('feed_by_id'),
+	                IDPayDB::getSqlQuery('feed_by_id'),
                     $IDPayTable,
                     $filters->formId
                 );
 
-            case self::QUERY_DELETE_FEED:
+            case Helpers::QUERY_DELETE_FEED:
                 return sprintf(
-                    self::getSqlQuery('delete_feed'),
+	                IDPayDB::getSqlQuery('delete_feed'),
                     $IDPayTable,
                     $filters->id
                 );
 
-            case self::QUERY_FEED:
+            case Helpers::QUERY_FEED:
                 return sprintf(
-                    self::getSqlQuery('feed'),
+	                IDPayDB::getSqlQuery('feed'),
                     $IDPayTable,
                     $filters->id
                 );
 
-            case self::QUERY_FEEDS:
+            case Helpers::QUERY_FEEDS:
                 return sprintf(
-                    self::getSqlQuery('feeds'),
+	                IDPayDB::getSqlQuery('feeds'),
                     $IDPayTable,
                     $filters->limitRowsMin,
                     $filters->limitRowsMax,
                     $formTable
                 );
 
-            case self::QUERY_FORM:
+            case Helpers::QUERY_FORM:
                 return sprintf(
-                    self::getSqlQuery('form'),
+	                IDPayDB::getSqlQuery('form'),
                     $formTable,
                     $filters->formId
                 );
 
-            case self::QUERY_DELETE_IDPAY:
+            case Helpers::QUERY_DELETE_IDPAY:
                 return sprintf(
-                    self::getSqlQuery('delete_idpay'),
+	                IDPayDB::getSqlQuery('delete_idpay'),
                     $IDPayTable
                 );
 
-            case self::QUERY_COUNT_TRANSACTION:
+            case Helpers::QUERY_COUNT_TRANSACTION:
                 return sprintf(
-                    self::getSqlQuery('count_transactions'),
+	                IDPayDB::getSqlQuery('count_transactions'),
                     $transactionTableName,
                     $filters->formId
                 );
 
 
-            case self::QUERY_TRANSACTIONS:
+            case Helpers::QUERY_TRANSACTIONS:
                 return sprintf(
-                    self::getSqlQuery('transactions'),
+	                IDPayDB::getSqlQuery('transactions'),
                     $transactionTableName,
                     $filters->formId,
                     $filters->limitRowsMin,
@@ -113,7 +97,7 @@ class IDPayDB
             return [];
         }
 
-        if ($type == self::QUERY_ANALYTICS) {
+        if ($type == Helpers::QUERY_ANALYTICS) {
             $list = [];
             foreach ($dto as $item) {
                 $status          = $item["status"];
@@ -123,7 +107,7 @@ class IDPayDB
             }
 
             return $list;
-        } elseif ($type == self::QUERY_COUNT_TRANSACTION || $type == self::QUERY_COUNT_FEED) {
+        } elseif ($type == Helpers::QUERY_COUNT_TRANSACTION || $type == Helpers::QUERY_COUNT_FEED) {
             return !empty($dto) == true ? ( (int) $dto[0]['count'] ) : 0;
         } else {
             return $dto;
@@ -134,7 +118,7 @@ class IDPayDB
     {
         global $wpdb;
         $results = $wpdb->get_results($query, ARRAY_A);
-        return self::castAndNormalizeDto($results, $type);
+        return IDPayDB::castAndNormalizeDto($results, $type);
     }
 
     public static function unSerializeDto($dto)
@@ -151,8 +135,8 @@ class IDPayDB
     {
         $configs = IDPayDB::getFeedByFormId($form["id"]);
         $configs = apply_filters(
-            self::$author . '_gf_IDPay_get_active_configs',
-            apply_filters(self::$author . '_gf_gateway_get_active_configs', $configs, $form),
+	        Helpers::AUTHOR . '_gf_IDPay_get_active_configs',
+            apply_filters(Helpers::AUTHOR . '_gf_gateway_get_active_configs', $configs, $form),
             $form
         );
 
@@ -183,11 +167,11 @@ class IDPayDB
         ];
 
         if ($id == 0) {
-            $wpdb->insert(self::getTableName(), $dto, [ "%d", "%d", "%s" ]);
+            $wpdb->insert(IDPayDB::getTableName(), $dto, [ "%d", "%d", "%s" ]);
             $id = $wpdb->get_var("SELECT LAST_INSERT_ID()");
         }
         if ($id != 0) {
-            $wpdb->update(self::getTableName(), $dto, [ "id" => $id ], [ "%d", "%d", "%s" ], [ "%d" ]);
+            $wpdb->update(IDPayDB::getTableName(), $dto, [ "id" => $id ], [ "%d", "%d", "%s" ], [ "%d" ]);
         }
 
         return $id;
@@ -210,9 +194,9 @@ class IDPayDB
 
         global $wpdb;
         $oldTable         = $wpdb->prefix . "rg_IDPay";
-        $tableName        = self::getTableName();
-        $queryShowTable   = sprintf( self::getSqlQuery('show_table'), $oldTable );
-        $queryRenameTable = sprintf( self::getSqlQuery('alter_table'), $oldTable, $tableName );
+        $tableName        = IDPayDB::getTableName();
+        $queryShowTable   = sprintf( IDPayDB::getSqlQuery('show_table'), $oldTable );
+        $queryRenameTable = sprintf( IDPayDB::getSqlQuery('alter_table'), $oldTable, $tableName );
         $existsTable      = ! empty($wpdb->get_var($queryShowTable));
         $charset          = ! empty($wpdb->charset) ? $wpdb->charset : null;
         $collate          = ! empty($wpdb->collate) ? $wpdb->collate : null;
@@ -220,7 +204,7 @@ class IDPayDB
         $options          .= ! empty($collate) ? " COLLATE {$collate}" : "";
 
         $queryCreateTable = sprintf(
-			self::getSqlQuery('create'),
+	        IDPayDB::getSqlQuery('create'),
 			$tableName,
 			$options
         );
@@ -236,80 +220,80 @@ class IDPayDB
         $limitRowsMin = ! empty($pagination->query->min) ? $pagination->query->min : 0;
         $limitRowsMax = ! empty($pagination->query->max) ? $pagination->query->max : $pagination->query->count;
 
-        $type  = self::QUERY_FEEDS;
+        $type  = Helpers::QUERY_FEEDS;
         $filters = (object)[
             'limitRowsMin' => $limitRowsMin,
             'limitRowsMax' => $limitRowsMax,
         ];
-        $query = self::prepareQuery($type, $filters);
-        $results = self::runQuery($query, $type);
-        return ! empty($results) == true ? self::unSerializeDto($results) : [];
+        $query = IDPayDB::prepareQuery($type, $filters);
+        $results = IDPayDB::runQuery($query, $type);
+        return ! empty($results) == true ? IDPayDB::unSerializeDto($results) : [];
     }
 
     public static function getAnalyticsTotalTransactions($formId)
     {
-        $type  = self::QUERY_ANALYTICS;
+        $type  = Helpers::QUERY_ANALYTICS;
         $filters = (object)[ 'formId' => $formId];
-        $query = self::prepareQuery($type, $filters);
-        return self::runQuery($query, $type);
+        $query = IDPayDB::prepareQuery($type, $filters);
+        return IDPayDB::runQuery($query, $type);
     }
 
     public static function getTransactionsCount($filters)
     {
-        $type  = self::QUERY_COUNT_TRANSACTION;
-        $query = self::prepareQuery($type, $filters);
-        return self::runQuery($query, $type);
+        $type  = Helpers::QUERY_COUNT_TRANSACTION;
+        $query = IDPayDB::prepareQuery($type, $filters);
+        return IDPayDB::runQuery($query, $type);
     }
 
     public static function getFeedsCount($filters)
     {
-        $type  = self::QUERY_COUNT_FEED;
-        $query = self::prepareQuery($type, $filters);
-        return self::runQuery($query, $type);
+        $type  = Helpers::QUERY_COUNT_FEED;
+        $query = IDPayDB::prepareQuery($type, $filters);
+        return IDPayDB::runQuery($query, $type);
     }
 
     public static function dropTable()
     {
 
-        $type  = self::QUERY_DELETE_IDPAY;
+        $type  = Helpers::QUERY_DELETE_IDPAY;
         $filters = (object)[];
-        $query = self::prepareQuery($type, $filters);
-        return self::runQuery($query, $type);
+        $query = IDPayDB::prepareQuery($type, $filters);
+        return IDPayDB::runQuery($query, $type);
     }
 
     public static function getFeedByFormId($formId)
     {
-        $type  = self::QUERY_FEED_BY_ID;
+        $type  = Helpers::QUERY_FEED_BY_ID;
         $filters = (object)[ 'formId' => $formId];
-        $query = self::prepareQuery($type, $filters);
-        $results =  self::runQuery($query, $type);
-        return ! empty($results) == true ? self::unSerializeDto($results) : [];
+        $query = IDPayDB::prepareQuery($type, $filters);
+        $results =  IDPayDB::runQuery($query, $type);
+        return ! empty($results) == true ? IDPayDB::unSerializeDto($results) : [];
     }
 
     public static function deleteFeed($id)
     {
-        $type  = self::QUERY_DELETE_FEED;
+        $type  = Helpers::QUERY_DELETE_FEED;
         $filters = (object)[ 'id' => $id];
-        $query = self::prepareQuery($type, $filters);
-        $results =  self::runQuery($query, $type);
+        $query = IDPayDB::prepareQuery($type, $filters);
+        $results =  IDPayDB::runQuery($query, $type);
     }
 
     public static function getFeed($id)
     {
-        $type  = self::QUERY_FEED;
+        $type  = Helpers::QUERY_FEED;
         $filters = (object)[ 'id' => $id];
-        $query = self::prepareQuery($type, $filters);
-        $results =  self::runQuery($query, $type);
-        $results   = ! empty($results) == true ? self::unSerializeDto($results) : [];
+        $query = IDPayDB::prepareQuery($type, $filters);
+        $results =  IDPayDB::runQuery($query, $type);
+        $results   = ! empty($results) == true ? IDPayDB::unSerializeDto($results) : [];
         return $results[0];
     }
 
     public static function getForm($formId)
     {
-        $type    = self::QUERY_FORM;
+        $type    = Helpers::QUERY_FORM;
         $filters = (object) [ 'formId' => $formId ];
-        $query   = self::prepareQuery($type, $filters);
-        $results = self::runQuery($query, $type);
+        $query   = IDPayDB::prepareQuery($type, $filters);
+        $results = IDPayDB::runQuery($query, $type);
 
         return $results[0];
     }
@@ -321,14 +305,14 @@ class IDPayDB
         $limitRowsMin = ! empty($pagination->query->min) ? $pagination->query->min : 0;
         $limitRowsMax = ! empty($pagination->query->max) ? $pagination->query->max : $pagination->query->count;
 
-        $type    = self::QUERY_TRANSACTIONS;
+        $type    = Helpers::QUERY_TRANSACTIONS;
         $filters = (object) [
             'limitRowsMin' => $limitRowsMin,
             'limitRowsMax' => $limitRowsMax,
             'formId' => $filters->formId
         ];
-        $query   = self::prepareQuery($type, $filters);
-        $results = self::runQuery($query, $type);
+        $query   = IDPayDB::prepareQuery($type, $filters);
+        $results = IDPayDB::runQuery($query, $type);
 
         return ! empty($results) == true ? $results : [];
     }
@@ -336,8 +320,8 @@ class IDPayDB
 
     public static function getWithPaginate($methodName, $filters)
     {
-        $pagination = self::loadPagination($methodName, $filters);
-        $data       = self::loadData($methodName, $pagination, $filters);
+        $pagination = IDPayDB::loadPagination($methodName, $filters);
+        $data       = IDPayDB::loadData($methodName, $pagination, $filters);
 
         return (object) [
             'query' => (object) [
@@ -352,7 +336,7 @@ class IDPayDB
 
     public static function loadData($methodName, $pagination, $filters = [])
     {
-        return self::{$methodName}($pagination, $filters);
+        return IDPayDB::{$methodName}($pagination, $filters);
     }
 
     public static function loadPagination($methodName, $filters)
@@ -361,7 +345,7 @@ class IDPayDB
         $currentUrl = add_query_arg($_SERVER['QUERY_STRING'], '', admin_url($wp->request) . 'admin.php');
         $pageNumber     = rgget('page_number') != '' ? sanitize_text_field(rgget('page_number')) : 1;
         $countMethodName     = "{$methodName}Count";
-        $count          = self::{$countMethodName}($filters);
+        $count          = IDPayDB::{$countMethodName}($filters);
         $limit          = 50;
         $min            = $pageNumber == 1 ? 0 : ( $pageNumber - 1 ) * $limit;
         $max            = $pageNumber * $limit;

@@ -1,17 +1,7 @@
 <?php
 
-class Helpers
+class Helpers extends Keys
 {
-
-    public static $version = "1.0.5";
-    public static $author = "IDPay";
-    public static $domain = "gravityformsIDPay";
-    public static $min_gravityforms_version = "1.9.10";
-    public const NO_PAYMENT = "NO_PAYMENT";
-    public const SUCCESS_PAYMENT = "SUCCESS_PAYMENT";
-    public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
-    public const KEY_IDPAY = "gf_IDPay_settings";
-
     public static function exists($array, $key): bool
     {
         if ($array instanceof ArrayAccess) {
@@ -67,24 +57,24 @@ class Helpers
 
             if ($segment === '*') {
                 if (! is_iterable($target)) {
-                    return self::value($default);
+                    return Helpers::value($default);
                 }
 
                 $result = [];
 
                 foreach ($target as $item) {
-                    $result[] = self::dataGet($item, $key);
+                    $result[] = Helpers::dataGet($item, $key);
                 }
 
-                return in_array('*', $key) ? self::collapse($result) : $result;
+                return in_array('*', $key) ? Helpers::collapse($result) : $result;
             }
 
-            if (self::accessible($target) && self::exists($target, $segment)) {
+            if (Helpers::accessible($target) && Helpers::exists($target, $segment)) {
                 $target = $target[ $segment ];
             } elseif (is_object($target) && isset($target->{$segment})) {
                 $target = $target->{$segment};
             } else {
-                return self::value($default);
+                return Helpers::value($default);
             }
         }
 
@@ -109,7 +99,7 @@ class Helpers
             'entry'   => $entry_id
         ), $pageURL));
 
-        return apply_filters(self::$author . '_IDPay_return_url', apply_filters(self::$author . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__), $form_id, $entry_id, __CLASS__);
+        return apply_filters(Helpers::AUTHOR . '_IDPay_return_url', apply_filters(Helpers::AUTHOR . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__), $form_id, $entry_id, __CLASS__);
     }
 
     public static function redirect_confirmation($url, $ajax)
@@ -185,7 +175,7 @@ class Helpers
     {
 
         $entry         = GFPersian_Payments::get_entry($entryId);
-        $paymentMethod = self::dataGet($entry, 'payment_method');
+        $paymentMethod = Helpers::dataGet($entry, 'payment_method');
         $condition1    = apply_filters('gf_gateway_IDPay_return', apply_filters('gf_gateway_verify_return', false));
         $condition2    = ( ! IDPayOperation::checkApprovedGravityFormVersion() ) || is_wp_error($entry);
         $condition3    = ( ! is_numeric((int) $form_id) ) || ( ! is_numeric((int) $entryId) );
@@ -215,8 +205,8 @@ class Helpers
             'body'    => json_encode($data),
             'headers' => [
                 'Content-Type' => 'application/json',
-                'X-API-KEY'    => self::getApiKey(),
-                'X-SANDBOX'    => self::getSandbox(),
+                'X-API-KEY'    => Helpers::getApiKey(),
+                'X-SANDBOX'    => Helpers::getSandbox(),
             ],
             'timeout' => 30,
         ];
@@ -238,7 +228,7 @@ class Helpers
     {
         $check = false;
         if (isset($form['fields'])) {
-            $fields = self::dataGet($form, 'fields');
+            $fields = Helpers::dataGet($form, 'fields');
             foreach ($fields as $field) {
                 if ($field['type'] == 'product') {
                     $check = true;
@@ -255,12 +245,12 @@ class Helpers
 
     public static function updateConfigAndRedirectPage($feedId, $data)
     {
-        $idpayConfig = apply_filters(self::$author . '_gform_gateway_save_config', $data);
-        $idpayConfig = apply_filters(self::$author . '_gform_IDPay_save_config', $idpayConfig);
+        $idpayConfig = apply_filters(Helpers::AUTHOR . '_gform_gateway_save_config', $data);
+        $idpayConfig = apply_filters(Helpers::AUTHOR . '_gform_IDPay_save_config', $idpayConfig);
         $feedId      = IDPayDB::updateFeed(
             $feedId,
-            self::dataGet($idpayConfig, 'form_id'),
-            self::dataGet($idpayConfig, 'meta'),
+	        Helpers::dataGet($idpayConfig, 'form_id'),
+	        Helpers::dataGet($idpayConfig, 'meta'),
         );
         if (! headers_sent()) {
             wp_redirect(admin_url('admin.php?page=gf_IDPay&view=edit&id=' . $feedId . '&updated=true'));
@@ -335,12 +325,12 @@ class Helpers
                 $condition2 = ! rgar($item, 'displayOnly');
                 if ($condition1) {
                     foreach ($item['inputs'] as $input) {
-                        $id       = self::dataGet($input, 'id');
+                        $id       = Helpers::dataGet($input, 'id');
                         $label    = GFCommon::get_label($item, $id);
                         $fields[] = [ 'id' => $id, 'label' => $label ];
                     }
                 } elseif ($condition2) {
-                    $id       = self::dataGet($item, 'id');
+                    $id       = Helpers::dataGet($item, 'id');
                     $label    = GFCommon::get_label($item);
                     $fields[] = [ 'id' => $id, 'label' => $label ];
                 }
@@ -351,8 +341,8 @@ class Helpers
             $str = "<select name='{$fieldName}' id='{$fieldName}'>";
             $str .= "<option value=''></option>";
             foreach ($fields as $field) {
-                $id       = self::dataGet($field, 'id');
-                $label    = esc_html(GFCommon::truncate_middle(self::dataGet($field, 'label'), 40));
+                $id       = Helpers::dataGet($field, 'id');
+                $label    = esc_html(GFCommon::truncate_middle(Helpers::dataGet($field, 'label'), 40));
                 $selected = $id == $selectedValue ? "selected='selected'" : "";
                 $str      .= "<option value='{$id}' {$selected} >{$label}</option>";
             }
@@ -402,8 +392,8 @@ class Helpers
 
     public static function checkSupportedGravityVersion()
     {
-	    $dict = self::loadDictionary();
-        $label1 = self::$min_gravityforms_version;
+	    $dict = Helpers::loadDictionary();
+        $label1 = Helpers::MIN_GRAVITY_VERSION;
         $label2 = "<a href='http://gravityforms.ir' target='_blank'>سایت گرویتی فرم فارسی</a>";
         if (! IDPayOperation::checkApprovedGravityFormVersion()) {
 	        return sprintf($dict->labelNotSupprt, $label1, $label2);
@@ -430,15 +420,15 @@ class Helpers
     public static function getTypeFeed($setting)
     {
         $label = " پرداخت/خرید ";
-        $activeAddons = self::makeListDelayedAddons($setting);
+        $activeAddons = Helpers::makeListDelayedAddons($setting);
 
-        if (self::dataGet($activeAddons, 'postCreate')) {
+        if (Helpers::dataGet($activeAddons, 'postCreate')) {
             $label = $label . "+ ایجاد پست ";
         }
-        if (self::dataGet($activeAddons, 'postUpdate')) {
+        if (Helpers::dataGet($activeAddons, 'postUpdate')) {
             $label = $label . "+ آپدیت پست ";
         }
-        if (self::dataGet($activeAddons, 'userRegistration')) {
+        if (Helpers::dataGet($activeAddons, 'userRegistration')) {
             $label = $label . "+ ثبت نام کاربر ";
         }
 
@@ -447,10 +437,10 @@ class Helpers
 
     public static function makeListDelayedAddons($config)
     {
-        $config = self::dataGet($config, 'meta.addon');
-        $postCreate = self::dataGet($config, 'post_create');
-        $postUpdate = self::dataGet($config, 'post_update');
-        $userRegistration = self::dataGet($config, 'user_registration');
+        $config = Helpers::dataGet($config, 'meta.addon');
+        $postCreate = Helpers::dataGet($config, 'post_create');
+        $postUpdate = Helpers::dataGet($config, 'post_update');
+        $userRegistration = Helpers::dataGet($config, 'user_registration');
         return [
             'postCreate' => $postCreate['success_payment'] || $postCreate['no_payment'],
             'postUpdate' => $postUpdate['success_payment'] || $postUpdate['no_payment'],
@@ -482,8 +472,9 @@ class Helpers
 
     public static function checkNeedToUpgradeVersion($setting)
     {
+	    $hasOldVersionKey = Helpers::getGlobalKey(Helpers::OLD_GLOBAL_KEY_VERSION) != null;
         $version = Helpers::dataGet($setting, 'version');
-        return $version != self::$version ;
+        return $version != Helpers::VERSION || $hasOldVersionKey;
     }
 
     public static function checkSubmittedConfigDataAndLoadSetting()
@@ -492,7 +483,7 @@ class Helpers
 
         if (isset($_POST["gf_IDPay_submit"])) {
             if (Helpers::checkNeedToUpgradeVersion($setting)) {
-	            IDPayOperation::upgrade();
+
             }
 
             check_admin_referer("update", "gf_IDPay_update");
@@ -501,7 +492,7 @@ class Helpers
                 "name"   => sanitize_text_field(rgpost('gf_IDPay_name')),
                 "api_key" => sanitize_text_field(rgpost('gf_IDPay_api_key')),
                 "sandbox" => sanitize_text_field(rgpost('gf_IDPay_sandbox')),
-                "version" => self::$version,
+                "version" => Helpers::VERSION,
             ];
             Helpers::setGlobalKey(Helpers::KEY_IDPAY, $setting);
         }
@@ -515,9 +506,9 @@ class Helpers
         $return  = ! empty($feed) ? $feed : false;
 
         return apply_filters(
-            self::$author . '_gf_IDPay_get_config_by_entry',
+	        Helpers::AUTHOR . '_gf_IDPay_get_config_by_entry',
             apply_filters(
-                self::$author . '_gf_gateway_get_config_by_entry',
+	            Helpers::AUTHOR . '_gf_gateway_get_config_by_entry',
                 $return,
                 $entry
             ),
@@ -530,14 +521,14 @@ class Helpers
         $config = null;
 
         if ($paymentType != 'custom') {
-            $config = self::loadConfigByEntry($entry);
+            $config = Helpers::loadConfigByEntry($entry);
             if (empty($config)) {
                 return null;
             }
         } elseif ($paymentType != 'form') {
             $config = apply_filters(
-                self::$author . '_gf_IDPay_config',
-                apply_filters(self::$author . '_gf_gateway_config', [], $form, $entry),
+	            Helpers::AUTHOR . '_gf_IDPay_config',
+                apply_filters(Helpers::AUTHOR . '_gf_gateway_config', [], $form, $entry),
                 $form,
                 $entry
             );
@@ -572,8 +563,8 @@ class Helpers
         $total = ( ! empty($total) && $total > 0 ) ? $total : 0;
 
         return apply_filters(
-            self::$author . '_IDPay_get_order_total',
-            apply_filters(self::$author . '_gateway_get_order_total', $total, $form, $entry),
+	        Helpers::AUTHOR . '_IDPay_get_order_total',
+            apply_filters(Helpers::AUTHOR . '_gateway_get_order_total', $total, $form, $entry),
             $form,
             $entry
         );
@@ -581,14 +572,14 @@ class Helpers
 
     public static function getPriceOrder($paymentType, $entry, $form)
     {
-        $entryId  = self::dataGet($entry, 'id');
-        $formId   = self::dataGet($form, 'id');
-        $currency = self::dataGet($entry, 'currency');
+        $entryId  = Helpers::dataGet($entry, 'id');
+        $formId   = Helpers::dataGet($form, 'id');
+        $currency = Helpers::dataGet($entry, 'currency');
 
         if ($paymentType == 'custom') {
             $amount = gform_get_meta($entryId, 'IDPay_part_price_' . $formId);
         } else {
-            $amount = self::getOrderTotal($form, $entry);
+            $amount = Helpers::getOrderTotal($form, $entry);
             $amount = GFPersian_Payments::amount($amount, 'IRR', $form, $entry);
         }
 
@@ -600,7 +591,7 @@ class Helpers
 
     public static function checkTypeVerify()
     {
-        return self::dataGet($_GET, 'no') == 'true' ? 'Free' : 'Purchase';
+        return Helpers::dataGet($_GET, 'no') == 'true' ? 'Free' : 'Purchase';
     }
 
     public static function getRequestData()
@@ -618,12 +609,12 @@ class Helpers
         }
 
         return (object) [
-            'id'      => self::dataGet($request, 'id'),
-            'status'  => self::dataGet($request, 'status'),
-            'trackId' => self::dataGet($request, 'track_id'),
-            'orderId' => self::dataGet($request, 'order_id'),
-            'formId'  => (int) self::dataGet($_GET, 'form_id'),
-            'entryId' => (int) self::dataGet($_GET, 'entry'),
+            'id'      => Helpers::dataGet($request, 'id'),
+            'status'  => Helpers::dataGet($request, 'status'),
+            'trackId' => Helpers::dataGet($request, 'track_id'),
+            'orderId' => Helpers::dataGet($request, 'order_id'),
+            'formId'  => (int) Helpers::dataGet($_GET, 'form_id'),
+            'entryId' => (int) Helpers::dataGet($_GET, 'entry'),
             'all'     => $all,
         ];
     }
@@ -632,7 +623,7 @@ class Helpers
     {
         $keys = [ 'status', 'id', 'trackId', 'orderId', 'formId', 'entryId' ];
         foreach ($keys as $key) {
-            if (self::dataGet($request, $key) == null) {
+            if (Helpers::dataGet($request, $key) == null) {
                 return false;
             }
         }
@@ -688,12 +679,12 @@ class Helpers
     {
         $paymentType      = gform_get_meta($request->entryId, 'payment_type');
         $hasCustomPayment = ( $paymentType != 'custom' );
-        $confirmPrepare   = apply_filters(self::$author . '_gf_gateway_verify', $hasCustomPayment, $form, $entry);
-        $confirmations    = apply_filters(self::$author . '_gf_IDPay_verify', $confirmPrepare, $form, $entry);
+        $confirmPrepare   = apply_filters(Helpers::AUTHOR . '_gf_gateway_verify', $hasCustomPayment, $form, $entry);
+        $confirmations    = apply_filters(Helpers::AUTHOR . '_gf_IDPay_verify', $confirmPrepare, $form, $entry);
         if ($confirmations) {
             foreach ($form['confirmations'] as $key => $value) {
-                $message                                  = self::dataGet($value, 'message');
-                $payment                                  = self::makeHtmlConfirmation($note, $status, $config, $message);
+                $message                                  = Helpers::dataGet($value, 'message');
+                $payment                                  = Helpers::makeHtmlConfirmation($note, $status, $config, $message);
                 $form['confirmations'][ $key ]['message'] = $payment;
             }
         }
@@ -708,7 +699,7 @@ class Helpers
                   "opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;";
         $output = "<div  style='{$style}'>{$note}</div>";
 
-        return empty(self::dataGet($config, 'meta.confirmation')) ? $output : str_replace($key, $output, $message);
+        return empty(Helpers::dataGet($config, 'meta.confirmation')) ? $output : str_replace($key, $output, $message);
     }
 
     public static function checkTypePayment($amount): string
@@ -720,42 +711,42 @@ class Helpers
     public static function processAddons($form, $entry, $config, $type)
     {
 
-        $config = self::dataGet($config, 'meta.addon');
+        $config = Helpers::dataGet($config, 'meta.addon');
 
-        if ($type == self::NO_PAYMENT) {
+        if ($type == Helpers::NO_PAYMENT) {
             $ADDON_USER_REGESTERATION = (object) [
                 'class' => 'GF_User_Registration',
-                'run'   => self::dataGet($config, 'user_registration.no_payment') == true,
+                'run'   => Helpers::dataGet($config, 'user_registration.no_payment') == true,
             ];
 
-            self::runAddon($ADDON_USER_REGESTERATION, $form, $entry);
+	        Helpers::runAddon($ADDON_USER_REGESTERATION, $form, $entry);
         }
 
-        if ($type == self::SUCCESS_PAYMENT) {
+        if ($type == Helpers::SUCCESS_PAYMENT) {
             $ADDON_USER_REGESTERATION = (object) [
                 'class' => 'GF_User_Registration',
-                'run'   => self::dataGet($config, 'user_registration.success_payment') == true,
+                'run'   => Helpers::dataGet($config, 'user_registration.success_payment') == true,
             ];
 
             $ADDON_POST_CREATION = (object) [
                 'class' => 'GF_Advanced_Post_Creation',
-                'run'   => self::dataGet($config, 'post_create.success_payment') == true,
+                'run'   => Helpers::dataGet($config, 'post_create.success_payment') == true,
             ];
 
             $ADDON_POST_UPDATE = (object) [
                 'class' => 'ACGF_PostUpdateAddOn',
-                'run'   => self::dataGet($config, 'post_update.success_payment') == true,
+                'run'   => Helpers::dataGet($config, 'post_update.success_payment') == true,
             ];
 
-            self::runAddon($ADDON_USER_REGESTERATION, $form, $entry);
-            self::runAddon($ADDON_POST_CREATION, $form, $entry);
-            self::runAddon($ADDON_POST_UPDATE, $form, $entry);
+	        Helpers::runAddon($ADDON_USER_REGESTERATION, $form, $entry);
+	        Helpers::runAddon($ADDON_POST_CREATION, $form, $entry);
+	        Helpers::runAddon($ADDON_POST_UPDATE, $form, $entry);
         }
     }
 
     public static function runAddon($obj, $form, $entry)
     {
-        $formId = self::dataGet($form, 'id');
+        $formId = Helpers::dataGet($form, 'id');
         if ($obj->run == true) {
             $addon = call_user_func([ $obj->class, 'get_instance' ]);
             $feeds = $addon->getFeeds($formId);
@@ -767,14 +758,14 @@ class Helpers
 
     public static function prepareFrontEndTools()
     {
-        include_once self::getBasePath() . '/resources/js/scripts.php';
-        include_once self::getBasePath() . '/resources/css/styles.php';
+        include_once Helpers::getBasePath() . '/resources/js/scripts.php';
+        include_once Helpers::getBasePath() . '/resources/css/styles.php';
     }
 
     public static function getBasePath()
     {
         $baseDir   = WP_PLUGIN_DIR;
-        $pluginDir = self::PLUGIN_FOLDER;
+        $pluginDir = Helpers::PLUGIN_FOLDER;
 
         return "{$baseDir}/{$pluginDir}";
     }

@@ -76,7 +76,7 @@ class JDate
         $timestamp       = is_numeric($date) && (int) $date == $date ? $date : strtotime($date);
         $date            = getdate($timestamp);
 
-        list( $date['year'], $date['mon'], $date['mday'] ) = self::gregorian_to_persian($date['year'], $date['mon'], $date['mday']);
+        list( $date['year'], $date['mon'], $date['mday'] ) = JDate::gregorian_to_persian($date['year'], $date['mon'], $date['mday']);
 
         $date['mon']  = (int) $date['mon'];
         $date['mday'] = (int) $date['mday'];
@@ -104,7 +104,7 @@ class JDate
                     $out .= $this->week_day($date['wday']);
                     break;
                 case 'z':
-                    if ($date['mon'] == 12 && self::IsPerLeapYear($date['year'])) {
+                    if ($date['mon'] == 12 && JDate::IsPerLeapYear($date['year'])) {
                         $out .= 30 + $date['mday'];
                     } else {
                         $out .= $this->j_days_in_month[ $date['mon'] ] + $date['mday'];
@@ -147,7 +147,7 @@ class JDate
                     $out .= 'ام';
                     break;
                 case 't':
-                    if ($date['mon'] == 12 && self::IsPerLeapYear($date['year'])) {
+                    if ($date['mon'] == 12 && JDate::IsPerLeapYear($date['year'])) {
                         $out .= 30;
                     } else {
                         $out .= $this->j_days_in_month[ $date['mon'] - 1 ];
@@ -214,7 +214,7 @@ class JDate
         }
 
         if (!in_array(strtolower($format), [ 'u', 'timestamp' ]) && $lang == 'per') {
-            return self::trim_number($out);
+            return JDate::trim_number($out);
         } else {
             return $out;
         }
@@ -224,7 +224,7 @@ class JDate
     {
         $dayOfYear = $this->g_days_sum_month[ (int) $gm ] + $gd;
 
-        if (self::IsLeapYear($gy) and $gm > 2) {
+        if (JDate::IsLeapYear($gy) and $gm > 2) {
             $dayOfYear ++;
         }
 
@@ -271,11 +271,11 @@ class JDate
 
     public static function getInstance()
     {
-        if (! isset(self::$instance)) {
-            self::$instance = new self();
+        if (! isset(JDate::$instance)) {
+	        JDate::$instance = new JDate();
         }
 
-        return self::$instance;
+        return JDate::$instance;
     }
 
     public function gregorian_date($format, $persiandate)
@@ -284,7 +284,7 @@ class JDate
 
         $matches = $matches[0];
 
-        list( $year, $mon, $day ) = self::persian_to_gregorian($matches[0], $matches[1], $matches[2]);
+        list( $year, $mon, $day ) = JDate::persian_to_gregorian($matches[0], $matches[1], $matches[2]);
 
         return date($format, mktime(( isset($matches[3]) ? $matches[3] : 0 ), ( isset($matches[4]) ? $matches[4] : 0 ), ( isset($matches[5]) ? $matches[5] : 0 ), $mon, $day, $year));
     }

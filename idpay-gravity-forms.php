@@ -29,11 +29,6 @@ require_once('lib/IDPayView.php');
 
 class GF_Gateway_IDPay extends Helpers
 {
-    public static $author = "IDPay";
-    public static $version = "2.0.0";
-    public static $min_gravityforms_version = "1.9.10";
-    public static $domain = "gravityformsIDPay";
-
     public static function init()
     {
         $dictionary = Helpers::loadDictionary();
@@ -54,7 +49,7 @@ class GF_Gateway_IDPay extends Helpers
         }
 
         add_filter('members_get_capabilities', [ IDPayOperation::class, "MembersCapabilities" ]);
-        $adminPermission = IDPayOperation::PERMISSION_ADMIN;
+        $adminPermission = Helpers::PERMISSION_ADMIN;
 
         if (is_admin() && IDPayOperation::hasPermission($adminPermission)) {
             add_action('wp_ajax_gf_IDPay_update_feed_active', [ IDPayDB::class, 'SaveOrUpdateFeed' ]);
@@ -122,7 +117,7 @@ class GF_Gateway_IDPay extends Helpers
     public static function setDelayedGravityAddons($is_delayed, $form, $entry, $slug)
     {
         $config     = IDPayDB::getActiveFeed($form);
-        $delayedFor = self::makeListDelayedAddons($config);
+        $delayedFor = Helpers::makeListDelayedAddons($config);
 
         if (! empty($config)) {
             if ($slug == 'gravityformsuserregistration') {
@@ -143,7 +138,7 @@ class GF_Gateway_IDPay extends Helpers
     {
         $dictionary = Helpers::loadDictionary();
         $baseClass = __CLASS__;
-        $author    = self::$author;
+        $author    = Helpers::AUTHOR;
         $class     = "{$baseClass}|{$author}";
         $IDPay     = [
                         'class' => $class,
@@ -156,8 +151,8 @@ class GF_Gateway_IDPay extends Helpers
               ];
 
         return apply_filters(
-            self::$author . '_gf_IDPay_detail',
-            apply_filters(self::$author . '_gf_gateway_detail', $IDPay, $form, $entry),
+	        Helpers::AUTHOR . '_gf_IDPay_detail',
+            apply_filters(Helpers::AUTHOR . '_gf_gateway_detail', $IDPay, $form, $entry),
             $form,
             $entry
         );
@@ -215,7 +210,7 @@ class GF_Gateway_IDPay extends Helpers
 
         if (Helpers::checkEntryForIDPay($entry)) {
             $dict = Helpers::loadDictionary();
-            $user = self::loadUser();
+            $user = Helpers::loadUser();
             $payment_status = sanitize_text_field(rgpost("payment_status"));
             $payment_amount       = sanitize_text_field(rgpost("payment_amount"));
             $payment_transaction  = sanitize_text_field(rgpost("IDPay_transaction_id"));
