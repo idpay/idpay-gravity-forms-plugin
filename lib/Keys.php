@@ -8,7 +8,6 @@ class Keys
 	public const AUTHOR = "IDPay";
 	public const MIN_GRAVITY_VERSION = "1.9.10";
 	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
-	public const KEY_IDPAY = "gf_IDPay_settings";
 
 	// PAYMENT KEYS
 	public const NO_PAYMENT = "NO_PAYMENT";
@@ -43,7 +42,11 @@ class Keys
 	public const IDPAY_PLUGIN_FILE = 'idpay-gravity-forms.php';
 
 	public const OLD_GLOBAL_KEY_VERSION = 'gf_IDPay_version';
+	public const OLD_GLOBAL_KEY_VERSION_BACKUP = 'gf_IDPay_version_backup';
 	public const OLD_GLOBAL_KEY_ENABLE = 'gf_IDPay_configured';
+	public const OLD_GLOBAL_KEY_ENABLE_BACKUP = 'gf_IDPay_configured_backup';
+	public const OLD_GLOBAL_KEY_IDPAY = "gf_IDPay_settings_backup";
+	public const KEY_IDPAY = "gf_IDPay_settings";
 
 
 	public const STATE_NO_CHANGED = 'NO_CHANGED';

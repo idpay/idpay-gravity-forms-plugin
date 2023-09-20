@@ -15,16 +15,38 @@ class IDPayOperation extends Helpers {
 
 	}
 
-	public static function levelUpGlobalSetting(  ) {
-		Helpers::deleteGlobalKey( Helpers::OLD_GLOBAL_KEY_VERSION );
-		$isEnabledOld = Helpers::getGlobalKey( Helpers::OLD_GLOBAL_KEY_ENABLE ) != null;
-		if($isEnabledOld){
+	public static function levelUpGlobalSetting() {
+
+		$oldVersion = IDPayOperation::BackupAndUpgradeGlobalKey(
+			Helpers::OLD_GLOBAL_KEY_VERSION,
+			Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP);
+
+		$oldEnabled = IDPayOperation::BackupAndUpgradeGlobalKey(
+			Helpers::OLD_GLOBAL_KEY_ENABLE,
+			Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP);
+
+		$oldSetting = IDPayOperation::BackupAndUpgradeGlobalKey(
+			Helpers::KEY_IDPAY,
+			Helpers::OLD_GLOBAL_KEY_IDPAY);
+
+		if($oldEnabled != null){
+
+			// save new setting structure
+
 			IDPayOperation::upgrade();
 		}
 		else{
 			IDPayOperation::redirectToSettingPage();
 		}
 	}
+
+	public static function BackupAndUpgradeGlobalKey($key,$backupKey) {
+		$oldValue = Helpers::getGlobalKey( $key );
+		Helpers::setGlobalKey( $backupKey,$oldValue );
+		Helpers::deleteGlobalKey( $key );
+		return $oldValue;
+	}
+
 
 	public static function redirectToSettingPage() {
 		$settingPageUrl = Helpers::SETTING_PAGE_URL;
@@ -36,15 +58,11 @@ class IDPayOperation extends Helpers {
 
 	public static function getStateIfPluginHasChanged() {
 
-
 		$setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
 		$isConfigured        = Helpers::dataGet( $setting, 'enable',false ) == false;
-		$version        = Helpers::dataGet( $setting, 'version' );
-
-
 
 		// condition removed gf_IDPay_version
-		if($hasOldVersionKey || $version != Helpers::VERSION){
+		if(IDPayOperation::checkNeedToUpgradeVersion($setting)){
 			return Helpers::STATE_UPGRADE;
 		}
 

@@ -473,7 +473,7 @@ class Helpers extends Keys
     public static function checkNeedToUpgradeVersion($setting)
     {
 	    $hasOldVersionKey = Helpers::getGlobalKey(Helpers::OLD_GLOBAL_KEY_VERSION) != null;
-        $version = Helpers::dataGet($setting, 'version');
+		$version = Helpers::dataGet($setting, 'version');
         return $version != Helpers::VERSION || $hasOldVersionKey;
     }
 
@@ -482,9 +482,6 @@ class Helpers extends Keys
         $setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
 
         if (isset($_POST["gf_IDPay_submit"])) {
-            if (Helpers::checkNeedToUpgradeVersion($setting)) {
-
-            }
 
             check_admin_referer("update", "gf_IDPay_update");
             $setting = [
