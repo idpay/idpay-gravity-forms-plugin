@@ -19,8 +19,9 @@ register_activation_hook(__FILE__, [ IDPAY_PLUGIN_CLASS, "addPermission" ]);
 register_deactivation_hook(__FILE__, [ IDPAY_PLUGIN_CLASS, "deactivation" ]);
 add_action('init', [ IDPAY_PLUGIN_CLASS, 'init']);
 
-require_once('lib/IDPayDB.php');
+require_once('lib/Keys.php');
 require_once('lib/Helpers.php');
+require_once('lib/IDPayDB.php');
 require_once('lib/JDate.php');
 require_once('lib/IDPayPayment.php');
 require_once('lib/IDPayVerify.php');

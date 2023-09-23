@@ -81,6 +81,25 @@ class Helpers extends Keys
         return $target;
     }
 
+	public static function checkSubmittedConfigDataAndLoadSetting()
+	{
+		$setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
+
+		if (isset($_POST["gf_IDPay_submit"])) {
+
+			check_admin_referer("update", "gf_IDPay_update");
+			$setting = [
+				"enable"  => sanitize_text_field(rgpost('gf_IDPay_enable')),
+				"name"   => sanitize_text_field(rgpost('gf_IDPay_name')),
+				"api_key" => sanitize_text_field(rgpost('gf_IDPay_api_key')),
+				"sandbox" => sanitize_text_field(rgpost('gf_IDPay_sandbox')),
+				"version" => Helpers::VERSION,
+			];
+			Helpers::setGlobalKey(Helpers::KEY_IDPAY, $setting);
+		}
+		return $setting;
+	}
+
     public static function Return_URL($form_id, $entry_id)
     {
         $pageURL = GFCommon::is_ssl() ? 'https://' : 'http://';
@@ -475,25 +494,6 @@ class Helpers extends Keys
 	    $hasOldVersionKey = Helpers::getGlobalKey(Helpers::OLD_GLOBAL_KEY_VERSION) != null;
 		$version = Helpers::dataGet($setting, 'version');
         return $version != Helpers::VERSION || $hasOldVersionKey;
-    }
-
-    public static function checkSubmittedConfigDataAndLoadSetting()
-    {
-        $setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
-
-        if (isset($_POST["gf_IDPay_submit"])) {
-
-            check_admin_referer("update", "gf_IDPay_update");
-            $setting = [
-                "enable"  => sanitize_text_field(rgpost('gf_IDPay_enable')),
-                "name"   => sanitize_text_field(rgpost('gf_IDPay_name')),
-                "api_key" => sanitize_text_field(rgpost('gf_IDPay_api_key')),
-                "sandbox" => sanitize_text_field(rgpost('gf_IDPay_sandbox')),
-                "version" => Helpers::VERSION,
-            ];
-            Helpers::setGlobalKey(Helpers::KEY_IDPAY, $setting);
-        }
-        return $setting;
     }
 
     public static function loadConfigByEntry($entry)

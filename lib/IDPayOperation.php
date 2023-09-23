@@ -5,8 +5,11 @@ class IDPayOperation extends Helpers {
 	public static function setup() {
 		$state = IDPayOperation::getStateIfPluginHasChanged();
 
+
 		if ($state == Helpers::STATE_UPGRADE) {
-			IDPayOperation::levelUpGlobalSetting();
+			IDPayOperation::levelUpGlobalKeyAndSetting();
+			IDPayOperation::levelUpDatabase();
+			IDPayOperation::redirectToSettingPage();
 		}
 
 		if ($state == Helpers::STATE_NO_CONFIGURED) {
@@ -15,38 +18,67 @@ class IDPayOperation extends Helpers {
 
 	}
 
-	public static function levelUpGlobalSetting() {
+	public static function levelUpGlobalKeyAndSetting() {
 
-		$oldVersion = IDPayOperation::BackupAndUpgradeGlobalKey(
+		$oldVersion = IDPayOperation::makeBackupGlobalKey(
 			Helpers::OLD_GLOBAL_KEY_VERSION,
 			Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP);
 
-		$oldEnabled = IDPayOperation::BackupAndUpgradeGlobalKey(
+		$oldEnabled = IDPayOperation::makeBackupGlobalKey(
 			Helpers::OLD_GLOBAL_KEY_ENABLE,
 			Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP);
 
-		$oldSetting = IDPayOperation::BackupAndUpgradeGlobalKey(
+		$oldSetting = IDPayOperation::makeBackupGlobalKey(
 			Helpers::KEY_IDPAY,
 			Helpers::OLD_GLOBAL_KEY_IDPAY);
 
-		if($oldEnabled != null){
-
-			// save new setting structure
-
-			IDPayOperation::upgrade();
-		}
-		else{
-			IDPayOperation::redirectToSettingPage();
-		}
+		IDPayOperation::levelUpSetting($oldSetting,$oldEnabled);
 	}
 
-	public static function BackupAndUpgradeGlobalKey($key,$backupKey) {
+	public static function levelUpDatabase() {
+		IDPayDB::upgrade();
+	}
+
+	public static function levelUpSetting($oldSetting,$oldEnabled) {
+		$setting = [
+			"enable"  => !empty($oldEnabled) ? 'on' : '',
+			"name"   =>  Helpers::dataGet($oldSetting,'gname'),
+			"api_key" => Helpers::dataGet($oldSetting,'api_key'),
+			"sandbox" => Helpers::dataGet($oldSetting,'sandbox'),
+			"version" => Helpers::VERSION,
+		];
+		Helpers::setGlobalKey(Helpers::KEY_IDPAY, $setting);
+	}
+
+
+	public static function levelDownGlobalKeyAndSetting() {
+
+		$oldVersion = IDPayOperation::makeRestoreGlobalKey(
+			Helpers::OLD_GLOBAL_KEY_VERSION,
+			Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP);
+
+		$oldEnabled = IDPayOperation::makeRestoreGlobalKey(
+			Helpers::OLD_GLOBAL_KEY_ENABLE,
+			Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP);
+
+		$oldSetting = IDPayOperation::makeRestoreGlobalKey(
+			Helpers::KEY_IDPAY,
+			Helpers::OLD_GLOBAL_KEY_IDPAY);
+	}
+
+	public static function makeRestoreGlobalKey($key,$backupKey) {
+		$newValue = Helpers::getGlobalKey( $backupKey );
+		Helpers::setGlobalKey( $key,$newValue );
+		Helpers::deleteGlobalKey( $backupKey );
+		return $newValue;
+	}
+
+	public static function makeBackupGlobalKey($key,$backupKey) {
 		$oldValue = Helpers::getGlobalKey( $key );
 		Helpers::setGlobalKey( $backupKey,$oldValue );
 		Helpers::deleteGlobalKey( $key );
 		return $oldValue;
 	}
-
 
 	public static function redirectToSettingPage() {
 		$settingPageUrl = Helpers::SETTING_PAGE_URL;
@@ -54,47 +86,51 @@ class IDPayOperation extends Helpers {
 			wp_redirect( admin_url( "admin.php{$settingPageUrl}" ) );
 		}
 	}
-	
 
 	public static function getStateIfPluginHasChanged() {
 
 		$setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
 		$isConfigured        = Helpers::dataGet( $setting, 'enable',false ) == false;
 
-		// condition removed gf_IDPay_version
 		if(IDPayOperation::checkNeedToUpgradeVersion($setting)){
 			return Helpers::STATE_UPGRADE;
 		}
 
-		// set new style with off
-		if($isConfigured){
-			return Helpers::STATE_NO_CONFIGURED;
-		}
-			return Helpers::STATE_NO_CHANGED;
-
-	}
-
-
-	public static function upgrade() {
-		IDPayDB::upgrade();
+		return  $isConfigured ? Helpers::STATE_NO_CONFIGURED : Helpers::STATE_NO_CHANGED;
 	}
 
 	public static function uninstall() {
 		$dictionary = Helpers::loadDictionary();
-		$basePath   = Helpers::PLUGIN_FOLDER;
-		$fileName   = Helpers::IDPAY_PLUGIN_FILE;
-		$plugin     = "{$basePath}/{$fileName}";
 		$condition  = ! IDPayOperation::hasPermission( Helpers::PERMISSION_UNISTALL );
-		$value      = [ $plugin => time() ] + (array) Helpers::getGlobalKey( 'recently_activated' );
+		$plugin = IDPayOperation::getPluginManifest();
 		if ( $condition ) {
 			die( $dictionary->labelDontPermission );
 		}
 		IDPayDB::dropTable();
-		Helpers::deleteGlobalKey( Helpers::KEY_IDPAY );
-		deactivate_plugins( $plugin );
-		Helpers::setGlobalKey( 'recently_activated', $value );
+		IDPayOperation::disablePlugin($plugin);
+		IDPayOperation::setSystemLog($plugin);
+		IDPayOperation::removeAllGlobalKey();
+		IDPayOperation::redirectToGravityMainPage();
+	}
+
+	public static function redirectToGravityMainPage() {
 		$gravityMainPageUrl = Helpers::GRAVITY_MAIN_PAGE_URL;
 		wp_redirect( admin_url( "admin.php{$gravityMainPageUrl}" ) );
+	}
+
+	public static function getPluginManifest() {
+		$basePath   = Helpers::PLUGIN_FOLDER;
+		$fileName   = Helpers::IDPAY_PLUGIN_FILE;
+		return "{$basePath}/{$fileName}";
+	}
+
+	public static function disablePlugin($plugin) {
+		deactivate_plugins( $plugin );
+	}
+
+	public static function setSystemLog($plugin) {
+		$value      = [ $plugin => time() ] + (array) Helpers::getGlobalKey( 'recently_activated' );
+		Helpers::setGlobalKey( 'recently_activated', $value );
 	}
 
 	public static function checkSubmittedUnistall() {
@@ -108,18 +144,17 @@ class IDPayOperation extends Helpers {
 
 
 	public static function deactivation() {
-		// correct But waiting to final //
-		/*
-		IDPayOperation::rollbackOldVersionSetting();
-		*/
+
+		IDPayOperation::levelDownGlobalKeyAndSetting();
 	}
 
-	public static function rollbackOldVersionSetting() {
-		// correct But waiting to final //
-		/*
-		update_option( Helpers::OLD_GLOBAL_KEY_VERSION, '1.0.5' );
-		update_option( "gf_IDPay_configured", true );
-		*/
+	public static function removeAllGlobalKey() {
+		Helpers::deleteGlobalKey( Helpers::OLD_GLOBAL_KEY_VERSION );
+		Helpers::deleteGlobalKey( Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP );
+		Helpers::deleteGlobalKey( Helpers::OLD_GLOBAL_KEY_ENABLE );
+		Helpers::deleteGlobalKey( Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP );
+		Helpers::deleteGlobalKey( Helpers::OLD_GLOBAL_KEY_IDPAY );
+		Helpers::deleteGlobalKey( Helpers::KEY_IDPAY );
 	}
 
 	public static function reportPreRequiredPersianGravityForm() {
