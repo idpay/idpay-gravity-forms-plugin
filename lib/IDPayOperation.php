@@ -37,7 +37,26 @@ class IDPayOperation extends Helpers {
 
 	public static function levelUpDatabase() {
 		IDPayDB::upgrade();
+		if(IDPayDB::checkMetaOldColumnExist() == 0)
+		{
+			IDPayDB::addMetaColumn();
+			IDPayDB::makeBackupMetaColumn();
+			IDPayOperation::levelUpFeed();
+		}
 	}
+
+	public static function levelUpFeed() {
+		$feeds = IDPayDB::getAllFeeds();
+		foreach ($feeds as $feed){
+			$id = Helpers::dataGet($feed,'id');
+			$formId = Helpers::dataGet($feed,'form_id');
+			$meta = [
+
+			];
+			IDPayDB::updateFeed( $id, $formId, $meta );
+		}
+	}
+
 
 	public static function levelUpSetting($oldSetting,$oldEnabled) {
 		$setting = [

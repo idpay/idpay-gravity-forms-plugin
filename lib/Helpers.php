@@ -491,7 +491,7 @@ class Helpers extends Keys
 
     public static function checkNeedToUpgradeVersion($setting)
     {
-	    $hasOldVersionKey = Helpers::getGlobalKey(Helpers::OLD_GLOBAL_KEY_VERSION) != null;
+	    $hasOldVersionKey = !empty(Helpers::getGlobalKey(Helpers::OLD_GLOBAL_KEY_VERSION));
 		$version = Helpers::dataGet($setting, 'version');
         return $version != Helpers::VERSION || $hasOldVersionKey;
     }

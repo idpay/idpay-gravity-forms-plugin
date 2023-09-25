@@ -29,6 +29,20 @@ class IDPayDB extends Helpers
                     $IDPayTable
                 );
 
+	        case Helpers::QUERY_ADD_META_COLUMN:
+		        return sprintf(
+			        IDPayDB::getSqlQuery('add_meta_column'),
+			        $IDPayTable,
+			        $filters->column
+		        );
+
+	        case Helpers::QUERY_CLONE_META_COLUMN:
+		        return sprintf(
+			        IDPayDB::getSqlQuery('clone_meta_column'),
+			        $IDPayTable,
+			        $filters->column
+		        );
+
             case Helpers::QUERY_FEED_BY_ID:
                 return sprintf(
 	                IDPayDB::getSqlQuery('feed_by_id'),
@@ -59,6 +73,12 @@ class IDPayDB extends Helpers
                     $formTable
                 );
 
+	        case Helpers::QUERY_ALL_FEEDS:
+		        return sprintf(
+			        IDPayDB::getSqlQuery('all_feeds'),
+			        $IDPayTable,
+		        );
+
             case Helpers::QUERY_FORM:
                 return sprintf(
 	                IDPayDB::getSqlQuery('form'),
@@ -88,6 +108,14 @@ class IDPayDB extends Helpers
                     $filters->limitRowsMin,
                     $filters->limitRowsMax
                 );
+
+            case Helpers::QUERY_CHECK_META_COLUMN:
+                return sprintf(
+	                IDPayDB::getSqlQuery('check_meta_column'),
+                    $filters->db,
+	                $IDPayTable,
+                    $filters->column,
+                );
         }
     }
 
@@ -107,7 +135,9 @@ class IDPayDB extends Helpers
             }
 
             return $list;
-        } elseif ($type == Helpers::QUERY_COUNT_TRANSACTION || $type == Helpers::QUERY_COUNT_FEED) {
+        } elseif ($type == Helpers::QUERY_COUNT_TRANSACTION ||
+                   $type == Helpers::QUERY_COUNT_FEED ||
+                  $type == Helpers::QUERY_CHECK_META_COLUMN) {
             return !empty($dto) == true ? ( (int) $dto[0]['count'] ) : 0;
         } else {
             return $dto;
@@ -212,6 +242,36 @@ class IDPayDB extends Helpers
 		$existsTable == true ? $wpdb->query($queryRenameTable) : dbDelta($queryCreateTable);
     }
 
+	public static function checkMetaOldColumnExist()
+	{
+		$type  = Helpers::QUERY_CHECK_META_COLUMN;
+		$filters = (object)[
+			'db' => DB_NAME,
+			'column' => 'meta_old',
+		];
+		$query = IDPayDB::prepareQuery($type, $filters);
+		return IDPayDB::runQuery($query, $type);
+	}
+
+	public static function addMetaColumn()
+	{
+		$type  = Helpers::QUERY_ADD_META_COLUMN;
+		$filters = (object)[
+			'db' => DB_NAME,
+			'column' => 'meta_old',
+		];
+		$query = IDPayDB::prepareQuery($type, $filters);
+		return IDPayDB::runQuery($query, $type);
+	}
+
+	public static function makeBackupMetaColumn()
+	{
+		$type  = Helpers::QUERY_CLONE_META_COLUMN;
+		$filters = (object)[ 'column' => 'meta_old'];
+		$query = IDPayDB::prepareQuery($type, $filters);
+		return IDPayDB::runQuery($query, $type);
+	}
+
     public static function getFeeds($pagination, $filters)
     {
 
@@ -227,6 +287,15 @@ class IDPayDB extends Helpers
         $results = IDPayDB::runQuery($query, $type);
         return ! empty($results) == true ? IDPayDB::unSerializeDto($results) : [];
     }
+
+	public static function getAllFeeds()
+	{
+		$type  = Helpers::QUERY_ALL_FEEDS;
+		$filters = (object)[];
+		$query = IDPayDB::prepareQuery($type, $filters);
+		$results = IDPayDB::runQuery($query, $type);
+		return ! empty($results) == true ? IDPayDB::unSerializeDto($results) : [];
+	}
 
     public static function getAnalyticsTotalTransactions($formId)
     {

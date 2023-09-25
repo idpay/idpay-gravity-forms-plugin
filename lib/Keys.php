@@ -26,7 +26,11 @@ class Keys
 	public const QUERY_DELETE_FEED = 'QUERY_DELETE_FEED';
 	public const QUERY_FEED = 'QUERY_FEED';
 	public const QUERY_FEEDS = 'QUERY_FEEDS';
+	public const QUERY_ALL_FEEDS = 'QUERY_ALL_FEEDS';
 	public const QUERY_FORM = 'QUERY_FORM';
+	public const QUERY_CHECK_META_COLUMN = 'QUERY_CHECK_META_COLUMN';
+	public const QUERY_ADD_META_COLUMN = 'QUERY_ADD_META_COLUMN';
+	public const QUERY_CLONE_META_COLUMN = 'QUERY_CLONE_META_COLUMN';
 
 	// VIEW KEYS
 	public const VIEW_CONFIG = "config";

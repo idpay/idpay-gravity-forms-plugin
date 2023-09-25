@@ -1,0 +1,1 @@
+SELECT id, form_id, is_active, meta FROM %s
