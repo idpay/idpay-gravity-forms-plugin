@@ -40,7 +40,8 @@ class IDPayDB extends Helpers
 		        return sprintf(
 			        IDPayDB::getSqlQuery('clone_meta_column'),
 			        $IDPayTable,
-			        $filters->column
+			        $filters->endColumn,
+			        $filters->StartColumn
 		        );
 
             case Helpers::QUERY_FEED_BY_ID:
@@ -267,7 +268,32 @@ class IDPayDB extends Helpers
 	public static function makeBackupMetaColumn()
 	{
 		$type  = Helpers::QUERY_CLONE_META_COLUMN;
-		$filters = (object)[ 'column' => 'meta_old'];
+		$filters = (object)[
+			'StartColumn' => 'meta',
+			'endColumn' => 'meta_old',
+			];
+		$query = IDPayDB::prepareQuery($type, $filters);
+		return IDPayDB::runQuery($query, $type);
+	}
+
+	public static function makeRestoreMetaColumn()
+	{
+		$type  = Helpers::QUERY_CLONE_META_COLUMN;
+		$filters = (object)[
+			'StartColumn' => 'meta_old',
+			'endColumn' => 'meta',
+		];
+		$query = IDPayDB::prepareQuery($type, $filters);
+		return IDPayDB::runQuery($query, $type);
+	}
+
+	public static function deleteMetaColumn()
+	{
+		$type  = Helpers::QUERY_DELETE_META_COLUMN;
+		$filters = (object)[
+			'db' => DB_NAME,
+			'column' => 'meta_old',
+		];
 		$query = IDPayDB::prepareQuery($type, $filters);
 		return IDPayDB::runQuery($query, $type);
 	}

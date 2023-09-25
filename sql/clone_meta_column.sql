@@ -1,1 +1,1 @@
-UPDATE %s SET %s = meta
+UPDATE %s SET %s = %s

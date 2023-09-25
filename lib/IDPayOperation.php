@@ -50,8 +50,28 @@ class IDPayOperation extends Helpers {
 		foreach ($feeds as $feed){
 			$id = Helpers::dataGet($feed,'id');
 			$formId = Helpers::dataGet($feed,'form_id');
+			$oldMeta = Helpers::dataGet($feed,'meta');
 			$meta = [
-
+				"description"         => Helpers::dataGet($oldMeta,'desc_pm'),
+				"payment_description" => Helpers::dataGet($oldMeta,'customer_fields_desc'),
+				"payment_email"       => Helpers::dataGet($oldMeta,'customer_fields_email'),
+				"payment_mobile"      => Helpers::dataGet($oldMeta,'customer_fields_mobile'),
+				"payment_name"        => Helpers::dataGet($oldMeta,'customer_fields_name'),
+				"confirmation"        => Helpers::dataGet($oldMeta,'confirmation'),
+				"addon"               => [
+					"post_create"       => [
+						"success_payment" => (bool) !empty(Helpers::dataGet($oldMeta,'addon')),
+						"no_payment"      => false,
+					],
+					"post_update"       => [
+						"success_payment" => (bool) !empty(Helpers::dataGet($oldMeta,'addon')),
+						"no_payment"      => false,
+					],
+					"user_registration" => [
+						"success_payment" => (bool) Helpers::dataGet($oldMeta,'type') == 'subscription' ,
+						"no_payment"      => (bool) Helpers::dataGet($oldMeta,'type') != 'subscription',
+					],
+				],
 			];
 			IDPayDB::updateFeed( $id, $formId, $meta );
 		}
@@ -83,6 +103,11 @@ class IDPayOperation extends Helpers {
 		$oldSetting = IDPayOperation::makeRestoreGlobalKey(
 			Helpers::KEY_IDPAY,
 			Helpers::OLD_GLOBAL_KEY_IDPAY);
+	}
+
+	public static function levelDownFeed() {
+		IDPayDB::makeRestoreMetaColumn();
+		IDPayDB::deleteMetaColumn();
 	}
 
 	public static function makeRestoreGlobalKey($key,$backupKey) {
@@ -165,6 +190,7 @@ class IDPayOperation extends Helpers {
 	public static function deactivation() {
 
 		IDPayOperation::levelDownGlobalKeyAndSetting();
+		IDPayOperation::levelDownFeed();
 	}
 
 	public static function removeAllGlobalKey() {
