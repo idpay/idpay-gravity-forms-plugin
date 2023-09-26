@@ -154,6 +154,7 @@ class IDPayOperation extends Helpers {
 		IDPayOperation::disablePlugin($plugin);
 		IDPayOperation::setSystemLog($plugin);
 		IDPayOperation::removeAllGlobalKey();
+		IDPayOperation::levelDownFeed();
 		IDPayOperation::redirectToGravityMainPage();
 	}
 

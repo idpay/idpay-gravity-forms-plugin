@@ -44,6 +44,13 @@ class IDPayDB extends Helpers
 			        $filters->StartColumn
 		        );
 
+	        case Helpers::QUERY_DELETE_META_COLUMN:
+		        return sprintf(
+			        IDPayDB::getSqlQuery('delete_meta_column'),
+			        $IDPayTable,
+			        $filters->column
+		        );
+
             case Helpers::QUERY_FEED_BY_ID:
                 return sprintf(
 	                IDPayDB::getSqlQuery('feed_by_id'),
