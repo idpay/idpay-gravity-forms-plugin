@@ -85,7 +85,7 @@ class GF_Gateway_IDPay extends Helpers
             add_filter("gform_disable_post_creation", [ __CLASS__, "setDelayedActivity" ], 10, 3);
             add_filter("gform_is_delayed_pre_process_feed", [ __CLASS__, "setDelayedGravityAddons" ], 10, 4);
             add_filter("gform_confirmation", [ IDPayPayment::class, "doPayment" ], 1000, 4);
-            add_action('wp', [ IDPayVerify::class, 'doVerify' ], 5);
+            add_action('wp', [ IDPayVerify::class, 'verify' ], 5);
             add_filter("gform_submit_button", [ IDPayView::class, "renderButtonSubmitForm" ], 10, 2);
         }
 

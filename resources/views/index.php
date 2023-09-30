@@ -62,8 +62,6 @@ $checkEnableGateway = ! ( $enable == false );
             <tr>
                 <th scope="col" id="cb" class="manage-column column-cb check-column C3">
                     <input type="checkbox"/></th>
-                <th scope="col" id="active" class="manage-column Cw50">
-                    <?php echo $dictionary->label27 ?></th>
                 <th scope="col" class="manage-column Cw65">
                     <?php echo $dictionary->label28 ?></th>
                 <th scope="col" class="manage-column Cw100"><?php echo $dictionary->label29 ?></th>
@@ -81,19 +79,11 @@ $checkEnableGateway = ! ( $enable == false );
                     foreach ($data as $setting) {
                         $settingId     = $setting["id"];
                         $settingFormId = $setting["form_id"];
-                        $imageOption   = Helpers::getStatusFeedImage($setting);
                         ?>
                     <tr class='author-self status-inherit'>
                         <th scope="row" class="check-column">
                             <input type="checkbox" name="feed[]" value="<?php echo $settingId ?>"/>
                         </th>
-
-                        <td>
-                            <img class="C4 Cw25" src="<?php echo $imageOption->image ?>"
-                                 alt="<?php echo $imageOption->active ?>"
-                                 title="<?php echo $imageOption->active ?>"
-                                 onclick="ToggleActive(this, <?php echo $settingId ?>);"/>
-                        </td>
 
                         <td><?php echo $settingId ?></td>
                         <td class="column-date">

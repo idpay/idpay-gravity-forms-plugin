@@ -9,20 +9,20 @@ class IDPayVerify extends Helpers
         $statusDesc    = IDPayVerify::getStatus($statusCode);
         $entryId       = Helpers::dataGet($entry, 'id');
         $user          = IDPayVerify::loadUser();
+	    $status = 'Failed';
 
         $entry["payment_date"]     = gmdate("Y-m-d H:i:s");
         $entry["transaction_id"]   = $transactionId;
-        $entry["payment_status"]   = 'Failed';
+        $entry["payment_status"]   = $status;
         $entry["transaction_type"] = null;
-        $entry["payment_amount"]   = $pricing->money;
+        $entry["payment_amount"]   = (string) $pricing->amount;
         $entry["is_fulfilled"]     = 0;
         GFAPI::update_entry($entry);
 
         $note = sprintf(
-            __('وضعیت پرداخت یا عضویت :%s (کد خطا: %s) - مبلغ قابل پرداخت یا عضویت : %s', "gravityformsIDPay"),
+            __('وضعیت پرداخت یا عضویت :%s (کد خطا: %s)', "gravityformsIDPay"),
             $statusDesc,
             $statusCode,
-            $pricing->money
         );
         $note .= print_r($request->all, true);
 
@@ -33,7 +33,7 @@ class IDPayVerify extends Helpers
             'gform_post_payment_status',
             $config,
             $entry,
-            'Failed',
+	        $status,
             $transactionId,
             '',
             $pricing->amount,
@@ -45,7 +45,7 @@ class IDPayVerify extends Helpers
             $config,
             $form,
             $entry,
-            'Failed',
+	        $status,
             $transactionId,
             '',
             $pricing->amount,
@@ -53,6 +53,7 @@ class IDPayVerify extends Helpers
             ''
         );
 
+	    IDPayVerify::processConfirmations($form, $request, $entry, $note, $status, $config);
         GFPersian_Payments::notification($form, $entry);
         GFPersian_Payments::confirmation($form, $entry, $note);
 
@@ -82,10 +83,9 @@ class IDPayVerify extends Helpers
 
 
         $note = sprintf(
-            __('وضعیت پرداخت یا عضویت :%s (کد خطا: %s) - مبلغ قابل پرداخت یا عضویت : %s', "gravityformsIDPay"),
+            __('وضعیت پرداخت یا عضویت :%s (کد خطا: %s)', "gravityformsIDPay"),
             $statusDesc,
             $statusCode,
-            $pricing->money
         );
 
         $note .= sprintf(
@@ -294,10 +294,17 @@ class IDPayVerify extends Helpers
         return false;
     }
 
+	public static function verify()
+	{
+		IDPayVerify::doVerify();
+		echo '';
+	}
+
+
     public static function doVerify()
     {
 
-        $request = IDPayVerify::getRequestData();
+        $request = Helpers::getRequestData();
 
         if (empty($request) || IDPayVerify::isNotApprovedGettingTransaction($request->entryId, $request->formId)) {
             return 'error';
@@ -312,7 +319,7 @@ class IDPayVerify extends Helpers
             return 'error';
         }
 
-        $pricing = IDPayVerify::getPriceOrder($paymentType, $entry, $form);
+        $pricing = Helpers::getPriceOrder($paymentType, $entry, $form);
 
         if (IDPayVerify::checkTypeVerify() == 'Purchase' && ! IDPayVerify::checkApprovedVerifyData($request)) {
 	        IDPayVerify::reject($entry, $form, $request, $pricing, $config);
@@ -337,10 +344,10 @@ class IDPayVerify extends Helpers
             $data    = (object) [
                 'id'      => Helpers::dataGet($request, 'id'),
                 'status'  => Helpers::dataGet($transaction, 'statusCode'),
-                'trackId' => Helpers::dataGet($request, 'track_id'),
-                'orderId' => Helpers::dataGet($request, 'order_id'),
-                'formId'  => (int) Helpers::dataGet($_GET, 'form_id'),
-                'entryId' => (int) Helpers::dataGet($_GET, 'entry'),
+                'trackId' => Helpers::dataGet($request, 'trackId'),
+                'orderId' => Helpers::dataGet($request, 'orderId'),
+                'formId'  => Helpers::dataGet($request, 'formId'),
+                'entryId' => Helpers::dataGet($request, 'entryId'),
                 'all'     => Helpers::dataGet($transaction, 'response'),
             ];
             $request = $data;
