@@ -597,9 +597,9 @@ class Helpers extends Keys {
 			case 10:
 				return 'در انتظار تایید پرداخت';
 			case 100:
-				return 'پرداخت یا عضویت تایید شده است';
+				return 'پرداخت تایید شده است';
 			case 101:
-				return 'پرداخت یا عضویت قبلا تایید شده است';
+				return 'پرداخت قبلا تایید شده است';
 			case 200:
 				return 'به دریافت کننده واریز شد';
 			case 0:
@@ -823,4 +823,12 @@ class Helpers extends Keys {
 	public static function setGlobalKey( $key, $value ) {
 		update_option( $key, $value );
 	}
+
+	public static function makePrintVariableNote($variable,$note) {
+		$variable = json_encode($variable,JSON_PRETTY_PRINT);
+		$notes = $note . PHP_EOL . PHP_EOL . '<hr>'. 'مشاهده داده ها' . PHP_EOL . '<hr>' . $variable;
+		$html = '<div style="font-weight: bold;font-size: 16px;font-family: monospace;">' . $notes . '</div>';
+		return $html;
+	}
+
 }

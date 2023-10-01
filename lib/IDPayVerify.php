@@ -78,18 +78,18 @@ class IDPayVerify extends Helpers {
 		GFAPI::update_entry( $entry );
 
 		$noteAdmin = sprintf(
-			__( 'وضعیت پرداخت یا عضویت :%s (کد خطا: %s)', "gravityformsIDPay" ),
+			__( 'وضعیت پرداخت : %s (کد خطا: %s)', "gravityformsIDPay" ),
 			$statusDesc,
 			$statusCode,
 		);
 
 		$noteUser = sprintf(
-			__( 'وضعیت پرداخت یا عضویت :%s (کد خطا: %s)', "gravityformsIDPay" ),
+			__( 'وضعیت پرداخت : %s (کد خطا: %s)', "gravityformsIDPay" ),
 			$statusDesc,
 			$statusCode,
 		);
 
-		$noteAdmin .= print_r( $request->all, true );
+		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
 
 		$entry = GFPersian_Payments::get_entry( $entryId );
 		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
@@ -119,7 +119,7 @@ class IDPayVerify extends Helpers {
 		);
 
 		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
-		GFPersian_Payments::notification( $form, $entry );
+		 GFPersian_Payments::notification( $form, $entry );
 		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
 
 		return true;
@@ -146,18 +146,22 @@ class IDPayVerify extends Helpers {
 		do_action( "gform_idpay_fulfillment", $entry, $config, $transaction->id, $pricing->amount );
 
 		$noteAdmin = sprintf(
-			__( ' پرداخت شما با موفقیت انجام شد. شماره سفارش: %s - کد رهگیری: %s', "gravityformsIDPay" ),
+			__( ' پرداخت شما با موفقیت انجام شد.
+			شماره سفارش : %s 
+			 کد رهگیری : %s', "gravityformsIDPay" ),
 			$request->orderId,
 			$request->trackId
 		);
 
 		$noteUser = sprintf(
-			__( ' پرداخت شما با موفقیت انجام شد. شماره سفارش: %s - کد رهگیری: %s', "gravityformsIDPay" ),
+			__( ' پرداخت شما با موفقیت انجام شد.
+			 شماره سفارش : %s 
+			  کد رهگیری : %s', "gravityformsIDPay" ),
 			$request->orderId,
 			$request->trackId
 		);
 
-		$noteAdmin .= print_r( $request->all, true );
+		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
 
 		$entry = GFPersian_Payments::get_entry( $entryId );
 		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
@@ -217,8 +221,9 @@ class IDPayVerify extends Helpers {
 
 		gform_delete_meta( $entryId, 'payment_gateway' );
 		$noteUser  = __( 'وضعیت پرداخت : رایگان - بدون درگاه پرداخت', "gravityformsIDPay" );
+
 		$noteAdmin = __( 'وضعیت پرداخت : رایگان - بدون درگاه پرداخت', "gravityformsIDPay" );
-		$noteAdmin .= print_r( $request->all, true );
+		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
 
 		$entry = GFPersian_Payments::get_entry( $entryId );
 
@@ -343,11 +348,11 @@ class IDPayVerify extends Helpers {
 			$error = $response->get_error_message();
 
 			return [
-				'message' => sprintf( __( 'خطا هنگام تایید تراکنش. پیام خطا: %s', 'gravityformsIDPay' ), $error )
+				'message' => sprintf( __( 'خطا هنگام تایید تراکنش . پیام خطا: %s', 'gravityformsIDPay' ), $error )
 			];
 		} elseif ( $http_status != 200 || empty( $result ) || empty( $result->status ) || empty( $result->track_id ) ) {
 			return [
-				'message' => sprintf( 'خطا هنگام تایید تراکنش. : %s (کد خطا: %s)', $result->error_message, $result->error_code )
+				'message' => sprintf( 'خطا هنگام تایید تراکنش . : %s (کد خطا: %s)', $result->error_message, $result->error_code )
 			];
 		}
 

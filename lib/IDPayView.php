@@ -88,7 +88,8 @@ class IDPayView extends Helpers {
 		$html .= "{$dict->money}{$amount}<br/><br/>";
 		$html .= "{$dict->currecny}{$currency}<br/><br/>";
 		$html .= "{$dict->date}<span>{$date}</span><br/><br/>";
-		$html .= "{$dict->ipg}<br/></div>";
+		$html .= "{$dict->ipg}<br/><br/><br/><br/>";
+		$html .= "{$dict->noteVariable}<br/><hr/><br/></div>";
 
 		echo $html;
 	}
@@ -135,7 +136,8 @@ class IDPayView extends Helpers {
 		$html .= "{$dict->currecny}{$currency}<br/><br/>";
 		$html .= "{$dict->date}{$date}<br/><br/>";
 		$html .= "{$dict->time}{$time}<br/><br/>";
-		$html .= "{$dict->ipg}<br/></div>";
+		$html .= "{$dict->ipg}<br/><br/><br/><br/>";
+		$html .= "{$dict->noteVariable}<br/><hr/><br/></div>";
 
 		echo $html;
 	}
