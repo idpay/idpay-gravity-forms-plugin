@@ -1,149 +1,142 @@
 <?php
 
 
-class IDPayView extends Helpers
-{
-    public static function route($view = null)
-    {
-        $view = empty($view) ? rgget("view") : $view;
-        $basePath = Helpers::getBasePath();
-        $folder = '/resources/views';
-        $page = Helpers::VIEW_FEEDS;
-        $page = $view == 'edit' ? Helpers::VIEW_CONFIG : $page;
-        $page = $view == 'stats' ? Helpers::VIEW_TRANSACTION : $page;
-        $page = $view == 'setting' ? Helpers::VIEW_SETTING : $page;
+class IDPayView extends Helpers {
+	public static function route( $view = null ) {
+		$view     = empty( $view ) ? rgget( "view" ) : $view;
+		$basePath = Helpers::getBasePath();
+		$folder   = '/resources/views';
+		$page     = Helpers::VIEW_FEEDS;
+		$page     = $view == 'edit' ? Helpers::VIEW_CONFIG : $page;
+		$page     = $view == 'stats' ? Helpers::VIEW_TRANSACTION : $page;
+		$page     = $view == 'setting' ? Helpers::VIEW_SETTING : $page;
 
-        $complete = "{$basePath}{$folder}/{$page}.php";
-        require_once($complete);
-    }
+		$complete = "{$basePath}{$folder}/{$page}.php";
+		require_once( $complete );
+	}
 
-    public static function addIdpayToNavigation($menus)
-    {
-        $handler = [ IDPayView::class, "route" ];
-        $menus[] = [
-            "name"       => "gf_IDPay",
-            "label"      => __("IDPay", "gravityformsIDPay"),
-            "callback"   => $handler,
-            "permission" => Helpers::PERMISSION_ADMIN
-        ];
+	public static function addIdpayToNavigation( $menus ) {
+		$handler = [ IDPayView::class, "route" ];
+		$menus[] = [
+			"name"       => "gf_IDPay",
+			"label"      => __( "IDPay", "gravityformsIDPay" ),
+			"callback"   => $handler,
+			"permission" => Helpers::PERMISSION_ADMIN
+		];
 
-        return $menus;
-    }
+		return $menus;
+	}
 
-    public static function addIdpayToToolbar($menu_items)
-    {
-        $menu_items[] = ['name'  => 'IDPay','label' => 'IDPay',];
-        return $menu_items;
-    }
+	public static function addIdpayToToolbar( $menu_items ) {
+		$menu_items[] = [ 'name' => 'IDPay', 'label' => 'IDPay', ];
 
-    public static function viewSetting()
-    {
-         IDPayView::route('setting');
-    }
+		return $menu_items;
+	}
 
-    public static function renderButtonSubmitForm($button_input, $form)
-    {
+	public static function viewSetting() {
+		IDPayView::route( 'setting' );
+	}
 
-        $buttonHtml = $button_input;
-        $formId = Helpers::dataGet($form, 'id');
-        $dictionary = Helpers::loadDictionary();
-        Helpers::prepareFrontEndTools();
+	public static function renderButtonSubmitForm( $button_input, $form ) {
 
-        $hasPriceFieldInForm  = Helpers::checkSetPriceForForm($form, $formId);
-        $basePath = Helpers::PLUGIN_FOLDER;
-        $file = '/resources/images/logo.svg';
-        $ImageUrl =  plugins_url("{$basePath}{$file}");
-        $config     = IDPayDB::getActiveFeed($form);
+		$buttonHtml = $button_input;
+		$formId     = Helpers::dataGet( $form, 'id' );
+		$dictionary = Helpers::loadDictionary();
+		Helpers::prepareFrontEndTools();
 
-        if ($hasPriceFieldInForm && ! empty($config)) {
-            $buttonHtml .= sprintf(
-                '<div class="idpay-logo C9" id="idpay-pay-id-%1$s"><img class="C10" src="%2$s">%3$s</div>',
-                $formId,
-                $ImageUrl,
-                $dictionary->labelPayment
-            );
-        }
+		$hasPriceFieldInForm = Helpers::checkSetPriceForForm( $form, $formId );
+		$basePath            = Helpers::PLUGIN_FOLDER;
+		$file                = '/resources/images/logo.svg';
+		$ImageUrl            = plugins_url( "{$basePath}{$file}" );
+		$config              = IDPayDB::getActiveFeed( $form );
 
-        return $buttonHtml;
-    }
+		if ( $hasPriceFieldInForm && ! empty( $config ) ) {
+			$buttonHtml .= sprintf(
+				'<div class="idpay-logo C9" id="idpay-pay-id-%1$s"><img class="C10" src="%2$s">%3$s</div>',
+				$formId,
+				$ImageUrl,
+				$dictionary->labelPayment
+			);
+		}
 
-    public static function makeHtmlShowPaymentData($formId, $entry)
-    {
-        $dict = Helpers::loadDictionary();
-        $form           = RGFormsModel::get_form_meta($formId);
-        $entryId = Helpers::dataGet($entry, 'id');
-        $style = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
-        $html = "<div style='{$style}'><hr/>";
-        $html .= "<strong>{$dict->labelTransactionData}</strong>";
-        $html .= "<br/><br/>";
+		return $buttonHtml;
+	}
 
-        $currency = Helpers::dataGet($entry, 'currency');
-        $amount = Helpers::dataGet($entry, 'payment_amount');
-        $amount   = empty($amount) ? $amount  : Helpers::getOrderTotal($form, $entry);
-        $amount   = GFCommon::to_money($amount, $currency);
-        $date   =  Helpers::dataGet($entry, 'payment_date');
-        $date   = Helpers::getJalaliDateTime($date);
-        $status   = Helpers::dataGet($entry, 'payment_status');
-        $status = !empty($status) ? $dict->{$status} :  $dict->noStatus;
-        $trackId = Helpers::dataGet($entry, 'transaction_id');
-        $transId = gform_get_meta($entryId, "IdpayTransactionId:{$entryId}", false);
+	public static function makeHtmlShowPaymentData( $formId, $entry ) {
+		$dict    = Helpers::loadDictionary();
+		$form    = RGFormsModel::get_form_meta( $formId );
+		$entryId = Helpers::dataGet( $entry, 'id' );
+		$style   = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
+		$html    = "<div style='{$style}'><hr/>";
+		$html    .= "<strong>{$dict->labelTransactionData}</strong>";
+		$html    .= "<br/><br/>";
 
-        $html .= "{$dict->transId}{$transId}<br/><br/>";
-        $html .= "{$dict->track}{$trackId}<br/><br/>";
-        $html .= "{$dict->status}{$status}<br/><br/>";
-        $html .= "{$dict->money}{$amount}<br/><br/>";
-        $html .= "{$dict->currecny}{$currency}<br/><br/>";
-        $html .= "{$dict->date}<span>{$date}</span><br/><br/>";
-        $html .= "{$dict->ipg}<br/></div>";
+		$currency = Helpers::dataGet( $entry, 'currency' );
+		$amount   = Helpers::dataGet( $entry, 'payment_amount' );
+		$amount   = empty( $amount ) ? $amount : Helpers::getOrderTotal( $form, $entry );
+		$amount   = GFCommon::to_money( $amount, $currency );
+		$date     = Helpers::dataGet( $entry, 'payment_date' );
+		$date     = Helpers::getJalaliDateTime( $date );
+		$status   = Helpers::dataGet( $entry, 'payment_status' );
+		$status   = ! empty( $status ) ? $dict->{$status} : $dict->noStatus;
+		$trackId  = Helpers::dataGet( $entry, 'transaction_id' );
+		$transId  = gform_get_meta( $entryId, "IdpayTransactionId:{$entryId}", false );
 
-        echo $html;
-    }
+		$html .= "{$dict->transId}{$transId}<br/><br/>";
+		$html .= "{$dict->track}{$trackId}<br/><br/>";
+		$html .= "{$dict->status}{$status}<br/><br/>";
+		$html .= "{$dict->money}{$amount}<br/><br/>";
+		$html .= "{$dict->currecny}{$currency}<br/><br/>";
+		$html .= "{$dict->date}<span>{$date}</span><br/><br/>";
+		$html .= "{$dict->ipg}<br/></div>";
 
-    public static function makeHtmlEditPaymentData($formId, $entry)
-    {
-        $dict = Helpers::loadDictionary();
-        $form           = RGFormsModel::get_form_meta($formId);
-        $entryId = Helpers::dataGet($entry, 'id');
-        $style = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
-        $html = "<div style='{$style}'><hr/>";
-        $html .= "<strong>{$dict->labelTransactionData}</strong>";
-        $html .= "<br/><br/>";
+		echo $html;
+	}
 
-        $currency = Helpers::dataGet($entry, 'currency');
-        $amount = Helpers::dataGet($entry, 'payment_amount');
-        $amount   = empty($amount) ? $amount  : Helpers::getOrderTotal($form, $entry);
-        $date   =  Helpers::dataGet($entry, 'payment_date');
-        $date   = Helpers::getJalaliDateTime($date);
-        list($date,$time)   = explode(" ", $date);
-        $status   = Helpers::dataGet($entry, 'payment_status');
-        $status = (object)[
-            'En' => $status,
-            'Fr' => !empty($status) ? $dict->{$status} :  $dict->noStatus,
-        ];
-        $trackId = Helpers::dataGet($entry, 'transaction_id');
-        $transId = gform_get_meta($entryId, "IdpayTransactionId:{$entryId}", false);
+	public static function makeHtmlEditPaymentData( $formId, $entry ) {
+		$dict    = Helpers::loadDictionary();
+		$form    = RGFormsModel::get_form_meta( $formId );
+		$entryId = Helpers::dataGet( $entry, 'id' );
+		$style   = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
+		$html    = "<div style='{$style}'><hr/>";
+		$html    .= "<strong>{$dict->labelTransactionData}</strong>";
+		$html    .= "<br/><br/>";
 
-        $statusOptions = "<select id='payment_status' name='payment_status'>";
-        $statusOptions .= "<option value='{$status->En}' selected>{$status->Fr}</option>";
-        $statusOptions .= $status->En == 'Paid' ? '' : "<option value='Paid'>{$dict->Paid}</option>";
-        $statusOptions .= $status->En == 'Failed' ? '' : "<option value='Failed'>{$dict->Failed}</option>";
-        $statusOptions .= $status->En == 'Processing' ? '' : "<option value='Processing'>{$dict->Processing}</option>";
-        $statusOptions .= '</select>';
+		$currency = Helpers::dataGet( $entry, 'currency' );
+		$amount   = Helpers::dataGet( $entry, 'payment_amount' );
+		$amount   = empty( $amount ) ? $amount : Helpers::getOrderTotal( $form, $entry );
+		$date     = Helpers::dataGet( $entry, 'payment_date' );
+		$date     = Helpers::getJalaliDateTime( $date );
+		list( $date, $time ) = explode( " ", $date );
+		$status  = Helpers::dataGet( $entry, 'payment_status' );
+		$status  = (object) [
+			'En' => $status,
+			'Fr' => ! empty( $status ) ? $dict->{$status} : $dict->noStatus,
+		];
+		$trackId = Helpers::dataGet( $entry, 'transaction_id' );
+		$transId = gform_get_meta( $entryId, "IdpayTransactionId:{$entryId}", false );
 
-        $date = "<input type='text' id='payment_date' name='payment_date' value='{$date}' />";
-	    $time = "<input type='text' id='payment_time' name='payment_time' value='{$time}' />";
-        $amount = "<input type='text' id='payment_amount' name='payment_amount' value='{$amount}' />";
-        $trackId = "<input type='text' id='IDPay_transaction_id' name='IDPay_transaction_id' value='{$trackId}' />";
+		$statusOptions = "<select id='payment_status' name='payment_status'>";
+		$statusOptions .= "<option value='{$status->En}' selected>{$status->Fr}</option>";
+		$statusOptions .= $status->En == 'Paid' ? '' : "<option value='Paid'>{$dict->Paid}</option>";
+		$statusOptions .= $status->En == 'Failed' ? '' : "<option value='Failed'>{$dict->Failed}</option>";
+		$statusOptions .= $status->En == 'Processing' ? '' : "<option value='Processing'>{$dict->Processing}</option>";
+		$statusOptions .= '</select>';
 
-        $html .= "{$dict->transId}{$transId}<br/><br/>";
-        $html .= "{$dict->track}{$trackId}<br/><br/>";
-        $html .= "{$dict->status}{$statusOptions}<br/><br/>";
-        $html .= "{$dict->money}{$amount}<br/><br/>";
-        $html .= "{$dict->currecny}{$currency}<br/><br/>";
-        $html .= "{$dict->date}{$date}<br/><br/>";
-        $html .= "{$dict->time}{$time}<br/><br/>";
-        $html .= "{$dict->ipg}<br/></div>";
+		$date    = "<input type='text' id='payment_date' name='payment_date' value='{$date}' />";
+		$time    = "<input type='text' id='payment_time' name='payment_time' value='{$time}' />";
+		$amount  = "<input type='text' id='payment_amount' name='payment_amount' value='{$amount}' />";
+		$trackId = "<input type='text' id='IDPay_transaction_id' name='IDPay_transaction_id' value='{$trackId}' />";
 
-        echo $html;
-    }
+		$html .= "{$dict->transId}{$transId}<br/><br/>";
+		$html .= "{$dict->track}{$trackId}<br/><br/>";
+		$html .= "{$dict->status}{$statusOptions}<br/><br/>";
+		$html .= "{$dict->money}{$amount}<br/><br/>";
+		$html .= "{$dict->currecny}{$currency}<br/><br/>";
+		$html .= "{$dict->date}{$date}<br/><br/>";
+		$html .= "{$dict->time}{$time}<br/><br/>";
+		$html .= "{$dict->ipg}<br/></div>";
+
+		echo $html;
+	}
 }

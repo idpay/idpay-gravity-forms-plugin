@@ -6,13 +6,13 @@ class IDPayOperation extends Helpers {
 		$state = IDPayOperation::getStateIfPluginHasChanged();
 
 
-		if ($state == Helpers::STATE_UPGRADE) {
+		if ( $state == Helpers::STATE_UPGRADE ) {
 			IDPayOperation::levelUpGlobalKeyAndSetting();
 			IDPayOperation::levelUpDatabase();
 			IDPayOperation::redirectToSettingPage();
 		}
 
-		if ($state == Helpers::STATE_NO_CONFIGURED) {
+		if ( $state == Helpers::STATE_NO_CONFIGURED ) {
 			IDPayOperation::redirectToSettingPage();
 		}
 
@@ -22,23 +22,22 @@ class IDPayOperation extends Helpers {
 
 		$oldVersion = IDPayOperation::makeBackupGlobalKey(
 			Helpers::OLD_GLOBAL_KEY_VERSION,
-			Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP);
+			Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP );
 
 		$oldEnabled = IDPayOperation::makeBackupGlobalKey(
 			Helpers::OLD_GLOBAL_KEY_ENABLE,
-			Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP);
+			Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP );
 
 		$oldSetting = IDPayOperation::makeBackupGlobalKey(
 			Helpers::KEY_IDPAY,
-			Helpers::OLD_GLOBAL_KEY_IDPAY);
+			Helpers::OLD_GLOBAL_KEY_IDPAY );
 
-		IDPayOperation::levelUpSetting($oldSetting,$oldEnabled);
+		IDPayOperation::levelUpSetting( $oldSetting, $oldEnabled );
 	}
 
 	public static function levelUpDatabase() {
 		IDPayDB::upgrade();
-		if(IDPayDB::checkMetaOldColumnExist() == 0)
-		{
+		if ( IDPayDB::checkMetaOldColumnExist() == 0 ) {
 			IDPayDB::addMetaColumn();
 			IDPayDB::makeBackupMetaColumn();
 			IDPayOperation::levelUpFeed();
@@ -47,29 +46,29 @@ class IDPayOperation extends Helpers {
 
 	public static function levelUpFeed() {
 		$feeds = IDPayDB::getAllFeeds();
-		foreach ($feeds as $feed){
-			$id = Helpers::dataGet($feed,'id');
-			$formId = Helpers::dataGet($feed,'form_id');
-			$oldMeta = Helpers::dataGet($feed,'meta');
-			$meta = [
-				"description"         => Helpers::dataGet($oldMeta,'desc_pm'),
-				"payment_description" => Helpers::dataGet($oldMeta,'customer_fields_desc'),
-				"payment_email"       => Helpers::dataGet($oldMeta,'customer_fields_email'),
-				"payment_mobile"      => Helpers::dataGet($oldMeta,'customer_fields_mobile'),
-				"payment_name"        => Helpers::dataGet($oldMeta,'customer_fields_name'),
-				"confirmation"        => Helpers::dataGet($oldMeta,'confirmation'),
+		foreach ( $feeds as $feed ) {
+			$id      = Helpers::dataGet( $feed, 'id' );
+			$formId  = Helpers::dataGet( $feed, 'form_id' );
+			$oldMeta = Helpers::dataGet( $feed, 'meta' );
+			$meta    = [
+				"description"         => Helpers::dataGet( $oldMeta, 'desc_pm' ),
+				"payment_description" => Helpers::dataGet( $oldMeta, 'customer_fields_desc' ),
+				"payment_email"       => Helpers::dataGet( $oldMeta, 'customer_fields_email' ),
+				"payment_mobile"      => Helpers::dataGet( $oldMeta, 'customer_fields_mobile' ),
+				"payment_name"        => Helpers::dataGet( $oldMeta, 'customer_fields_name' ),
+				"confirmation"        => Helpers::dataGet( $oldMeta, 'confirmation' ),
 				"addon"               => [
 					"post_create"       => [
-						"success_payment" => (bool) !empty(Helpers::dataGet($oldMeta,'addon')),
+						"success_payment" => (bool) ! empty( Helpers::dataGet( $oldMeta, 'addon' ) ),
 						"no_payment"      => false,
 					],
 					"post_update"       => [
-						"success_payment" => (bool) !empty(Helpers::dataGet($oldMeta,'addon')),
+						"success_payment" => (bool) ! empty( Helpers::dataGet( $oldMeta, 'addon' ) ),
 						"no_payment"      => false,
 					],
 					"user_registration" => [
-						"success_payment" => (bool) Helpers::dataGet($oldMeta,'type') == 'subscription' ,
-						"no_payment"      => (bool) Helpers::dataGet($oldMeta,'type') != 'subscription',
+						"success_payment" => (bool) Helpers::dataGet( $oldMeta, 'type' ) == 'subscription',
+						"no_payment"      => (bool) Helpers::dataGet( $oldMeta, 'type' ) != 'subscription',
 					],
 				],
 			];
@@ -78,15 +77,15 @@ class IDPayOperation extends Helpers {
 	}
 
 
-	public static function levelUpSetting($oldSetting,$oldEnabled) {
+	public static function levelUpSetting( $oldSetting, $oldEnabled ) {
 		$setting = [
-			"enable"  => !empty($oldEnabled) ? 'on' : '',
-			"name"   =>  Helpers::dataGet($oldSetting,'gname'),
-			"api_key" => Helpers::dataGet($oldSetting,'api_key'),
-			"sandbox" => Helpers::dataGet($oldSetting,'sandbox'),
+			"enable"  => ! empty( $oldEnabled ) ? 'on' : '',
+			"name"    => Helpers::dataGet( $oldSetting, 'gname' ),
+			"api_key" => Helpers::dataGet( $oldSetting, 'api_key' ),
+			"sandbox" => Helpers::dataGet( $oldSetting, 'sandbox' ),
 			"version" => Helpers::VERSION,
 		];
-		Helpers::setGlobalKey(Helpers::KEY_IDPAY, $setting);
+		Helpers::setGlobalKey( Helpers::KEY_IDPAY, $setting );
 	}
 
 
@@ -94,15 +93,15 @@ class IDPayOperation extends Helpers {
 
 		$oldVersion = IDPayOperation::makeRestoreGlobalKey(
 			Helpers::OLD_GLOBAL_KEY_VERSION,
-			Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP);
+			Helpers::OLD_GLOBAL_KEY_VERSION_BACKUP );
 
 		$oldEnabled = IDPayOperation::makeRestoreGlobalKey(
 			Helpers::OLD_GLOBAL_KEY_ENABLE,
-			Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP);
+			Helpers::OLD_GLOBAL_KEY_ENABLE_BACKUP );
 
 		$oldSetting = IDPayOperation::makeRestoreGlobalKey(
 			Helpers::KEY_IDPAY,
-			Helpers::OLD_GLOBAL_KEY_IDPAY);
+			Helpers::OLD_GLOBAL_KEY_IDPAY );
 	}
 
 	public static function levelDownFeed() {
@@ -110,49 +109,51 @@ class IDPayOperation extends Helpers {
 		IDPayDB::deleteMetaColumn();
 	}
 
-	public static function makeRestoreGlobalKey($key,$backupKey) {
+	public static function makeRestoreGlobalKey( $key, $backupKey ) {
 		$newValue = Helpers::getGlobalKey( $backupKey );
-		Helpers::setGlobalKey( $key,$newValue );
+		Helpers::setGlobalKey( $key, $newValue );
 		Helpers::deleteGlobalKey( $backupKey );
+
 		return $newValue;
 	}
 
-	public static function makeBackupGlobalKey($key,$backupKey) {
+	public static function makeBackupGlobalKey( $key, $backupKey ) {
 		$oldValue = Helpers::getGlobalKey( $key );
-		Helpers::setGlobalKey( $backupKey,$oldValue );
+		Helpers::setGlobalKey( $backupKey, $oldValue );
 		Helpers::deleteGlobalKey( $key );
+
 		return $oldValue;
 	}
 
 	public static function redirectToSettingPage() {
 		$settingPageUrl = Helpers::SETTING_PAGE_URL;
-		if(! str_contains( $_SERVER['REQUEST_URI'], Helpers::SETTING_PAGE_URL )) {
+		if ( ! str_contains( $_SERVER['REQUEST_URI'], Helpers::SETTING_PAGE_URL ) ) {
 			wp_redirect( admin_url( "admin.php{$settingPageUrl}" ) );
 		}
 	}
 
 	public static function getStateIfPluginHasChanged() {
 
-		$setting = Helpers::getGlobalKey(Helpers::KEY_IDPAY);
-		$isConfigured        = Helpers::dataGet( $setting, 'enable',false ) == false;
+		$setting      = Helpers::getGlobalKey( Helpers::KEY_IDPAY );
+		$isConfigured = Helpers::dataGet( $setting, 'enable', false ) == false;
 
-		if(IDPayOperation::checkNeedToUpgradeVersion($setting)){
+		if ( IDPayOperation::checkNeedToUpgradeVersion( $setting ) ) {
 			return Helpers::STATE_UPGRADE;
 		}
 
-		return  $isConfigured ? Helpers::STATE_NO_CONFIGURED : Helpers::STATE_NO_CHANGED;
+		return $isConfigured ? Helpers::STATE_NO_CONFIGURED : Helpers::STATE_NO_CHANGED;
 	}
 
 	public static function uninstall() {
 		$dictionary = Helpers::loadDictionary();
 		$condition  = ! IDPayOperation::hasPermission( Helpers::PERMISSION_UNISTALL );
-		$plugin = IDPayOperation::getPluginManifest();
+		$plugin     = IDPayOperation::getPluginManifest();
 		if ( $condition ) {
 			die( $dictionary->labelDontPermission );
 		}
 		IDPayDB::dropTable();
-		IDPayOperation::disablePlugin($plugin);
-		IDPayOperation::setSystemLog($plugin);
+		IDPayOperation::disablePlugin( $plugin );
+		IDPayOperation::setSystemLog( $plugin );
 		IDPayOperation::removeAllGlobalKey();
 		IDPayOperation::levelDownFeed();
 		IDPayOperation::redirectToGravityMainPage();
@@ -164,17 +165,18 @@ class IDPayOperation extends Helpers {
 	}
 
 	public static function getPluginManifest() {
-		$basePath   = Helpers::PLUGIN_FOLDER;
-		$fileName   = Helpers::IDPAY_PLUGIN_FILE;
+		$basePath = Helpers::PLUGIN_FOLDER;
+		$fileName = Helpers::IDPAY_PLUGIN_FILE;
+
 		return "{$basePath}/{$fileName}";
 	}
 
-	public static function disablePlugin($plugin) {
+	public static function disablePlugin( $plugin ) {
 		deactivate_plugins( $plugin );
 	}
 
-	public static function setSystemLog($plugin) {
-		$value      = [ $plugin => time() ] + (array) Helpers::getGlobalKey( 'recently_activated' );
+	public static function setSystemLog( $plugin ) {
+		$value = [ $plugin => time() ] + (array) Helpers::getGlobalKey( 'recently_activated' );
 		Helpers::setGlobalKey( 'recently_activated', $value );
 	}
 

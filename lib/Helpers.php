@@ -618,8 +618,8 @@ class Helpers extends Keys {
 		return false;
 	}
 
-	public static function processConfirmations( &$form, $request, $entry, $note, $status, $config ) {
-		$paymentType      = gform_get_meta( $request->entryId, 'payment_type' );
+	public static function processConfirmations( &$form, $entry, $note, $status, $config ) {
+		$paymentType      = gform_get_meta( Helpers::dataGet($entry,'id'), 'payment_type' );
 		$hasCustomPayment = ( $paymentType != 'custom' );
 		$confirmPrepare   = apply_filters( Helpers::AUTHOR . '_gf_gateway_verify', $hasCustomPayment, $form, $entry );
 		$confirmations    = apply_filters( Helpers::AUTHOR . '_gf_IDPay_verify', $confirmPrepare, $form, $entry );

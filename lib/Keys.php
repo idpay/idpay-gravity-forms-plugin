@@ -1,7 +1,6 @@
 <?php
 
-class Keys
-{
+class Keys {
 // GLOBAL KEYS
 
 	public const VERSION = "2.0.0";
