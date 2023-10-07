@@ -14,27 +14,27 @@ class IDPayDB extends Helpers {
 		$IDPayTable           = IDPayDB::getTableName();
 
 		switch ( $type ) {
-			case Helpers::QUERY_ANALYTICS:
+			case Keys::QUERY_ANALYTICS:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'analytics' ),
 					$transactionTableName,
 					$filters->formId
 				);
 
-			case Helpers::QUERY_COUNT_FEED:
+			case Keys::QUERY_COUNT_FEED:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'count_feed' ),
 					$IDPayTable
 				);
 
-			case Helpers::QUERY_ADD_META_COLUMN:
+			case Keys::QUERY_ADD_META_COLUMN:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'add_meta_column' ),
 					$IDPayTable,
 					$filters->column
 				);
 
-			case Helpers::QUERY_CLONE_META_COLUMN:
+			case Keys::QUERY_CLONE_META_COLUMN:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'clone_meta_column' ),
 					$IDPayTable,
@@ -42,35 +42,35 @@ class IDPayDB extends Helpers {
 					$filters->StartColumn
 				);
 
-			case Helpers::QUERY_DELETE_META_COLUMN:
+			case Keys::QUERY_DELETE_META_COLUMN:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'delete_meta_column' ),
 					$IDPayTable,
 					$filters->column
 				);
 
-			case Helpers::QUERY_FEED_BY_ID:
+			case Keys::QUERY_FEED_BY_ID:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'feed_by_id' ),
 					$IDPayTable,
 					$filters->formId
 				);
 
-			case Helpers::QUERY_DELETE_FEED:
+			case Keys::QUERY_DELETE_FEED:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'delete_feed' ),
 					$IDPayTable,
 					$filters->id
 				);
 
-			case Helpers::QUERY_FEED:
+			case Keys::QUERY_FEED:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'feed' ),
 					$IDPayTable,
 					$filters->id
 				);
 
-			case Helpers::QUERY_FEEDS:
+			case Keys::QUERY_FEEDS:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'feeds' ),
 					$IDPayTable,
@@ -79,26 +79,26 @@ class IDPayDB extends Helpers {
 					$formTable
 				);
 
-			case Helpers::QUERY_ALL_FEEDS:
+			case Keys::QUERY_ALL_FEEDS:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'all_feeds' ),
 					$IDPayTable,
 				);
 
-			case Helpers::QUERY_FORM:
+			case Keys::QUERY_FORM:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'form' ),
 					$formTable,
 					$filters->formId
 				);
 
-			case Helpers::QUERY_DELETE_IDPAY:
+			case Keys::QUERY_DELETE_IDPAY:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'delete_idpay' ),
 					$IDPayTable
 				);
 
-			case Helpers::QUERY_COUNT_TRANSACTION:
+			case Keys::QUERY_COUNT_TRANSACTION:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'count_transactions' ),
 					$transactionTableName,
@@ -106,7 +106,7 @@ class IDPayDB extends Helpers {
 				);
 
 
-			case Helpers::QUERY_TRANSACTIONS:
+			case Keys::QUERY_TRANSACTIONS:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'transactions' ),
 					$transactionTableName,
@@ -115,7 +115,7 @@ class IDPayDB extends Helpers {
 					$filters->limitRowsMax
 				);
 
-			case Helpers::QUERY_CHECK_META_COLUMN:
+			case Keys::QUERY_CHECK_META_COLUMN:
 				return sprintf(
 					IDPayDB::getSqlQuery( 'check_meta_column' ),
 					$filters->db,
@@ -130,7 +130,7 @@ class IDPayDB extends Helpers {
 			return [];
 		}
 
-		if ( $type == Helpers::QUERY_ANALYTICS ) {
+		if ( $type == Keys::QUERY_ANALYTICS ) {
 			$list = [];
 			foreach ( $dto as $item ) {
 				$status          = $item["status"];
@@ -140,9 +140,9 @@ class IDPayDB extends Helpers {
 			}
 
 			return $list;
-		} elseif ( $type == Helpers::QUERY_COUNT_TRANSACTION ||
-		           $type == Helpers::QUERY_COUNT_FEED ||
-		           $type == Helpers::QUERY_CHECK_META_COLUMN ) {
+		} elseif ( $type == Keys::QUERY_COUNT_TRANSACTION ||
+		           $type == Keys::QUERY_COUNT_FEED ||
+		           $type == Keys::QUERY_CHECK_META_COLUMN ) {
 			return ! empty( $dto ) == true ? ( (int) $dto[0]['count'] ) : 0;
 		} else {
 			return $dto;
@@ -168,8 +168,8 @@ class IDPayDB extends Helpers {
 	public static function getActiveFeed( $form ) {
 		$configs = IDPayDB::getFeedByFormId( $form["id"] );
 		$configs = apply_filters(
-			Helpers::AUTHOR . '_gf_IDPay_get_active_configs',
-			apply_filters( Helpers::AUTHOR . '_gf_gateway_get_active_configs', $configs, $form ),
+			Keys::AUTHOR . '_gf_IDPay_get_active_configs',
+			apply_filters( Keys::AUTHOR . '_gf_gateway_get_active_configs', $configs, $form ),
 			$form
 		);
 
@@ -242,7 +242,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function checkMetaOldColumnExist() {
-		$type    = Helpers::QUERY_CHECK_META_COLUMN;
+		$type    = Keys::QUERY_CHECK_META_COLUMN;
 		$filters = (object) [
 			'db'     => DB_NAME,
 			'column' => 'meta_old',
@@ -253,7 +253,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function addMetaColumn() {
-		$type    = Helpers::QUERY_ADD_META_COLUMN;
+		$type    = Keys::QUERY_ADD_META_COLUMN;
 		$filters = (object) [
 			'db'     => DB_NAME,
 			'column' => 'meta_old',
@@ -264,7 +264,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function makeBackupMetaColumn() {
-		$type    = Helpers::QUERY_CLONE_META_COLUMN;
+		$type    = Keys::QUERY_CLONE_META_COLUMN;
 		$filters = (object) [
 			'StartColumn' => 'meta',
 			'endColumn'   => 'meta_old',
@@ -275,7 +275,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function makeRestoreMetaColumn() {
-		$type    = Helpers::QUERY_CLONE_META_COLUMN;
+		$type    = Keys::QUERY_CLONE_META_COLUMN;
 		$filters = (object) [
 			'StartColumn' => 'meta_old',
 			'endColumn'   => 'meta',
@@ -286,7 +286,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function deleteMetaColumn() {
-		$type    = Helpers::QUERY_DELETE_META_COLUMN;
+		$type    = Keys::QUERY_DELETE_META_COLUMN;
 		$filters = (object) [
 			'db'     => DB_NAME,
 			'column' => 'meta_old',
@@ -301,7 +301,7 @@ class IDPayDB extends Helpers {
 		$limitRowsMin = ! empty( $pagination->query->min ) ? $pagination->query->min : 0;
 		$limitRowsMax = ! empty( $pagination->query->max ) ? $pagination->query->max : $pagination->query->count;
 
-		$type    = Helpers::QUERY_FEEDS;
+		$type    = Keys::QUERY_FEEDS;
 		$filters = (object) [
 			'limitRowsMin' => $limitRowsMin,
 			'limitRowsMax' => $limitRowsMax,
@@ -313,7 +313,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function getAllFeeds() {
-		$type    = Helpers::QUERY_ALL_FEEDS;
+		$type    = Keys::QUERY_ALL_FEEDS;
 		$filters = (object) [];
 		$query   = IDPayDB::prepareQuery( $type, $filters );
 		$results = IDPayDB::runQuery( $query, $type );
@@ -322,7 +322,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function getAnalyticsTotalTransactions( $formId ) {
-		$type    = Helpers::QUERY_ANALYTICS;
+		$type    = Keys::QUERY_ANALYTICS;
 		$filters = (object) [ 'formId' => $formId ];
 		$query   = IDPayDB::prepareQuery( $type, $filters );
 
@@ -330,14 +330,14 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function getTransactionsCount( $filters ) {
-		$type  = Helpers::QUERY_COUNT_TRANSACTION;
+		$type  = Keys::QUERY_COUNT_TRANSACTION;
 		$query = IDPayDB::prepareQuery( $type, $filters );
 
 		return IDPayDB::runQuery( $query, $type );
 	}
 
 	public static function getFeedsCount( $filters ) {
-		$type  = Helpers::QUERY_COUNT_FEED;
+		$type  = Keys::QUERY_COUNT_FEED;
 		$query = IDPayDB::prepareQuery( $type, $filters );
 
 		return IDPayDB::runQuery( $query, $type );
@@ -345,7 +345,7 @@ class IDPayDB extends Helpers {
 
 	public static function dropTable() {
 
-		$type    = Helpers::QUERY_DELETE_IDPAY;
+		$type    = Keys::QUERY_DELETE_IDPAY;
 		$filters = (object) [];
 		$query   = IDPayDB::prepareQuery( $type, $filters );
 
@@ -353,7 +353,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function getFeedByFormId( $formId ) {
-		$type    = Helpers::QUERY_FEED_BY_ID;
+		$type    = Keys::QUERY_FEED_BY_ID;
 		$filters = (object) [ 'formId' => $formId ];
 		$query   = IDPayDB::prepareQuery( $type, $filters );
 		$results = IDPayDB::runQuery( $query, $type );
@@ -362,14 +362,14 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function deleteFeed( $id ) {
-		$type    = Helpers::QUERY_DELETE_FEED;
+		$type    = Keys::QUERY_DELETE_FEED;
 		$filters = (object) [ 'id' => $id ];
 		$query   = IDPayDB::prepareQuery( $type, $filters );
 		$results = IDPayDB::runQuery( $query, $type );
 	}
 
 	public static function getFeed( $id ) {
-		$type    = Helpers::QUERY_FEED;
+		$type    = Keys::QUERY_FEED;
 		$filters = (object) [ 'id' => $id ];
 		$query   = IDPayDB::prepareQuery( $type, $filters );
 		$results = IDPayDB::runQuery( $query, $type );
@@ -379,7 +379,7 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function getForm( $formId ) {
-		$type    = Helpers::QUERY_FORM;
+		$type    = Keys::QUERY_FORM;
 		$filters = (object) [ 'formId' => $formId ];
 		$query   = IDPayDB::prepareQuery( $type, $filters );
 		$results = IDPayDB::runQuery( $query, $type );
@@ -393,7 +393,7 @@ class IDPayDB extends Helpers {
 		$limitRowsMin = ! empty( $pagination->query->min ) ? $pagination->query->min : 0;
 		$limitRowsMax = ! empty( $pagination->query->max ) ? $pagination->query->max : $pagination->query->count;
 
-		$type    = Helpers::QUERY_TRANSACTIONS;
+		$type    = Keys::QUERY_TRANSACTIONS;
 		$filters = (object) [
 			'limitRowsMin' => $limitRowsMin,
 			'limitRowsMax' => $limitRowsMax,

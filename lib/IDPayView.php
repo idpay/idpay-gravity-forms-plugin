@@ -6,10 +6,10 @@ class IDPayView extends Helpers {
 		$view     = empty( $view ) ? rgget( "view" ) : $view;
 		$basePath = Helpers::getBasePath();
 		$folder   = '/resources/views';
-		$page     = Helpers::VIEW_FEEDS;
-		$page     = $view == 'edit' ? Helpers::VIEW_CONFIG : $page;
-		$page     = $view == 'stats' ? Helpers::VIEW_TRANSACTION : $page;
-		$page     = $view == 'setting' ? Helpers::VIEW_SETTING : $page;
+		$page     = Keys::VIEW_FEEDS;
+		$page     = $view == 'edit' ? Keys::VIEW_CONFIG : $page;
+		$page     = $view == 'stats' ? Keys::VIEW_TRANSACTION : $page;
+		$page     = $view == 'setting' ? Keys::VIEW_SETTING : $page;
 
 		$complete = "{$basePath}{$folder}/{$page}.php";
 		require_once( $complete );
@@ -21,7 +21,7 @@ class IDPayView extends Helpers {
 			"name"       => "gf_IDPay",
 			"label"      => __( "IDPay", "gravityformsIDPay" ),
 			"callback"   => $handler,
-			"permission" => Helpers::PERMISSION_ADMIN
+			"permission" => Keys::PERMISSION_ADMIN
 		];
 
 		return $menus;
@@ -45,7 +45,7 @@ class IDPayView extends Helpers {
 		Helpers::prepareFrontEndTools();
 
 		$hasPriceFieldInForm = Helpers::checkSetPriceForForm( $form, $formId );
-		$basePath            = Helpers::PLUGIN_FOLDER;
+		$basePath            = Keys::PLUGIN_FOLDER;
 		$file                = '/resources/images/logo.svg';
 		$ImageUrl            = plugins_url( "{$basePath}{$file}" );
 		$config              = IDPayDB::getActiveFeed( $form );

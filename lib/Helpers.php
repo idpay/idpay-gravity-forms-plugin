@@ -76,7 +76,7 @@ class Helpers extends Keys {
 	}
 
 	public static function checkSubmittedConfigDataAndLoadSetting() {
-		$setting = Helpers::getGlobalKey( Helpers::KEY_IDPAY );
+		$setting = Helpers::getGlobalKey( Keys::KEY_IDPAY );
 
 		if ( isset( $_POST["gf_IDPay_submit"] ) ) {
 
@@ -86,9 +86,9 @@ class Helpers extends Keys {
 				"name"    => sanitize_text_field( rgpost( 'gf_IDPay_name' ) ),
 				"api_key" => sanitize_text_field( rgpost( 'gf_IDPay_api_key' ) ),
 				"sandbox" => sanitize_text_field( rgpost( 'gf_IDPay_sandbox' ) ),
-				"version" => Helpers::VERSION,
+				"version" => Keys::VERSION,
 			];
-			Helpers::setGlobalKey( Helpers::KEY_IDPAY, $setting );
+			Helpers::setGlobalKey( Keys::KEY_IDPAY, $setting );
 		}
 
 		return $setting;
@@ -111,7 +111,7 @@ class Helpers extends Keys {
 			'entry'   => $entry_id
 		), $pageURL ) );
 
-		return apply_filters( Helpers::AUTHOR . '_IDPay_return_url', apply_filters( Helpers::AUTHOR . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__ ), $form_id, $entry_id, __CLASS__ );
+		return apply_filters( Keys::AUTHOR . '_IDPay_return_url', apply_filters( Keys::AUTHOR . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__ ), $form_id, $entry_id, __CLASS__ );
 	}
 
 	public static function redirect_confirmation( $url, $ajax ) {
@@ -156,7 +156,7 @@ class Helpers extends Keys {
 	}
 
 	public static function getGatewayName(): string {
-		$settings = Helpers::getGlobalKey( Helpers::KEY_IDPAY );
+		$settings = Helpers::getGlobalKey( Keys::KEY_IDPAY );
 
 		return isset( $settings['name'] ) ? $settings["name"] : __( 'IDPay', 'gravityformsIDPay' );
 	}
@@ -188,14 +188,14 @@ class Helpers extends Keys {
 	}
 
 	public static function getApiKey() {
-		$settings = Helpers::getGlobalKey( Helpers::KEY_IDPAY );
+		$settings = Helpers::getGlobalKey( Keys::KEY_IDPAY );
 		$api_key  = $settings["api_key"] ?? '';
 
 		return trim( $api_key );
 	}
 
 	public static function getSandbox() {
-		$settings = Helpers::getGlobalKey( Helpers::KEY_IDPAY );
+		$settings = Helpers::getGlobalKey( Keys::KEY_IDPAY );
 
 		return $settings["sandbox"] ? "true" : "false";
 	}
@@ -243,8 +243,8 @@ class Helpers extends Keys {
 	}
 
 	public static function updateConfigAndRedirectPage( $feedId, $data ) {
-		$idpayConfig = apply_filters( Helpers::AUTHOR . '_gform_gateway_save_config', $data );
-		$idpayConfig = apply_filters( Helpers::AUTHOR . '_gform_IDPay_save_config', $idpayConfig );
+		$idpayConfig = apply_filters( Keys::AUTHOR . '_gform_gateway_save_config', $data );
+		$idpayConfig = apply_filters( Keys::AUTHOR . '_gform_IDPay_save_config', $idpayConfig );
 		$feedId      = IDPayDB::updateFeed(
 			$feedId,
 			Helpers::dataGet( $idpayConfig, 'form_id' ),
@@ -384,7 +384,7 @@ class Helpers extends Keys {
 
 	public static function checkSupportedGravityVersion() {
 		$dict   = Helpers::loadDictionary();
-		$label1 = Helpers::MIN_GRAVITY_VERSION;
+		$label1 = Keys::MIN_GRAVITY_VERSION;
 		$label2 = "<a href='http://gravityforms.ir' target='_blank'>سایت گرویتی فرم فارسی</a>";
 		if ( ! IDPayOperation::checkApprovedGravityFormVersion() ) {
 			return sprintf( $dict->labelNotSupprt, $label1, $label2 );
@@ -446,10 +446,10 @@ class Helpers extends Keys {
 	}
 
 	public static function checkNeedToUpgradeVersion( $setting ) {
-		$hasOldVersionKey = ! empty( Helpers::getGlobalKey( Helpers::OLD_GLOBAL_KEY_VERSION ) );
+		$hasOldVersionKey = ! empty( Helpers::getGlobalKey( Keys::OLD_GLOBAL_KEY_VERSION ) );
 		$version          = Helpers::dataGet( $setting, 'version' );
 
-		return $version != Helpers::VERSION || $hasOldVersionKey;
+		return $version != Keys::VERSION || $hasOldVersionKey;
 	}
 
 	public static function loadConfigByEntry( $entry ) {
@@ -458,9 +458,9 @@ class Helpers extends Keys {
 		$return  = ! empty( $feed ) ? $feed : false;
 
 		return apply_filters(
-			Helpers::AUTHOR . '_gf_IDPay_get_config_by_entry',
+			Keys::AUTHOR . '_gf_IDPay_get_config_by_entry',
 			apply_filters(
-				Helpers::AUTHOR . '_gf_gateway_get_config_by_entry',
+				Keys::AUTHOR . '_gf_gateway_get_config_by_entry',
 				$return,
 				$entry
 			),
@@ -478,8 +478,8 @@ class Helpers extends Keys {
 			}
 		} elseif ( $paymentType != 'form' ) {
 			$config = apply_filters(
-				Helpers::AUTHOR . '_gf_IDPay_config',
-				apply_filters( Helpers::AUTHOR . '_gf_gateway_config', [], $form, $entry ),
+				Keys::AUTHOR . '_gf_IDPay_config',
+				apply_filters( Keys::AUTHOR . '_gf_gateway_config', [], $form, $entry ),
 				$form,
 				$entry
 			);
@@ -512,8 +512,8 @@ class Helpers extends Keys {
 		$total = ( ! empty( $total ) && $total > 0 ) ? $total : 0;
 
 		return apply_filters(
-			Helpers::AUTHOR . '_IDPay_get_order_total',
-			apply_filters( Helpers::AUTHOR . '_gateway_get_order_total', $total, $form, $entry ),
+			Keys::AUTHOR . '_IDPay_get_order_total',
+			apply_filters( Keys::AUTHOR . '_gateway_get_order_total', $total, $form, $entry ),
 			$form,
 			$entry
 		);
@@ -621,8 +621,8 @@ class Helpers extends Keys {
 	public static function processConfirmations( &$form, $entry, $note, $status, $config ) {
 		$paymentType      = gform_get_meta( Helpers::dataGet($entry,'id'), 'payment_type' );
 		$hasCustomPayment = ( $paymentType != 'custom' );
-		$confirmPrepare   = apply_filters( Helpers::AUTHOR . '_gf_gateway_verify', $hasCustomPayment, $form, $entry );
-		$confirmations    = apply_filters( Helpers::AUTHOR . '_gf_IDPay_verify', $confirmPrepare, $form, $entry );
+		$confirmPrepare   = apply_filters( Keys::AUTHOR . '_gf_gateway_verify', $hasCustomPayment, $form, $entry );
+		$confirmations    = apply_filters( Keys::AUTHOR . '_gf_IDPay_verify', $confirmPrepare, $form, $entry );
 		if ( $confirmations ) {
 			foreach ( $form['confirmations'] as $key => $value ) {
 				$message                                  = Helpers::dataGet( $value, 'message' );
@@ -652,7 +652,7 @@ class Helpers extends Keys {
 
 		$config = Helpers::dataGet( $config, 'meta.addon' );
 
-		if ( $type == Helpers::NO_PAYMENT ) {
+		if ( $type == Keys::NO_PAYMENT ) {
 			$ADDON_USER_REGESTERATION = (object) [
 				'class' => 'GF_User_Registration',
 				'slug'  => apply_filters( 'gf_user_registration_slug', 'gravityformsuserregistration' ) ?? 'gravityformsuserregistration',
@@ -662,7 +662,7 @@ class Helpers extends Keys {
 			Helpers::runAddon( $ADDON_USER_REGESTERATION, $form, $entry );
 		}
 
-		if ( $type == Helpers::SUCCESS_PAYMENT ) {
+		if ( $type == Keys::SUCCESS_PAYMENT ) {
 			$ADDON_USER_REGESTERATION = (object) [
 				'class' => 'GF_User_Registration',
 				'slug'  => apply_filters( 'gf_user_registration_slug', 'gravityformsuserregistration' ) ?? 'gravityformsuserregistration',
@@ -731,7 +731,7 @@ class Helpers extends Keys {
 
 	public static function getBasePath() {
 		$baseDir   = WP_PLUGIN_DIR;
-		$pluginDir = Helpers::PLUGIN_FOLDER;
+		$pluginDir = Keys::PLUGIN_FOLDER;
 
 		return "{$baseDir}/{$pluginDir}";
 	}

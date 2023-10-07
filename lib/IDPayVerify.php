@@ -23,7 +23,7 @@ class IDPayVerify extends Helpers {
 
 		if ( IDPayVerify::checkTypeVerify() == 'Purchase' && ! IDPayVerify::checkApprovedVerifyData( $request ) ) {
 			IDPayVerify::reject( $entry, $form, $request, $pricing, $config );
-			IDPayVerify::processAddons( $form, $entry, $config, Helpers::NO_PAYMENT );
+			IDPayVerify::processAddons( $form, $entry, $config, Keys::NO_PAYMENT );
 
 			return 'error';
 		}
@@ -37,14 +37,14 @@ class IDPayVerify extends Helpers {
 		}
 
 		if ( $transaction == 'error' ) {
-			IDPayVerify::processAddons( $form, $entry, $config, Helpers::NO_PAYMENT );
+			IDPayVerify::processAddons( $form, $entry, $config, Keys::NO_PAYMENT );
 
 			return 'error';
 		} elseif ( $transaction->statusCode != 100 ) {
 			$transactionData = Helpers::dataGet( $transaction, 'response' );
 			$request         = IDPayVerify::appendDataToRequest( $request, $transactionData );
 			IDPayVerify::reject( $entry, $form, $request, $pricing, $config );
-			IDPayVerify::processAddons( $form, $entry, $config, Helpers::NO_PAYMENT );
+			IDPayVerify::processAddons( $form, $entry, $config, Keys::NO_PAYMENT );
 
 			return 'error';
 		}
@@ -56,7 +56,7 @@ class IDPayVerify extends Helpers {
 			IDPayVerify::acceptPurchase( $transaction, $entry, $form, $request, $pricing, $config );
 		}
 
-		IDPayVerify::processAddons( $form, $entry, $config, Helpers::SUCCESS_PAYMENT );
+		IDPayVerify::processAddons( $form, $entry, $config, Keys::SUCCESS_PAYMENT );
 
 		return true;
 	}
@@ -261,7 +261,7 @@ class IDPayVerify extends Helpers {
 
 	public static function prepareFree( $entry, $form ) {
 		$transactionId = apply_filters(
-			Helpers::AUTHOR . '_gf_rand_transaction_id',
+			Keys::AUTHOR . '_gf_rand_transaction_id',
 			GFPersian_Payments::transaction_id( $entry ),
 			$form,
 			$entry

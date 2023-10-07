@@ -78,8 +78,8 @@ class IDPayPayment extends Helpers {
 		];
 		foreach ( $applyFilters as $apply ) {
 			apply_filters(
-				Helpers::AUTHOR . "{$apply[0]}{$formId}",
-				apply_filters( Helpers::AUTHOR . $apply[1], $Amount, $form, $entry ),
+				Keys::AUTHOR . "{$apply[0]}{$formId}",
+				apply_filters( Keys::AUTHOR . $apply[1], $Amount, $form, $entry ),
 				$form,
 				$entry
 			);
@@ -140,13 +140,13 @@ class IDPayPayment extends Helpers {
 		$feed   = IDPayPayment::getFeed( $form );
 
 		$amount = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_price_' . $formId );
-		$amount = apply_filters( Helpers::AUTHOR . "_gform_custom_gateway_price_{$formId}", apply_filters( Helpers::AUTHOR . "_gform_custom_gateway_price", $amount, $form, $entry ), $form, $entry );
-		$amount = apply_filters( Helpers::AUTHOR . "_gform_custom_IDPay_price_{$formId}", apply_filters( Helpers::AUTHOR . "_gform_custom_IDPay_price", $amount, $form, $entry ), $form, $entry );
-		$amount = apply_filters( Helpers::AUTHOR . "_gform_gateway_price_{$formId}", apply_filters( Helpers::AUTHOR . "_gform_gateway_price", $amount, $form, $entry ), $form, $entry );
-		$amount = apply_filters( Helpers::AUTHOR . "_gform_IDPay_price_{$formId}", apply_filters( Helpers::AUTHOR . "_gform_IDPay_price", $amount, $form, $entry ), $form, $entry );
+		$amount = apply_filters( Keys::AUTHOR . "_gform_custom_gateway_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_custom_gateway_price", $amount, $form, $entry ), $form, $entry );
+		$amount = apply_filters( Keys::AUTHOR . "_gform_custom_IDPay_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_custom_IDPay_price", $amount, $form, $entry ), $form, $entry );
+		$amount = apply_filters( Keys::AUTHOR . "_gform_gateway_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_gateway_price", $amount, $form, $entry ), $form, $entry );
+		$amount = apply_filters( Keys::AUTHOR . "_gform_IDPay_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_IDPay_price", $amount, $form, $entry ), $form, $entry );
 
 		$Description = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_desc_' . $formId );
-		$Description = apply_filters( Helpers::AUTHOR . '_gform_IDPay_gateway_desc_', apply_filters( Helpers::AUTHOR . '_gform_custom_gateway_desc_', $Description, $form, $entry ), $form, $entry );
+		$Description = apply_filters( Keys::AUTHOR . '_gform_IDPay_gateway_desc_', apply_filters( Keys::AUTHOR . '_gform_custom_gateway_desc_', $Description, $form, $entry ), $form, $entry );
 
 		$Name   = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_name_' . $formId );
 		$Mail   = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_email_' . $formId );

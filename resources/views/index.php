@@ -10,7 +10,7 @@ $html          = [
 	'B' => "<tr><td colspan='5' style='padding:20px;direction: rtl'>{$dictionary->haveToEnable}</td></tr>",
 	'C' => "<tr><td colspan='5' style='padding:20px;'>{$dictionary->feedNotExists}</td></tr>",
 ];
-$setting       = Helpers::getGlobalKey( Helpers::KEY_IDPAY );
+$setting       = Helpers::getGlobalKey( Keys::KEY_IDPAY );
 $enable        = Helpers::dataGet( $setting, 'enable' );
 $addOption     = $enable == true ? $html['A'] : '';
 $list_action   = wp_nonce_field( 'list_action', 'gf_IDPay_list' );
@@ -20,7 +20,7 @@ $addFeedOption = $enable == false ? $html['B'] : '';
 
 /* Load Data And Pagination Section */
 $filters               = (object) [];
-$feeds                 = IDPayDB::getWithPaginate( Helpers::FEEDS, $filters );
+$feeds                 = IDPayDB::getWithPaginate( Keys::FEEDS, $filters );
 $data                  = $feeds->data;
 $checkDataExists       = ! empty( $data ) && count( $data ) > 0;
 $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['C'] : '';
