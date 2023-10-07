@@ -21,7 +21,7 @@ $translateFormTitle    = sprintf( $dictionary->label3, $formTitle );
 if ( ! rgempty( "gf_IDPay_submit" ) ) {
 	check_admin_referer( "update", "gf_IDPay_feed" );
 	$config                = Helpers::readDataFromRequest( $config );
-	$gfStatusBarMessage    = Helpers::generateStatusBarMessage( $formId );
+	$gfStatusBarMessage    = Helpers::makeUpdateMessageBar( );
 	$isSubmitDataForUpdate = true;
 	Helpers::updateConfigAndRedirectPage( $feedId, $config );
 }
@@ -29,7 +29,7 @@ if ( ! rgempty( "gf_IDPay_submit" ) ) {
 
 //Section Check Security And Validate
 $form                = ! empty( $formId ) ? RGFormsModel::get_form_meta( $formId ) : [];
-$setUpdatedMessage   = rgget( 'updated' ) == 'true' && Helpers::makeUpdateMessageBar( $feedId );
+$setUpdatedMessage   = rgget( 'updated' ) == 'true' && Helpers::makeUpdateMessageBar();
 $menu_items          = apply_filters( 'gform_toolbar_menu', GFForms::get_toolbar_menu_items( $formId ), $formId );
 $formMeta            = GFFormsModel::get_form_meta( $formId );
 $hasPriceFieldInForm = Helpers::checkSetPriceForForm( $form, $formId );

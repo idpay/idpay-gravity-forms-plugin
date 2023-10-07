@@ -56,4 +56,6 @@ class Keys {
 	public const STATE_NO_CHANGED = 'NO_CHANGED';
 	public const STATE_UPGRADE = 'UPGRADE';
 	public const STATE_NO_CONFIGURED = 'NOT-CONFIGURED';
+
+	public const CSS_FEED_STYLE = 'font-weight: bold;direction: rtl;text-align:center;font-size: 20px;font-family: monospace;padding-top: 10px;padding-bottom: 10px;';
 }

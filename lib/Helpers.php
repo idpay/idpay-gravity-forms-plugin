@@ -111,12 +111,16 @@ class Helpers extends Keys {
 			'entry'   => $entry_id
 		), $pageURL ) );
 
-		return apply_filters( Keys::AUTHOR . '_IDPay_return_url', apply_filters( Keys::AUTHOR . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__ ), $form_id, $entry_id, __CLASS__ );
+		$applyData = apply_filters( Keys::AUTHOR . '_gateway_return_url', $pageURL, $form_id, $entry_id, __CLASS__ );
+		return apply_filters( Keys::AUTHOR . '_IDPay_return_url', $applyData, $form_id, $entry_id, __CLASS__ );
 	}
 
 	public static function redirect_confirmation( $url, $ajax ) {
 		if ( headers_sent() || $ajax ) {
-			$confirmation = "<script type=\"text/javascript\">" . apply_filters( 'gform_cdata_open', '' ) . " function gformRedirect(){document.location.href='$url';}";
+			$confirmation = "<script type=\"text/javascript\">" . apply_filters( 'gform_cdata_open', '' );
+			$confirmation .= apply_filters( 'gform_cdata_open', '' );
+			$confirmation .= " function gformRedirect(){document.location.href='$url';}";
+
 			if ( ! $ajax ) {
 				$confirmation .= 'gformRedirect();';
 			}
@@ -129,26 +133,13 @@ class Helpers extends Keys {
 	}
 
 	public static function checkOneConfirmationExists( $confirmation, $form, $entry, $ajax ): bool {
-		if ( apply_filters(
-			'gf_IDPay_request_return',
-			apply_filters( 'gf_gateway_request_return', false, $confirmation, $form, $entry, $ajax ),
-			$confirmation,
-			$form,
-			$entry,
-			$ajax
-		) ) {
-			return false;
-		}
-
-		return true;
+	$applyFilter = apply_filters( 'gf_gateway_request_return', false, $confirmation, $form, $entry, $ajax );
+	$applyFilter = apply_filters('gf_IDPay_request_return',$applyFilter,$confirmation,$form,$entry,$ajax);
+	return ! $applyFilter;
 	}
 
 	public static function checkSubmittedForIDPay( $formId ): bool {
-		if ( RGForms::post( "gform_submit" ) != $formId ) {
-			return false;
-		}
-
-		return true;
+		return ! ( RGForms::post( "gform_submit" ) != $formId );
 	}
 
 	public static function checkFeedExists( $form ): bool {
@@ -157,13 +148,11 @@ class Helpers extends Keys {
 
 	public static function getGatewayName(): string {
 		$settings = Helpers::getGlobalKey( Keys::KEY_IDPAY );
-
-		return isset( $settings['name'] ) ? $settings["name"] : __( 'IDPay', 'gravityformsIDPay' );
+		return isset( $settings['name'] ) ? $settings["name"] : Keys::AUTHOR;
 	}
 
 	public static function getFeed( $form ) {
 		$feed = IDPayDB::getActiveFeed( $form );
-
 		return reset( $feed );
 	}
 
@@ -182,22 +171,20 @@ class Helpers extends Keys {
 		$condition1    = apply_filters( 'gf_gateway_IDPay_return', apply_filters( 'gf_gateway_verify_return', false ) );
 		$condition2    = ( ! IDPayOperation::checkApprovedGravityFormVersion() ) || is_wp_error( $entry );
 		$condition3    = ( ! is_numeric( (int) $form_id ) ) || ( ! is_numeric( (int) $entryId ) );
-		$condition4    = empty( $paymentMethod ) || $paymentMethod != 'IDPay';
+		$condition4    = empty( $paymentMethod ) || $paymentMethod != Keys::AUTHOR;
 
 		return $condition1 || $condition2 || $condition3 || $condition4;
 	}
 
 	public static function getApiKey() {
 		$settings = Helpers::getGlobalKey( Keys::KEY_IDPAY );
-		$api_key  = $settings["api_key"] ?? '';
-
-		return trim( $api_key );
+		$apiKey  = Helpers::dataGet($settings,'api_key','');
+		return trim( $apiKey );
 	}
 
 	public static function getSandbox() {
 		$settings = Helpers::getGlobalKey( Keys::KEY_IDPAY );
-
-		return $settings["sandbox"] ? "true" : "false";
+		return Helpers::dataGet($settings,'sandbox') ? "true" : "false";
 	}
 
 	public static function httpRequest( $url, $data ) {
@@ -211,7 +198,7 @@ class Helpers extends Keys {
 			'timeout' => 30,
 		];
 
-		$number_of_connection_tries = 3;
+		$number_of_connection_tries = 5;
 		while ( $number_of_connection_tries ) {
 			$response = wp_safe_remote_post( $url, $args );
 			if ( is_wp_error( $response ) ) {
@@ -245,11 +232,10 @@ class Helpers extends Keys {
 	public static function updateConfigAndRedirectPage( $feedId, $data ) {
 		$idpayConfig = apply_filters( Keys::AUTHOR . '_gform_gateway_save_config', $data );
 		$idpayConfig = apply_filters( Keys::AUTHOR . '_gform_IDPay_save_config', $idpayConfig );
-		$feedId      = IDPayDB::updateFeed(
-			$feedId,
-			Helpers::dataGet( $idpayConfig, 'form_id' ),
-			Helpers::dataGet( $idpayConfig, 'meta' ),
-		);
+		$formId = Helpers::dataGet( $idpayConfig, 'form_id' );
+		$meta = Helpers::dataGet( $idpayConfig, 'meta' );
+		$feedId  = IDPayDB::updateFeed($feedId,$formId,$meta);
+
 		if ( ! headers_sent() ) {
 			wp_redirect( admin_url( 'admin.php?page=gf_IDPay&view=edit&id=' . $feedId . '&updated=true' ) );
 		} else {
@@ -301,12 +287,12 @@ class Helpers extends Keys {
 		];
 	}
 
-	public static function makeUpdateMessageBar( $oldFeedId ) {
-		$feedId       = (int) rgget( 'id' ) ?? $oldFeedId;
-		$message      = __( " فید {$feedId} به روز شد . %sبازگشت به لیست%s . ", "gravityformsIDPay" );
-		$updatedLabel = sprintf( $message, "<a href='?page=gf_IDPay'>", "</a>" );
-		echo '<div class="updated fade" style="padding:6px">' . $updatedLabel . '</div>';
-
+	public static function makeUpdateMessageBar( ) {
+		$dict         = Helpers::loadDictionary();
+		$style = Keys::CSS_FEED_STYLE;
+		$label = $dict->labelUpdateFeed;
+		$html = "<div class='updated fade' style='{$style}'>{$label}</div>";
+		echo $html;
 		return true;
 	}
 
@@ -349,9 +335,10 @@ class Helpers extends Keys {
 	}
 
 	public static function generateFeedSelectForm( $formId ) {
+		$dict = Helpers::loadDictionary();
 		$gfAllForms             = RGFormsModel::get_forms();
 		$visibleFieldFormSelect = rgget( 'id' ) || rgget( 'fid' ) ? 'style="display:none !important"' : '';
-		$label                  = 'یک فرم انتخاب نمایید';
+		$label                  = $dict->labelSelectForm;
 		$optionsForms           = "<option value=''>{$label}</option>";
 		foreach ( $gfAllForms as $current_form ) {
 			$title        = esc_html( $current_form->title );
@@ -366,14 +353,6 @@ class Helpers extends Keys {
 		];
 	}
 
-	public static function generateStatusBarMessage( $formId ) {
-		$updateFeedLabel = __( "فید به روز شد . %sبازگشت به لیست%s.", "gravityformsIDPay" );
-		$updatedFeed     = sprintf( $updateFeedLabel, "<a href='?page=gf_IDPay'>", "</a>" );
-		$feedHtml        = '<div class="updated fade" style="padding:6px">' . $updatedFeed . '</div>';
-
-		return $feedHtml;
-	}
-
 	public static function loadDictionary() {
 		$basePath   = Helpers::getBasePath();
 		$fullPath   = "{$basePath}/lang/fa.php";
@@ -385,7 +364,8 @@ class Helpers extends Keys {
 	public static function checkSupportedGravityVersion() {
 		$dict   = Helpers::loadDictionary();
 		$label1 = Keys::MIN_GRAVITY_VERSION;
-		$label2 = "<a href='http://gravityforms.ir' target='_blank'>سایت گرویتی فرم فارسی</a>";
+		$labelGravity = $dict->labelGravityFarsi;
+		$label2 = "<a href='http://gravityforms.ir' target='_blank'>{$labelGravity}</a>";
 		if ( ! IDPayOperation::checkApprovedGravityFormVersion() ) {
 			return sprintf( $dict->labelNotSupprt, $label1, $label2 );
 		}
@@ -394,17 +374,18 @@ class Helpers extends Keys {
 	}
 
 	public static function getTypeFeed( $setting ) {
-		$label        = " پرداخت/خرید ";
+		$dict   = Helpers::loadDictionary();
+		$label        = $dict->labelBuySell;
 		$activeAddons = Helpers::makeListDelayedAddons( $setting );
 
 		if ( Helpers::dataGet( $activeAddons, 'postCreate' ) ) {
-			$label = $label . "+ ایجاد پست ";
+			$label .= $dict->labelPostCreate;
 		}
 		if ( Helpers::dataGet( $activeAddons, 'postUpdate' ) ) {
-			$label = $label . "+ آپدیت پست ";
+			$label .= $dict->labelPostUpdate;
 		}
 		if ( Helpers::dataGet( $activeAddons, 'userRegistration' ) ) {
-			$label = $label . "+ ثبت نام کاربر ";
+			$label .= $dict->labelUserReg;
 		}
 
 		return $label;
@@ -424,12 +405,14 @@ class Helpers extends Keys {
 	}
 
 	public static function checkSubmittedOperation() {
+		$dict   = Helpers::loadDictionary();
+		$style = Keys::CSS_FEED_STYLE;
 		if ( rgpost( 'action' ) == "delete" ) {
 			check_admin_referer( "list_action", "gf_IDPay_list" );
 			$id = absint( rgpost( "action_argument" ) );
 			IDPayDB::deleteFeed( $id );
 
-			return "<div class='updated fade' style='padding:6px'>فید حذف شد</div>";
+			return "<div class='updated fade' style='{$style}'>{$dict->labelDeleteFeed}</div>";
 		} elseif ( ! empty( $_POST["bulk_action"] ) ) {
 			check_admin_referer( "list_action", "gf_IDPay_list" );
 			$selected_feeds = rgpost( "feed" );
@@ -438,7 +421,7 @@ class Helpers extends Keys {
 					IDPayDB::deleteFeed( $feed_id );
 				}
 
-				return "<div class='updated fade' style='padding:6px'>فید ها حذف شد</div>";
+				return "<div class='updated fade' style='{$style}'>{$dict->labelDeleteFeeds}</div>";
 			}
 		}
 
@@ -457,15 +440,9 @@ class Helpers extends Keys {
 		$feed    = ! empty( $feed_id ) ? IDPayDB::getFeed( $feed_id ) : '';
 		$return  = ! empty( $feed ) ? $feed : false;
 
-		return apply_filters(
-			Keys::AUTHOR . '_gf_IDPay_get_config_by_entry',
-			apply_filters(
-				Keys::AUTHOR . '_gf_gateway_get_config_by_entry',
-				$return,
-				$entry
-			),
-			$entry
-		);
+		$applyFilter = apply_filters(Keys::AUTHOR . '_gf_gateway_get_config_by_entry',$return,$entry);
+		$applyFilter = apply_filters(Keys::AUTHOR . '_gf_IDPay_get_config_by_entry',$applyFilter,$entry);
+		return $applyFilter;
 	}
 
 	public static function loadConfig( $entry, $form, $paymentType ) {
@@ -477,27 +454,22 @@ class Helpers extends Keys {
 				return null;
 			}
 		} elseif ( $paymentType != 'form' ) {
-			$config = apply_filters(
-				Keys::AUTHOR . '_gf_IDPay_config',
-				apply_filters( Keys::AUTHOR . '_gf_gateway_config', [], $form, $entry ),
-				$form,
-				$entry
-			);
+			$applyFilter = apply_filters( Keys::AUTHOR . '_gf_gateway_config', [], $form, $entry );
+			$config = apply_filters(Keys::AUTHOR . '_gf_IDPay_config',	$applyFilter,$form,	$entry);
 		}
 
 		return $config;
 	}
 
 	public static function loadUser() {
+		$dict   = Helpers::loadDictionary();
 		global $current_user;
 		$user_data = get_userdata( $current_user->ID );
-		$user_id   = 0;
-		$user_name = '';
 		if ( $current_user && $user_data ) {
 			$user_id   = $current_user->ID;
 			$user_name = $user_data->display_name;
 		} else {
-			$user_name = __( 'مهمان', 'gravityformsIDPay' );
+			$user_name = $dict->labelGuest;
 			$user_id   = 0;
 		}
 
@@ -511,12 +483,9 @@ class Helpers extends Keys {
 		$total = GFCommon::get_order_total( $form, $entry );
 		$total = ( ! empty( $total ) && $total > 0 ) ? $total : 0;
 
-		return apply_filters(
-			Keys::AUTHOR . '_IDPay_get_order_total',
-			apply_filters( Keys::AUTHOR . '_gateway_get_order_total', $total, $form, $entry ),
-			$form,
-			$entry
-		);
+		$applyFilter = apply_filters( Keys::AUTHOR . '_gateway_get_order_total', $total, $form, $entry );
+		$applyFilter = apply_filters(Keys::AUTHOR . '_IDPay_get_order_total',	$applyFilter,$form,$entry);
+		return $applyFilter;
 	}
 
 	public static function getPriceOrder( $paymentType, $entry, $form ) {
@@ -577,36 +546,10 @@ class Helpers extends Keys {
 	}
 
 	public static function getStatus( $statusCode ) {
-		switch ( $statusCode ) {
-			case 1:
-				return 'پرداخت انجام نشده است';
-			case 2:
-				return 'پرداخت ناموفق بوده است';
-			case 3:
-				return 'خطا رخ داده است';
-			case 4:
-				return 'بلوکه شده';
-			case 5:
-				return 'برگشت به پرداخت کننده';
-			case 6:
-				return 'برگشت خورده سیستمی';
-			case 7:
-				return 'انصراف از پرداخت';
-			case 8:
-				return 'به درگاه پرداخت منتقل شد';
-			case 10:
-				return 'در انتظار تایید پرداخت';
-			case 100:
-				return 'پرداخت تایید شده است';
-			case 101:
-				return 'پرداخت قبلا تایید شده است';
-			case 200:
-				return 'به دریافت کننده واریز شد';
-			case 0:
-				return 'خطا در عملیات';
-			default:
-				return 'خطای ناشناخته';
-		}
+		$dict = Helpers::loadDictionary();
+		$key = "Code{$statusCode}";
+		$default = Helpers::dataGet($dict,'Code0');
+		return  isset($dict->{$key}) ? Helpers::dataGet($dict,$key) : $default;
 	}
 
 	public static function isNotDoubleSpending( $reference_id, $order_id, $transaction_id ) {
@@ -825,8 +768,9 @@ class Helpers extends Keys {
 	}
 
 	public static function makePrintVariableNote($variable,$note) {
+		$dict = Helpers::loadDictionary();
 		$variable = json_encode($variable,JSON_PRETTY_PRINT);
-		$notes = $note . PHP_EOL . PHP_EOL . '<hr>'. 'مشاهده داده ها' . PHP_EOL . '<hr>' . $variable;
+		$notes = $note . PHP_EOL . PHP_EOL . '<hr>'. $dict->labelShowData . PHP_EOL . '<hr>' . $variable;
 		$html = '<div style="font-weight: bold;font-size: 16px;font-family: monospace;">' . $notes . '</div>';
 		return $html;
 	}
