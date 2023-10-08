@@ -77,8 +77,8 @@ $checkEnableGateway    = ! ( $enable == false );
 			if ( $checkEnableGateway ) {
 				if ( $checkDataExists ) {
 					foreach ( $data as $setting ) {
-						$settingId     = $setting["id"];
-						$settingFormId = $setting["form_id"];
+						$settingId     = Helpers::dataGet($setting,'id');
+						$settingFormId = Helpers::dataGet($setting,"form_id");
 						?>
                         <tr class='author-self status-inherit'>
                             <th scope="row" class="check-column">

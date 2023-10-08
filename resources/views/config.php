@@ -10,7 +10,7 @@ $feedId                = ! $settingId ? rgpost( "IDPay_setting_id" ) : absint( r
 $config                = ! empty( $feedId ) ? IDPayDB::getFeed( $feedId ) : null;
 $formId                = Helpers::calcFormId( $fId, $config );
 $form                  = ! empty( $formId ) ? IDPayDB::getForm( $formId ) : null;
-$formTitle             = ! empty( $form ) ? $form['form_title'] : '';
+$formTitle             = ! empty( $form ) ? Helpers::dataGet($form,'form_title') : '';
 $dictionary            = Helpers::loadDictionary();
 $translateFeedId       = sprintf( $dictionary->label2, $feedId );
 $translateFormTitle    = sprintf( $dictionary->label3, $formTitle );
@@ -30,7 +30,8 @@ if ( ! rgempty( "gf_IDPay_submit" ) ) {
 //Section Check Security And Validate
 $form                = ! empty( $formId ) ? RGFormsModel::get_form_meta( $formId ) : [];
 $setUpdatedMessage   = rgget( 'updated' ) == 'true' && Helpers::makeUpdateMessageBar();
-$menu_items          = apply_filters( 'gform_toolbar_menu', GFForms::get_toolbar_menu_items( $formId ), $formId );
+$hook =  'gform_toolbar_menu';
+$menu_items          = apply_filters($hook, GFForms::get_toolbar_menu_items( $formId ), $formId );
 $formMeta            = GFFormsModel::get_form_meta( $formId );
 $hasPriceFieldInForm = Helpers::checkSetPriceForForm( $form, $formId );
 // End Section
@@ -62,8 +63,11 @@ $isCheckedUserRegSuccessPay     = $isUserRegSuccessPay == true ? "checked='check
 $isCheckedUserRegNoPay          = $isUserRegNoPay == true ? "checked='checked'" : "";
 $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
 $descriptionText                = ! empty( $description ) ? $description : $defaultDescription;
-do_action( Keys::AUTHOR . '_gform_gateway_config', $config, $form );
-do_action( Keys::AUTHOR . '_gform_IDPay_config', $config, $form );
+
+$hook1 = Keys::AUTHOR . '_gform_gateway_config';
+$hook2 = Keys::AUTHOR . '_gform_IDPay_config';
+do_action( $hook1, $config, $form );
+do_action( $hook2, $config, $form );
 // End Section : LoadConfigValues
 
 /* Section FeedFormSelect

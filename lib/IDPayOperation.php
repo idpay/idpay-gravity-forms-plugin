@@ -216,7 +216,8 @@ class IDPayOperation extends Helpers {
 
 	public static function reportPreRequiredGravityForm() {
 		$dictionary = Helpers::loadDictionary();
-		$html       = "<a href='https://gravityforms.ir/11378' target='_blank'>{$dictionary->labelHintGravity}</a>";
+		$html       = "<a href='https://gravityforms.ir/11378' target='_blank'>";
+		$html       .= "{$dictionary->labelHintGravity}</a>";
 		$html       = sprintf( $html, Keys::MIN_GRAVITY_VERSION );
 		$class      = 'notice notice-error';
 		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $html );

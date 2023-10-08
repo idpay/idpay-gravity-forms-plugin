@@ -133,9 +133,9 @@ class IDPayDB extends Helpers {
 		if ( $type == Keys::QUERY_ANALYTICS ) {
 			$list = [];
 			foreach ( $dto as $item ) {
-				$status          = $item["status"];
-				$revenue         = ! empty( $item["revenue"] ) ? $item["revenue"] : 0;
-				$transactions    = ! empty( $item["transactions"] ) ? $item["transactions"] : 0;
+				$status          = Helpers::dataGet($item,"status");
+				$revenue         = Helpers::dataGet($item,'revenue',0);
+				$transactions    = Helpers::dataGet($item,'transactions',0);
 				$list[ $status ] = [ "revenue" => $revenue, "transactions" => $transactions ];
 			}
 
@@ -166,14 +166,13 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function getActiveFeed( $form ) {
-		$configs = IDPayDB::getFeedByFormId( $form["id"] );
-		$configs = apply_filters(
-			Keys::AUTHOR . '_gf_IDPay_get_active_configs',
-			apply_filters( Keys::AUTHOR . '_gf_gateway_get_active_configs', $configs, $form ),
-			$form
-		);
+		$formId = Helpers::dataGet($form,'id');
+		$configs = IDPayDB::getFeedByFormId($formId );
 
-		return $configs;
+		$hook1 = Keys::AUTHOR . '_gf_gateway_get_active_configs';
+		$hook2 = Keys::AUTHOR . '_gf_IDPay_get_active_configs';
+		$applyFilter = apply_filters( $hook1, $configs, $form );
+		return apply_filters($hook2,$applyFilter,$form);
 	}
 
 	public static function getTableName() {
@@ -186,7 +185,9 @@ class IDPayDB extends Helpers {
 		check_ajax_referer( 'gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active' );
 		$id   = absint( rgpost( 'feed_id' ) );
 		$feed = IDPayDB::getFeed( $id );
-		IDPayDB::updateFeed( $id, $feed["form_id"], $feed["meta"] );
+		$formId = Helpers::dataGet($feed,'form_id');
+		$meta = Helpers::dataGet($feed,'meta');
+		IDPayDB::updateFeed( $id, $formId, $meta );
 	}
 
 	public static function updateFeed( $id, $formId, $setting ) {

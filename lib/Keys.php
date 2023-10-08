@@ -60,7 +60,9 @@ class Keys {
 
 	public const CSS_NOTE_STYLE =  "font-weight: bold;font-size: 16px;font-family: monospace;";
 
-	public const CSS_MESSAGE_STYLE = 'font-weight: bold;direction: rtl;text-align:center;font-size: 20px;
-								      font-family: monospace;padding-top: 10px;padding-bottom: 10px;';
+	public const CSS_MESSAGE_STYLE = 'font-weight: bold;direction: rtl;text-align:center;font-size: 20px;' .
+								      'font-family: monospace;padding-top: 10px;padding-bottom: 10px;';
 
+	public const CSS_CONFIRMATION_STYLE =  'direction:rtl;padding: 20px;background-color:%s;color: white;' .
+											'opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;';
 }

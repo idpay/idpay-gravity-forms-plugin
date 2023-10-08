@@ -6,14 +6,16 @@ $settings   = Helpers::checkSubmittedConfigDataAndLoadSetting();
 $enable     = Helpers::dataGet( $settings, 'enable' );
 $dictionary = Helpers::loadDictionary();
 
+$subView = Helpers::dataGet($_GET,'subview');
 $condition1    = ! empty( $_POST );
-$condition2    = isset( $_GET['subview'] ) && $_GET['subview'] == 'gf_IDPay' && isset( $_GET['updated'] );
+$condition2    = isset( $subView ) && $subView == 'gf_IDPay' && isset( $_GET['updated'] );
 $isActive      = $enable ? "checked='checked'" : "";
 $title         = sanitize_text_field( rgar( $settings, 'name' ) );
 $gatewayTitle  = $title ? sanitize_text_field( $settings["name"] ) : 'IDPay';
 $apiKey        = sanitize_text_field( rgar( $settings, 'api_key' ) );
 $isActive2     = rgar( $settings, 'sandbox' ) ? "checked='checked'" : "";
-$uninstallHtml = '<input class="button" type="submit" name="uninstall" value="%s" onclick="return confirm(%s%s%s);" />';
+$uninstallHtml = '<input class="button" type="submit" name="uninstall" value="%s"';
+$uninstallHtml .= 'onclick="return confirm(%s%s%s);" />';
 $uninstallHtml = sprintf( $uninstallHtml, $dictionary->label52, "'", $dictionary->label53, "'" );
 $message       = "<div class='updated fade C8'>{$dictionary->label41}</div>";
 
