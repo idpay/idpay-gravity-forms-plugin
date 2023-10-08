@@ -69,23 +69,9 @@ class IDPayPayment extends Helpers {
 
 	public static function checkout( $form, $entry ) {
 		$formId       = $form['id'];
-		$Amount       = IDPayPayment::getOrderTotal( $form, $entry );
-		$applyFilters = [
-			[ '_gform_form_gateway_price_', '_gform_form_gateway_price' ],
-			[ '_gform_form_IDPay_price_', '_gform_form_IDPay_price' ],
-			[ '_gform_gateway_price_', '_gform_gateway_price' ],
-			[ '_gform_IDPay_price_', '_gform_IDPay_price' ],
-		];
-		foreach ( $applyFilters as $apply ) {
-			apply_filters(
-				Keys::AUTHOR . "{$apply[0]}{$formId}",
-				apply_filters( Keys::AUTHOR . $apply[1], $Amount, $form, $entry ),
-				$form,
-				$entry
-			);
-		}
-
-		return $Amount;
+		$amount       = IDPayPayment::getOrderTotal( $form, $entry );
+		IDPayPayment::sendSetPriceGravityCore($entry,$form,$amount);
+		return $amount;
 	}
 
 	public static function handleAutoConfirmation( $confirmation, $form, $entry, $ajax ) {
@@ -140,13 +126,13 @@ class IDPayPayment extends Helpers {
 		$feed   = IDPayPayment::getFeed( $form );
 
 		$amount = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_price_' . $formId );
-		$amount = apply_filters( Keys::AUTHOR . "_gform_custom_gateway_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_custom_gateway_price", $amount, $form, $entry ), $form, $entry );
-		$amount = apply_filters( Keys::AUTHOR . "_gform_custom_IDPay_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_custom_IDPay_price", $amount, $form, $entry ), $form, $entry );
-		$amount = apply_filters( Keys::AUTHOR . "_gform_gateway_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_gateway_price", $amount, $form, $entry ), $form, $entry );
-		$amount = apply_filters( Keys::AUTHOR . "_gform_IDPay_price_{$formId}", apply_filters( Keys::AUTHOR . "_gform_IDPay_price", $amount, $form, $entry ), $form, $entry );
+		$amount = IDPayPayment::sendCustomSetPriceGravityCore($entry,$form,$amount);
+
 
 		$Description = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_desc_' . $formId );
-		$Description = apply_filters( Keys::AUTHOR . '_gform_IDPay_gateway_desc_', apply_filters( Keys::AUTHOR . '_gform_custom_gateway_desc_', $Description, $form, $entry ), $form, $entry );
+		$applyFilter = apply_filters( Keys::AUTHOR . '_gform_custom_gateway_desc_', $Description, $form, $entry );
+		$Description = apply_filters( Keys::AUTHOR . '_gform_IDPay_gateway_desc_',$applyFilter, $form, $entry );
+
 
 		$Name   = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_name_' . $formId );
 		$Mail   = gform_get_meta( rgar( $entry, 'id' ), 'IDPay_part_email_' . $formId );
@@ -183,38 +169,30 @@ class IDPayPayment extends Helpers {
 
 	public static function processPurchase( $feed, $entry, $form ) {
 
-		$formId      = $form['id'];
-		$description = $feed["meta"]["description"];
-		$desc        = $feed["meta"]["payment_description"];
 		$mobile      = $feed["meta"]["payment_mobile"];
 		$name        = $feed["meta"]["payment_name"];
 		$email       = $feed["meta"]["payment_email"];
+		$desc = Helpers::makeCustomDescription($entry,$form,$feed);
 
-		$Desc1       = ! empty( $description ) ? str_replace( [
-			'{entry_id}',
-			'{form_title}',
-			'{form_id}'
-		], [ $entry['id'], $form['title'], $formId ], $description ) : '';
-		$Desc2       = ! empty( $desc ) ? rgpost( 'input_' . str_replace( ".", "_", $desc ) ) : '';
-		$Description = sanitize_text_field( $Desc1 . ( ! empty( $Desc1 ) && ! empty( $Desc2 ) ? ' - ' : '' ) . $Desc2 . ' ' );
-		$Mobile      = ! empty( $mobile ) ? sanitize_text_field( rgpost( 'input_' . str_replace( ".", "_", $mobile ) ) ) : '';
-		$Name        = ! empty( $name ) ? sanitize_text_field( rgpost( 'input_' . str_replace( ".", "_", $name ) ) ) : '';
-		$Mail        = ! empty( $email ) ? sanitize_text_field( rgpost( 'input_' . str_replace( ".", "_", $email ) ) ) : '';
+		$mobile      = ! empty( $mobile ) ? Helpers::convertNameToTxtBoxKey( $mobile ) : '';
+		$name        = ! empty( $name ) ? Helpers::convertNameToTxtBoxKey($name )  : '';
+		$email        = ! empty( $email ) ? Helpers::convertNameToTxtBoxKey( $email )  : '';
+		$Mobile      = GFPersian_Payments::fix_mobile($mobile);
 
 		return [
-			'mobile'      => GFPersian_Payments::fix_mobile( $Mobile ),
-			'name'        => $Name,
-			'mail'        => $Mail,
-			'description' => $Description,
+			'mobile'      => $Mobile,
+			'name'        => $name,
+			'mail'        => $email,
+			'description' => $desc,
 		];
 	}
 
 	public static function reject( $entry, $form, $Message = '' ) {
+		$dict = Helpers::loadDictionary();
 		$entryId      = $entry['id'];
 		$formId       = $form['id'];
-		$translate    = 'خطایی رخ داده است. به نظر میرسد این خطا به علت مبلغ ارسالی اشتباه باشد';
-		$Message      = ! empty( $Message ) ? $Message : __( $translate, 'gravityformsIDPay' );
-		$confirmation = __( 'متاسفانه نمیتوانیم به درگاه متصل شویم. علت : ', 'gravityformsIDPay' ) . $Message;
+		$Message      = ! empty( $Message ) ? $Message : $dict->labelErrorPayment;
+		$confirmation = $dict->labelErrorConnectGateway . $Message;
 
 		$entry                   = GFPersian_Payments::get_entry( $entryId );
 		$entry['payment_status'] = 'Failed';
@@ -222,19 +200,14 @@ class IDPayPayment extends Helpers {
 
 		global $current_user;
 		$user_id   = 0;
-		$user_name = __( 'مهمان', 'gravityformsIDPay' );
+		$user_name = $dict->labelGuest;
 		if ( $current_user && $user_data = get_userdata( $current_user->ID ) ) {
 			$user_id   = $current_user->ID;
 			$user_name = $user_data->display_name;
 		}
 
-		RGFormsModel::add_note(
-			$entryId,
-			$user_id,
-			$user_name,
-			sprintf( __( 'خطا در اتصال به درگاه رخ داده است : %s', "gravityformsIDPay" ), $Message )
-		);
-
+		$note = sprintf( $dict->labelErrorConnectIPG, $Message );
+		RGFormsModel::add_note($entryId,$user_id,$user_name,$note);
 		GFPersian_Payments::notification( $form, $entry );
 
 		$anchor   = gf_apply_filters( 'gform_confirmation_anchor', $formId, 0 ) ?
@@ -258,23 +231,68 @@ class IDPayPayment extends Helpers {
 	}
 
 	public static function checkErrorResponse( $response, $http_status, $result ) {
-
+		$dict = Helpers::loadDictionary();
 		if ( is_wp_error( $response ) ) {
 			$error = $response->get_error_message();
 
 			return [
-				'message' => sprintf( __( 'خطا هنگام ایجاد تراکنش. پیام خطا: %s', 'gravityformsIDPay' ), $error )
+				'message' => sprintf( $dict->labelErrorCreateTransaction, $error )
 			];
 		} elseif ( $http_status != 201 || empty( $result ) || empty( $result->id ) || empty( $result->link ) ) {
 			return [
-				'message' => sprintf(
-					'خطا هنگام ایجاد تراکنش. : %s (کد خطا: %s)',
-					$result->error_message,
-					$result->error_code
-				)
+				'message' => sprintf($dict->labelErrorCreatingTransaction,$result->error_message,$result->error_code)
 			];
 		}
 
 		return false;
+	}
+
+	public static function sendCustomSetPriceGravityCore($entry,$form,$amount){
+
+		$formId = Helpers::dataGet($form,'id');
+		$hook0 = Keys::AUTHOR . "_gform_custom_gateway_price";
+		$hook1 = Keys::AUTHOR . "_gform_custom_gateway_price_{$formId}";
+		$hook2 = Keys::AUTHOR . "_gform_custom_IDPay_price";
+		$hook3 = Keys::AUTHOR . "_gform_custom_IDPay_price_{$formId}";
+		$hook4 = Keys::AUTHOR . "_gform_gateway_price";
+		$hook5 = Keys::AUTHOR . "_gform_gateway_price_{$formId}";
+		$hook6 = Keys::AUTHOR . "_gform_IDPay_price";
+		$hook7 = Keys::AUTHOR . "_gform_IDPay_price_{$formId}";
+
+		$applyFilter = apply_filters( $hook0, $amount, $form, $entry );
+		$amount = apply_filters( $hook1, $applyFilter, $form, $entry );
+		$applyFilter = apply_filters( $hook2, $amount, $form, $entry );
+		$amount = apply_filters( $hook3, $applyFilter, $form, $entry );
+		$applyFilter = apply_filters( $hook4, $amount, $form, $entry );
+		$amount = apply_filters( $hook5, $applyFilter, $form, $entry );
+		$applyFilter = apply_filters( $hook6, $amount, $form, $entry );
+		$amount = apply_filters( $hook7, $applyFilter, $form, $entry );
+
+		return $amount ;
+
+	}
+
+	public static function sendSetPriceGravityCore($entry,$form,$amount){
+
+		$formId = Helpers::dataGet($form,'id');
+		$hook0 = Keys::AUTHOR . "_gform_form_gateway_price";
+		$hook1 = Keys::AUTHOR . "_gform_form_gateway_price_{$formId}";
+		$hook2 = Keys::AUTHOR . "_gform_form_IDPay_price";
+		$hook3 = Keys::AUTHOR . "_gform_form_IDPay_price_{$formId}";
+		$hook4 = Keys::AUTHOR . "_gform_gateway_price";
+		$hook5 = Keys::AUTHOR . "_gform_gateway_price_{$formId}";
+		$hook6 = Keys::AUTHOR . "_gform_IDPay_price";
+		$hook7 = Keys::AUTHOR . "_gform_IDPay_price_{$formId}";
+
+		$applyFilter = apply_filters( $hook0, $amount, $form, $entry );
+		$amount = apply_filters( $hook1, $applyFilter, $form, $entry );
+		$applyFilter = apply_filters( $hook2, $amount, $form, $entry );
+		$amount = apply_filters( $hook3, $applyFilter, $form, $entry );
+		$applyFilter = apply_filters( $hook4, $amount, $form, $entry );
+		$amount = apply_filters( $hook5, $applyFilter, $form, $entry );
+		$applyFilter = apply_filters( $hook6, $amount, $form, $entry );
+		$amount = apply_filters( $hook7, $applyFilter, $form, $entry );
+
+		return $amount ;
 	}
 }

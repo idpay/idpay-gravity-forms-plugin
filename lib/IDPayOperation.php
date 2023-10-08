@@ -207,7 +207,7 @@ class IDPayOperation extends Helpers {
 
 	public static function reportPreRequiredPersianGravityForm() {
 		$dictionary = Helpers::loadDictionary();
-		$url        = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884";
+		$url        = Keys::PLUGIN_INSTALL_URL;
 		$adminUrl   = admin_url( $url );
 		$html       = "<a href='{$adminUrl}'>{$dictionary->labelHintPersianGravity}</a>";
 		$class      = 'notice notice-error';
@@ -217,7 +217,7 @@ class IDPayOperation extends Helpers {
 	public static function reportPreRequiredGravityForm() {
 		$dictionary = Helpers::loadDictionary();
 		$html       = "<a href='https://gravityforms.ir/11378' target='_blank'>{$dictionary->labelHintGravity}</a>";
-		$html       = sprintf( $html, IDPayOperation::MIN_GRAVITY_VERSION );
+		$html       = sprintf( $html, Keys::MIN_GRAVITY_VERSION );
 		$class      = 'notice notice-error';
 		printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $html );
 	}
@@ -251,7 +251,7 @@ class IDPayOperation extends Helpers {
 
 	public static function checkApprovedGravityFormVersion(): bool {
 		$condition1 = class_exists( "GFCommon" );
-		$condition2 = (bool) version_compare( GFCommon::$version, IDPayOperation::MIN_GRAVITY_VERSION, ">=" );
+		$condition2 = (bool) version_compare( GFCommon::$version, Keys::MIN_GRAVITY_VERSION, ">=" );
 
 		return $condition1 && $condition2;
 	}

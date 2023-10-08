@@ -51,12 +51,8 @@ class IDPayView extends Helpers {
 		$config              = IDPayDB::getActiveFeed( $form );
 
 		if ( $hasPriceFieldInForm && ! empty( $config ) ) {
-			$buttonHtml .= sprintf(
-				'<div class="idpay-logo C9" id="idpay-pay-id-%1$s"><img class="C10" src="%2$s">%3$s</div>',
-				$formId,
-				$ImageUrl,
-				$dictionary->labelPayment
-			);
+			$html = '<div class="idpay-logo C9" id="idpay-pay-id-%1$s"><img class="C10" src="%2$s">%3$s</div>';
+			$buttonHtml .= sprintf($html,$formId,$ImageUrl,$dictionary->labelPayment);
 		}
 
 		return $buttonHtml;
@@ -66,7 +62,7 @@ class IDPayView extends Helpers {
 		$dict    = Helpers::loadDictionary();
 		$form    = RGFormsModel::get_form_meta( $formId );
 		$entryId = Helpers::dataGet( $entry, 'id' );
-		$style   = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
+		$style   = Keys::CSS_MESSAGE_STYLE;
 		$html    = "<div style='{$style}'><hr/>";
 		$html    .= "<strong>{$dict->labelTransactionData}</strong>";
 		$html    .= "<br/><br/>";
@@ -98,7 +94,7 @@ class IDPayView extends Helpers {
 		$dict    = Helpers::loadDictionary();
 		$form    = RGFormsModel::get_form_meta( $formId );
 		$entryId = Helpers::dataGet( $entry, 'id' );
-		$style   = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
+		$style   = Keys::CSS_MESSAGE_STYLE;
 		$html    = "<div style='{$style}'><hr/>";
 		$html    .= "<strong>{$dict->labelTransactionData}</strong>";
 		$html    .= "<br/><br/>";

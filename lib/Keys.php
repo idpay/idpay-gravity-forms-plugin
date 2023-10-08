@@ -7,6 +7,7 @@ class Keys {
 	public const AUTHOR = "IDPay";
 	public const MIN_GRAVITY_VERSION = "1.9.10";
 	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
+	public const PLUGIN_INSTALL_URL = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&TB_iframe=true&width=772&height=884";
 
 	// PAYMENT KEYS
 	public const NO_PAYMENT = "NO_PAYMENT";
@@ -57,5 +58,9 @@ class Keys {
 	public const STATE_UPGRADE = 'UPGRADE';
 	public const STATE_NO_CONFIGURED = 'NOT-CONFIGURED';
 
-	public const CSS_FEED_STYLE = 'font-weight: bold;direction: rtl;text-align:center;font-size: 20px;font-family: monospace;padding-top: 10px;padding-bottom: 10px;';
+	public const CSS_NOTE_STYLE =  "font-weight: bold;font-size: 16px;font-family: monospace;";
+
+	public const CSS_MESSAGE_STYLE = 'font-weight: bold;direction: rtl;text-align:center;font-size: 20px;
+								      font-family: monospace;padding-top: 10px;padding-bottom: 10px;';
+
 }

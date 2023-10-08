@@ -5,8 +5,10 @@ class IDPayVerify extends Helpers {
 	public static function doVerify() {
 
 		$request = Helpers::getRequestData();
+		$condition1 =  empty( $request );
+		$condition2 =  IDPayVerify::isNotApprovedGettingTransaction( $request->entryId, $request->formId );
 
-		if ( empty( $request ) || IDPayVerify::isNotApprovedGettingTransaction( $request->entryId, $request->formId ) ) {
+		if ( $condition1 || $condition2 ) {
 			return 'error';
 		}
 
@@ -21,7 +23,10 @@ class IDPayVerify extends Helpers {
 
 		$pricing = Helpers::getPriceOrder( $paymentType, $entry, $form );
 
-		if ( IDPayVerify::checkTypeVerify() == 'Purchase' && ! IDPayVerify::checkApprovedVerifyData( $request ) ) {
+		$condition1 = IDPayVerify::checkTypeVerify() == 'Purchase';
+		$condition2 = ! IDPayVerify::checkApprovedVerifyData( $request );
+
+		if ( $condition1 && $condition2 ) {
 			IDPayVerify::reject( $entry, $form, $request, $pricing, $config );
 			IDPayVerify::processAddons( $form, $entry, $config, Keys::NO_PAYMENT );
 
@@ -62,6 +67,7 @@ class IDPayVerify extends Helpers {
 	}
 
 	public static function reject( $entry, $form, $request, $pricing, $config ) {
+		$dict = Helpers::loadDictionary();
 		$transactionId = $request->trackId ?? '';
 		$statusCode    = $request->status ?? 0;
 		$statusDesc    = IDPayVerify::getStatus( $statusCode );
@@ -77,55 +83,26 @@ class IDPayVerify extends Helpers {
 		$entry["is_fulfilled"]     = 0;
 		GFAPI::update_entry( $entry );
 
-		$noteAdmin = sprintf(
-			__( 'وضعیت پرداخت : %s (کد خطا: %s)', "gravityformsIDPay" ),
-			$statusDesc,
-			$statusCode,
-		);
-
-		$noteUser = sprintf(
-			__( 'وضعیت پرداخت : %s (کد خطا: %s)', "gravityformsIDPay" ),
-			$statusDesc,
-			$statusCode,
-		);
+		$noteAdmin = sprintf($dict->labelRejectNote,$statusDesc,$statusCode);
+		$noteUser = sprintf($dict->labelRejectNote,$statusDesc,$statusCode);
 
 		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
 
 		$entry = GFPersian_Payments::get_entry( $entryId );
 		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
 
-		do_action(
-			'gform_post_payment_status',
-			$config,
-			$entry,
-			$status,
-			$transactionId,
-			'',
-			$pricing->amount,
-			'',
-			''
-		);
-		do_action(
-			'gform_post_payment_status_' . __CLASS__,
-			$config,
-			$form,
-			$entry,
-			$status,
-			$transactionId,
-			'',
-			$pricing->amount,
-			'',
-			''
-		);
-
-		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
+		 IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
+	   	 Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
 		 GFPersian_Payments::notification( $form, $entry );
-		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
+		 GFPersian_Payments::confirmation( $form, $entry, $noteUser );
 
 		return true;
 	}
 
+
+
 	public static function acceptPurchase( $transaction, $entry, $form, $request, $pricing, $config ) {
+		$dict = Helpers::loadDictionary();
 		$status        = 'Paid';
 		$transactionId = $request->trackId ?? '';
 		$statusCode    = $transaction->status ?? 0;
@@ -141,54 +118,17 @@ class IDPayVerify extends Helpers {
 		$entry["is_fulfilled"]     = 1;
 		GFAPI::update_entry( $entry );
 
-		do_action( "gform_IDPay_fulfillment", $entry, $config, $transaction->id, $pricing->amount );
-		do_action( "gform_gateway_fulfillment", $entry, $config, $transaction->id, $pricing->amount );
-		do_action( "gform_idpay_fulfillment", $entry, $config, $transaction->id, $pricing->amount );
+		IDPayVerify::sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing);
 
-		$noteAdmin = sprintf(
-			__( ' پرداخت شما با موفقیت انجام شد.
-			شماره سفارش : %s 
-			 کد رهگیری : %s', "gravityformsIDPay" ),
-			$request->orderId,
-			$request->trackId
-		);
-
-		$noteUser = sprintf(
-			__( ' پرداخت شما با موفقیت انجام شد.
-			 شماره سفارش : %s 
-			  کد رهگیری : %s', "gravityformsIDPay" ),
-			$request->orderId,
-			$request->trackId
-		);
+		$noteAdmin = sprintf($dict->labelAcceptPurchase,$request->orderId,$request->trackId);
+		$noteUser = sprintf($dict->labelAcceptPurchase,$request->orderId,$request->trackId);
 
 		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
 
 		$entry = GFPersian_Payments::get_entry( $entryId );
 		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
 
-		do_action(
-			'gform_post_payment_status',
-			$config,
-			$entry,
-			$status,
-			$transactionId,
-			'',
-			$pricing->amount,
-			'',
-			''
-		);
-		do_action(
-			'gform_post_payment_status_' . __CLASS__,
-			$config,
-			$form,
-			$entry,
-			$status,
-			$transactionId,
-			'',
-			$pricing->amount,
-			'',
-			''
-		);
+		IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
 
 		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
 		GFPersian_Payments::notification( $form, $entry );
@@ -198,13 +138,13 @@ class IDPayVerify extends Helpers {
 	}
 
 	public static function acceptFree( $transaction, $entry, $form, $request, $pricing, $config ) {
+		$dict = Helpers::loadDictionary();
 		$status        = 'Paid';
 		$transactionId = $request->trackId ?? '';
 		$statusCode    = $transaction->status ?? 0;
 		$statusDesc    = IDPayVerify::getStatus( $statusCode );
 		$entryId       = Helpers::dataGet( $entry, 'id' );
 		$user          = IDPayVerify::loadUser();
-
 
 		$entry["payment_date"]     = gmdate( "Y-m-d H:i:s" );
 		$entry["transaction_id"]   = $transactionId;
@@ -215,43 +155,19 @@ class IDPayVerify extends Helpers {
 		$entry["is_fulfilled"]     = null;
 		GFAPI::update_entry( $entry );
 
-		do_action( "gform_IDPay_fulfillment", $entry, $config, $transaction->id, $pricing->amount );
-		do_action( "gform_gateway_fulfillment", $entry, $config, $transaction->id, $pricing->amount );
-		do_action( "gform_idpay_fulfillment", $entry, $config, $transaction->id, $pricing->amount );
+		IDPayVerify::sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing);
 
 		gform_delete_meta( $entryId, 'payment_gateway' );
-		$noteUser  = __( 'وضعیت پرداخت : رایگان - بدون درگاه پرداخت', "gravityformsIDPay" );
+		$noteUser  = $dict->labelAcceptedFree;
+		$noteAdmin  = $dict->labelAcceptedFree;
 
-		$noteAdmin = __( 'وضعیت پرداخت : رایگان - بدون درگاه پرداخت', "gravityformsIDPay" );
 		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
 
 		$entry = GFPersian_Payments::get_entry( $entryId );
 
 		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
-		do_action(
-			'gform_post_payment_status',
-			$config,
-			$entry,
-			$status,
-			$transactionId,
-			'',
-			$pricing->amount,
-			'',
-			''
-		);
-		do_action(
-			'gform_post_payment_status_' . __CLASS__,
-			$config,
-			$form,
-			$entry,
-			$status,
-			$transactionId,
-			'',
-			$pricing->amount,
-			'',
-			''
-		);
 
+		IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
 		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
 		GFPersian_Payments::notification( $form, $entry );
 		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
@@ -260,12 +176,9 @@ class IDPayVerify extends Helpers {
 	}
 
 	public static function prepareFree( $entry, $form ) {
-		$transactionId = apply_filters(
-			Keys::AUTHOR . '_gf_rand_transaction_id',
-			GFPersian_Payments::transaction_id( $entry ),
-			$form,
-			$entry
-		);
+		$hook = Keys::AUTHOR . '_gf_rand_transaction_id';
+		$entryData = GFPersian_Payments::transaction_id( $entry );
+		$transactionId = apply_filters($hook,$entryData,$form,$entry);
 
 		return (object) [
 			'status'     => 'completed',
@@ -343,17 +256,18 @@ class IDPayVerify extends Helpers {
 	}
 
 	public static function checkErrorResponse( $response, $http_status, $result ) {
-
+		$dict = Helpers::loadDictionary();
 		if ( is_wp_error( $response ) ) {
 			$error = $response->get_error_message();
 
 			return [
-				'message' => sprintf( __( 'خطا هنگام تایید تراکنش . پیام خطا: %s', 'gravityformsIDPay' ), $error )
+				'message' => sprintf( $dict->labelErrorTransaction, $error )
 			];
-		} elseif ( $http_status != 200 || empty( $result ) || empty( $result->status ) || empty( $result->track_id ) ) {
+		} elseif ( $http_status != 200 || empty( $result->status ) || empty( $result->track_id ) ) {
 			return [
-				'message' => sprintf( 'خطا هنگام تایید تراکنش . : %s (کد خطا: %s)', $result->error_message, $result->error_code )
+				'message' => sprintf( $dict->labelErrorTransaction, $result->error_message, $result->error_code )
 			];
+
 		}
 
 		return false;
@@ -364,6 +278,25 @@ class IDPayVerify extends Helpers {
 		$request->all = $all;
 
 		return (object) $request;
+	}
+
+	public static function sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing){
+		$hook1 = 'gform_post_payment_status';
+		$hook2 = 'gform_post_payment_status_' . __CLASS__;
+		$amount = $pricing->amount;
+		do_action($hook1,$config,$entry,$status,$transactionId,'',$amount,'','');
+		do_action($hook2,$config,$form,$entry,$status,$transactionId,'',$amount,'','');
+	}
+
+	public static function sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing){
+		$hook1 = 'gform_IDPay_fulfillment';
+		$hook2 = 'gform_gateway_fulfillment';
+		$hook3 = 'gform_idpay_fulfillment';
+		$amount = $pricing->amount;
+		$transId = $transaction->id;
+		do_action( $hook1, $entry, $config, $transId, $amount );
+		do_action( $hook2, $entry, $config, $transId, $amount );
+		do_action( $hook3, $entry, $config, $transId, $amount );
 	}
 
 

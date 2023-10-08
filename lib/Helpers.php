@@ -289,7 +289,7 @@ class Helpers extends Keys {
 
 	public static function makeUpdateMessageBar( ) {
 		$dict         = Helpers::loadDictionary();
-		$style = Keys::CSS_FEED_STYLE;
+		$style = Keys::CSS_MESSAGE_STYLE;
 		$label = $dict->labelUpdateFeed;
 		$html = "<div class='updated fade' style='{$style}'>{$label}</div>";
 		echo $html;
@@ -406,7 +406,7 @@ class Helpers extends Keys {
 
 	public static function checkSubmittedOperation() {
 		$dict   = Helpers::loadDictionary();
-		$style = Keys::CSS_FEED_STYLE;
+		$style = Keys::CSS_MESSAGE_STYLE;
 		if ( rgpost( 'action' ) == "delete" ) {
 			check_admin_referer( "list_action", "gf_IDPay_list" );
 			$id = absint( rgpost( "action_argument" ) );
@@ -771,8 +771,32 @@ class Helpers extends Keys {
 		$dict = Helpers::loadDictionary();
 		$variable = json_encode($variable,JSON_PRETTY_PRINT);
 		$notes = $note . PHP_EOL . PHP_EOL . '<hr>'. $dict->labelShowData . PHP_EOL . '<hr>' . $variable;
-		$html = '<div style="font-weight: bold;font-size: 16px;font-family: monospace;">' . $notes . '</div>';
+		$style = Keys::CSS_NOTE_STYLE;
+		$html = "<div style='{$style}'>{$notes}</div>";
 		return $html;
 	}
+
+	public static function convertNameToTxtBoxKey($name) {
+		return sanitize_text_field(
+			rgpost( 'input_' . str_replace( ".", "_", $name ) ) );
+
+	}
+
+	public static function makeCustomDescription($entry,$form,$feed) {
+		$formId   = $form['id'];
+		$entryId = $entry['id'];
+		$title   = $form['title'];
+		$description = $feed["meta"]["description"];
+		$desc        = $feed["meta"]["payment_description"];
+
+		$note = ['{entry_id}','{form_title}','{form_id}'];
+		$keys = [ $entryId, $title, $formId ];
+
+		$desc1       = ! empty( $description ) ? str_replace( $note, $keys, $description ) : '';
+		$desc2       = ! empty( $desc ) ? Helpers::convertNameToTxtBoxKey($desc) : '';
+		$description = ( ! empty( $desc1 ) && ! empty( $desc2 ) ? ' - ' : '' );
+		return sanitize_text_field( $desc1 . $description . $desc2 . ' ' );
+	}
+
 
 }

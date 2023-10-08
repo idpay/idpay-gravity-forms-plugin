@@ -427,8 +427,13 @@ class IDPayDB extends Helpers {
 
 	public static function loadPagination( $methodName, $filters ) {
 		global $wp;
-		$currentUrl      = add_query_arg( $_SERVER['QUERY_STRING'], '', admin_url( $wp->request ) . 'admin.php' );
-		$pageNumber      = rgget( 'page_number' ) != '' ? sanitize_text_field( rgget( 'page_number' ) ) : 1;
+		$dict = Helpers::loadDictionary();
+		$labelfPage = $dict->labelNextPage;
+		$labelbPage = $dict->labelBackPage;
+		$adminUrl = admin_url( $wp->request ) . 'admin.php';
+		$currentUrl      = add_query_arg( $_SERVER['QUERY_STRING'], '', $adminUrl );
+		$number = sanitize_text_field( rgget( 'page_number' ) );
+		$pageNumber      = rgget( 'page_number' ) != '' ? $number : 1;
 		$countMethodName = "{$methodName}Count";
 		$count           = IDPayDB::{$countMethodName}( $filters );
 		$limit           = 50;
@@ -438,10 +443,10 @@ class IDPayDB extends Helpers {
 		$fPage           = $pageNumber + 1;
 		$bPage           = $pageNumber - 1;
 		if ( $pageNumber > 1 ) {
-			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$bPage'>صفحه قبل</a></li>";
+			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$bPage'>{$labelbPage}</a></li>";
 		}
 		if ( ( ( $count / $limit ) / $pageNumber ) > 1 ) {
-			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$fPage'>صفحه بعد</a></li>";
+			$paginationHtml .= "<li><a class='button' href='$currentUrl&page_number=$fPage'>{$labelfPage}</a></li>";
 		}
 
 		$paginationHtml .= '</ul>';

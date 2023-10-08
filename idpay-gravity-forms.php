@@ -234,7 +234,7 @@ class GF_Gateway_IDPay extends Helpers
             GFAPI::update_entry($entry);
 
             $note =  sprintf($dict->report, $dict->{$status}, $amount, $trackId, $date);
-            $style = "font-weight: bold;direction: rtl;text-align:center;font-size: 16px;font-family: monospace;";
+            $style = Keys::CSS_MESSAGE_STYLE;
             $html = "<div style='{$style}'>{$note}</div>";
             RGFormsModel::add_note($entry_id, $user->id, $user->username, $html);
         }
