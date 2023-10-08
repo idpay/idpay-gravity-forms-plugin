@@ -169,10 +169,8 @@ class IDPayDB extends Helpers {
 		$formId = Helpers::dataGet($form,'id');
 		$configs = IDPayDB::getFeedByFormId($formId );
 
-		$hook1 = Keys::AUTHOR . '_gf_gateway_get_active_configs';
-		$hook2 = Keys::AUTHOR . '_gf_IDPay_get_active_configs';
-		$applyFilter = apply_filters( $hook1, $configs, $form );
-		return apply_filters($hook2,$applyFilter,$form);
+		$applyFilter = apply_filters( Keys::HOOK_16, $configs, $form );
+		return apply_filters(Keys::HOOK_17,$applyFilter,$form);
 	}
 
 	public static function getTableName() {

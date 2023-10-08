@@ -1,6 +1,7 @@
 <?php
 
 class IDPayPayment extends Helpers {
+
 	public static function doPayment( $confirmation, $form, $entry, $ajax ) {
 		$entryId = Helpers::dataGet($entry,'id');
 		$formId = Helpers::dataGet($form,'id');
@@ -132,10 +133,8 @@ class IDPayPayment extends Helpers {
 
 		$Description = gform_get_meta( $entryId, "IDPay_part_desc_{$formId}" );
 
-		$hook1 = Keys::AUTHOR . '_gform_custom_gateway_desc_';
-		$hook2 = Keys::AUTHOR . '_gform_IDPay_gateway_desc_';
-		$applyFilter = apply_filters( $hook1, $Description, $form, $entry );
-		$Description = apply_filters( $hook2,$applyFilter, $form, $entry );
+		$applyFilter = apply_filters( Keys::HOOK_18, $Description, $form, $entry );
+		$Description = apply_filters( Keys::HOOK_19,$applyFilter, $form, $entry );
 
 
 		$Name   = gform_get_meta( $entryId, "IDPay_part_name_{$formId}");
@@ -145,10 +144,8 @@ class IDPayPayment extends Helpers {
 		$entryId = GFAPI::add_entry( $entry );
 		$entry   = GFPersian_Payments::get_entry( $entryId );
 
-		$hook1 = 'gf_gateway_request_add_entry';
-		$hook2 = 'gf_IDPay_request_add_entry';
-		do_action( $hook1, $confirmation, $form, $entry, $ajax );
-		do_action( $hook2, $confirmation, $form, $entry, $ajax );
+		do_action( Keys::HOOK_20, $confirmation, $form, $entry, $ajax );
+		do_action( Keys::HOOK_21, $confirmation, $form, $entry, $ajax );
 
 		gform_update_meta( $entryId, 'payment_gateway', IDPayPayment::getGatewayName() );
 		gform_update_meta( $entryId, 'payment_type', 'custom' );
@@ -255,14 +252,14 @@ class IDPayPayment extends Helpers {
 	public static function sendCustomSetPriceGravityCore($entry,$form,$amount){
 
 		$formId = Helpers::dataGet($form,'id');
-		$hook0 = Keys::AUTHOR . "_gform_custom_gateway_price";
-		$hook1 = Keys::AUTHOR . "_gform_custom_gateway_price_{$formId}";
-		$hook2 = Keys::AUTHOR . "_gform_custom_IDPay_price";
-		$hook3 = Keys::AUTHOR . "_gform_custom_IDPay_price_{$formId}";
-		$hook4 = Keys::AUTHOR . "_gform_gateway_price";
-		$hook5 = Keys::AUTHOR . "_gform_gateway_price_{$formId}";
-		$hook6 = Keys::AUTHOR . "_gform_IDPay_price";
-		$hook7 = Keys::AUTHOR . "_gform_IDPay_price_{$formId}";
+		$hook0 = Keys::HOOK_21;
+		$hook1 = Keys::HOOK_22 . $formId;
+		$hook2 = Keys::HOOK_23;
+		$hook3 = Keys::HOOK_24 . $formId;
+		$hook4 = Keys::HOOK_25;
+		$hook5 = Keys::HOOK_26 . $formId;
+		$hook6 = Keys::HOOK_27;
+		$hook7 = Keys::HOOK_28 .$formId;
 
 		$applyFilter = apply_filters( $hook0, $amount, $form, $entry );
 		$amount = apply_filters( $hook1, $applyFilter, $form, $entry );
@@ -280,14 +277,14 @@ class IDPayPayment extends Helpers {
 	public static function sendSetPriceGravityCore($entry,$form,$amount){
 
 		$formId = Helpers::dataGet($form,'id');
-		$hook0 = Keys::AUTHOR . "_gform_form_gateway_price";
-		$hook1 = Keys::AUTHOR . "_gform_form_gateway_price_{$formId}";
-		$hook2 = Keys::AUTHOR . "_gform_form_IDPay_price";
-		$hook3 = Keys::AUTHOR . "_gform_form_IDPay_price_{$formId}";
-		$hook4 = Keys::AUTHOR . "_gform_gateway_price";
-		$hook5 = Keys::AUTHOR . "_gform_gateway_price_{$formId}";
-		$hook6 = Keys::AUTHOR . "_gform_IDPay_price";
-		$hook7 = Keys::AUTHOR . "_gform_IDPay_price_{$formId}";
+		$hook0 = Keys::HOOK_29;
+		$hook1 = Keys::HOOK_30 . $formId;
+		$hook2 = Keys::HOOK_31 ;
+		$hook3 = Keys::HOOK_32 . $formId;
+		$hook4 = Keys::HOOK_33;
+		$hook5 = Keys::HOOK_34 . $formId;
+		$hook6 = Keys::HOOK_35;
+		$hook7 = Keys::HOOK_36 . $formId;
 
 		$applyFilter = apply_filters( $hook0, $amount, $form, $entry );
 		$amount = apply_filters( $hook1, $applyFilter, $form, $entry );

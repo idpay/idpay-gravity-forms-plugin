@@ -6,7 +6,9 @@ class IDPayVerify extends Helpers {
 
 		$request = Helpers::getRequestData();
 		$condition1 =  empty( $request );
-		$condition2 =  IDPayVerify::isNotApprovedGettingTransaction( $request->entryId, $request->formId );
+		$entryId = !empty($request) ? $request->entryId : null;
+		$formId = !empty($request) ? $request->formId : null;
+		$condition2 =  IDPayVerify::isNotApprovedGettingTransaction( $entryId, $formId );
 
 		if ( $condition1 || $condition2 ) {
 			return 'error';
@@ -66,119 +68,9 @@ class IDPayVerify extends Helpers {
 		return true;
 	}
 
-	public static function reject( $entry, $form, $request, $pricing, $config ) {
-		$dict = Helpers::loadDictionary();
-		$transactionId = $request->trackId ?? '';
-		$statusCode    = $request->status ?? 0;
-		$statusDesc    = IDPayVerify::getStatus( $statusCode );
-		$entryId       = Helpers::dataGet( $entry, 'id' );
-		$user          = IDPayVerify::loadUser();
-		$status        = 'Failed';
-
-		$entry["payment_date"]     = gmdate( "Y-m-d H:i:s" );
-		$entry["transaction_id"]   = $transactionId;
-		$entry["payment_status"]   = $status;
-		$entry["transaction_type"] = null;
-		$entry["payment_amount"]   = (string) $pricing->amount;
-		$entry["is_fulfilled"]     = 0;
-		GFAPI::update_entry( $entry );
-
-		$noteAdmin = sprintf($dict->labelRejectNote,$statusDesc,$statusCode);
-		$noteUser = sprintf($dict->labelRejectNote,$statusDesc,$statusCode);
-
-		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
-
-		$entry = GFPersian_Payments::get_entry( $entryId );
-		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
-
-		 IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
-	   	 Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
-		 GFPersian_Payments::notification( $form, $entry );
-		 GFPersian_Payments::confirmation( $form, $entry, $noteUser );
-
-		return true;
-	}
-
-
-
-	public static function acceptPurchase( $transaction, $entry, $form, $request, $pricing, $config ) {
-		$dict = Helpers::loadDictionary();
-		$status        = 'Paid';
-		$transactionId = $request->trackId ?? '';
-		$statusCode    = $transaction->status ?? 0;
-		$statusDesc    = IDPayVerify::getStatus( $statusCode );
-		$entryId       = Helpers::dataGet( $entry, 'id' );
-		$user          = IDPayVerify::loadUser();
-
-		$entry["payment_date"]     = gmdate( "Y-m-d H:i:s" );
-		$entry["payment_amount"]   = $transaction->amount;
-		$entry["transaction_id"]   = $transactionId;
-		$entry["payment_status"]   = $status;
-		$entry["transaction_type"] = null;
-		$entry["is_fulfilled"]     = 1;
-		GFAPI::update_entry( $entry );
-
-		IDPayVerify::sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing);
-
-		$noteAdmin = sprintf($dict->labelAcceptPurchase,$request->orderId,$request->trackId);
-		$noteUser = sprintf($dict->labelAcceptPurchase,$request->orderId,$request->trackId);
-
-		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
-
-		$entry = GFPersian_Payments::get_entry( $entryId );
-		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
-
-		IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
-
-		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
-		GFPersian_Payments::notification( $form, $entry );
-		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
-
-		return true;
-	}
-
-	public static function acceptFree( $transaction, $entry, $form, $request, $pricing, $config ) {
-		$dict = Helpers::loadDictionary();
-		$status        = 'Paid';
-		$transactionId = $request->trackId ?? '';
-		$statusCode    = $transaction->status ?? 0;
-		$statusDesc    = IDPayVerify::getStatus( $statusCode );
-		$entryId       = Helpers::dataGet( $entry, 'id' );
-		$user          = IDPayVerify::loadUser();
-
-		$entry["payment_date"]     = gmdate( "Y-m-d H:i:s" );
-		$entry["transaction_id"]   = $transactionId;
-		$entry["payment_method"]   = "NoGateway";
-		$entry["payment_status"]   = $status;
-		$entry["payment_amount"]   = 0;
-		$entry["transaction_type"] = null;
-		$entry["is_fulfilled"]     = null;
-		GFAPI::update_entry( $entry );
-
-		IDPayVerify::sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing);
-
-		gform_delete_meta( $entryId, 'payment_gateway' );
-		$noteUser  = $dict->labelAcceptedFree;
-		$noteAdmin  = $dict->labelAcceptedFree;
-
-		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
-
-		$entry = GFPersian_Payments::get_entry( $entryId );
-
-		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
-
-		IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
-		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
-		GFPersian_Payments::notification( $form, $entry );
-		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
-
-		return true;
-	}
-
 	public static function prepareFree( $entry, $form ) {
-		$hook = Keys::AUTHOR . '_gf_rand_transaction_id';
 		$entryData = GFPersian_Payments::transaction_id( $entry );
-		$transactionId = apply_filters($hook,$entryData,$form,$entry);
+		$transactionId = apply_filters(Keys::HOOK_37,$entryData,$form,$entry);
 
 		return (object) [
 			'status'     => 'completed',
@@ -255,49 +147,111 @@ class IDPayVerify extends Helpers {
 		];
 	}
 
-	public static function checkErrorResponse( $response, $http_status, $result ) {
+	public static function acceptPurchase( $transaction, $entry, $form, $request, $pricing, $config ) {
 		$dict = Helpers::loadDictionary();
-		if ( is_wp_error( $response ) ) {
-			$error = $response->get_error_message();
+		$status        = 'Paid';
+		$transactionId = $request->trackId ?? '';
+		$statusCode    = $transaction->status ?? 0;
+		$statusDesc    = IDPayVerify::getStatus( $statusCode );
+		$entryId       = Helpers::dataGet( $entry, 'id' );
+		$user          = IDPayVerify::loadUser();
 
-			return [
-				'message' => sprintf( $dict->labelErrorTransaction, $error )
-			];
-		} elseif ( $http_status != 200 || empty( $result->status ) || empty( $result->track_id ) ) {
-			return [
-				'message' => sprintf( $dict->labelErrorTransaction, $result->error_message, $result->error_code )
-			];
+		$entry["payment_date"]     = gmdate( "Y-m-d H:i:s" );
+		$entry["payment_amount"]   = $transaction->amount;
+		$entry["transaction_id"]   = $transactionId;
+		$entry["payment_status"]   = $status;
+		$entry["transaction_type"] = null;
+		$entry["is_fulfilled"]     = 1;
+		GFAPI::update_entry( $entry );
 
-		}
+		IDPayVerify::sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing);
 
-		return false;
+		$noteAdmin = sprintf($dict->labelAcceptPurchase,$request->orderId,$request->trackId);
+		$noteUser = sprintf($dict->labelAcceptPurchase,$request->orderId,$request->trackId);
+
+		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
+
+		$entry = GFPersian_Payments::get_entry( $entryId );
+		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
+
+		IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
+
+		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
+		GFPersian_Payments::notification( $form, $entry );
+		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
+
+		return true;
 	}
 
-	public static function appendDataToRequest( $request, $appendData ) {
-		$all          = array_merge( Helpers::dataGet( $request, 'all' ), $appendData );
-		$request->all = $all;
+	public static function acceptFree( $transaction, $entry, $form, $request, $pricing, $config ) {
+		$dict = Helpers::loadDictionary();
+		$status        = 'Paid';
+		$transactionId = $request->trackId ?? '';
+		$statusCode    = $transaction->status ?? 0;
+		$statusDesc    = IDPayVerify::getStatus( $statusCode );
+		$entryId       = Helpers::dataGet( $entry, 'id' );
+		$user          = IDPayVerify::loadUser();
 
-		return (object) $request;
+		$entry["payment_date"]     = gmdate( "Y-m-d H:i:s" );
+		$entry["transaction_id"]   = $transactionId;
+		$entry["payment_method"]   = "NoGateway";
+		$entry["payment_status"]   = $status;
+		$entry["payment_amount"]   = 0;
+		$entry["transaction_type"] = null;
+		$entry["is_fulfilled"]     = null;
+		GFAPI::update_entry( $entry );
+
+		IDPayVerify::sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing);
+
+		gform_delete_meta( $entryId, 'payment_gateway' );
+		$noteUser  = $dict->labelAcceptedFree;
+		$noteAdmin  = $dict->labelAcceptedFree;
+
+		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
+
+		$entry = GFPersian_Payments::get_entry( $entryId );
+
+		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
+
+		IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
+		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
+		GFPersian_Payments::notification( $form, $entry );
+		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
+
+		return true;
 	}
 
-	public static function sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing){
-		$hook1 = 'gform_post_payment_status';
-		$hook2 = 'gform_post_payment_status_' . __CLASS__;
-		$amount = $pricing->amount;
-		do_action($hook1,$config,$entry,$status,$transactionId,'',$amount,'','');
-		do_action($hook2,$config,$form,$entry,$status,$transactionId,'',$amount,'','');
-	}
+	public static function reject( $entry, $form, $request, $pricing, $config ) {
+		$dict = Helpers::loadDictionary();
+		$transactionId = $request->trackId ?? '';
+		$statusCode    = $request->status ?? 0;
+		$statusDesc    = IDPayVerify::getStatus( $statusCode );
+		$entryId       = Helpers::dataGet( $entry, 'id' );
+		$user          = IDPayVerify::loadUser();
+		$status        = 'Failed';
 
-	public static function sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing){
-		$hook1 = 'gform_IDPay_fulfillment';
-		$hook2 = 'gform_gateway_fulfillment';
-		$hook3 = 'gform_idpay_fulfillment';
-		$amount = $pricing->amount;
-		$transId = $transaction->id;
-		do_action( $hook1, $entry, $config, $transId, $amount );
-		do_action( $hook2, $entry, $config, $transId, $amount );
-		do_action( $hook3, $entry, $config, $transId, $amount );
-	}
+		$entry["payment_date"]     = gmdate( "Y-m-d H:i:s" );
+		$entry["transaction_id"]   = $transactionId;
+		$entry["payment_status"]   = $status;
+		$entry["transaction_type"] = null;
+		$entry["payment_amount"]   = (string) $pricing->amount;
+		$entry["is_fulfilled"]     = 0;
+		GFAPI::update_entry( $entry );
 
+		$noteAdmin = sprintf($dict->labelRejectNote,$statusDesc,$statusCode);
+		$noteUser = sprintf($dict->labelRejectNote,$statusDesc,$statusCode);
+
+		$noteAdmin =  Helpers::makePrintVariableNote($request->all,$noteAdmin);
+
+		$entry = GFPersian_Payments::get_entry( $entryId );
+		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
+
+		IDPayVerify::sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing);
+		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
+		GFPersian_Payments::notification( $form, $entry );
+		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
+
+		return true;
+	}
 
 }

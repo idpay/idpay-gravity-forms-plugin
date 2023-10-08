@@ -30,8 +30,7 @@ if ( ! rgempty( "gf_IDPay_submit" ) ) {
 //Section Check Security And Validate
 $form                = ! empty( $formId ) ? RGFormsModel::get_form_meta( $formId ) : [];
 $setUpdatedMessage   = rgget( 'updated' ) == 'true' && Helpers::makeUpdateMessageBar();
-$hook =  'gform_toolbar_menu';
-$menu_items          = apply_filters($hook, GFForms::get_toolbar_menu_items( $formId ), $formId );
+$menu_items          = apply_filters(Keys::HOOK_43, GFForms::get_toolbar_menu_items( $formId ), $formId );
 $formMeta            = GFFormsModel::get_form_meta( $formId );
 $hasPriceFieldInForm = Helpers::checkSetPriceForForm( $form, $formId );
 // End Section
@@ -64,10 +63,8 @@ $isCheckedUserRegNoPay          = $isUserRegNoPay == true ? "checked='checked'" 
 $isCheckedUseCustomConfirmation = $isUseCustomConfirmation == "true" ? "checked='checked'" : "";
 $descriptionText                = ! empty( $description ) ? $description : $defaultDescription;
 
-$hook1 = Keys::AUTHOR . '_gform_gateway_config';
-$hook2 = Keys::AUTHOR . '_gform_IDPay_config';
-do_action( $hook1, $config, $form );
-do_action( $hook2, $config, $form );
+do_action( Keys::HOOK_44, $config, $form );
+do_action( Keys::HOOK_45, $config, $form );
 // End Section : LoadConfigValues
 
 /* Section FeedFormSelect

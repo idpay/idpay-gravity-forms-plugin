@@ -115,10 +115,8 @@ class Helpers extends Keys {
 		];
 		$pageURL = str_replace( '#038;', '&', add_query_arg( $arrayData, $pageURL ) );
 
-		$hook1 = Keys::AUTHOR . '_gateway_return_url';
-		$hook2 = Keys::AUTHOR . '_IDPay_return_url';
-		$applyData = apply_filters( $hook1, $pageURL, $form_id, $entry_id, __CLASS__ );
-		return apply_filters( $hook2, $applyData, $form_id, $entry_id, __CLASS__ );
+		$applyData = apply_filters( Keys::HOOK_1, $pageURL, $form_id, $entry_id, __CLASS__ );
+		return apply_filters( Keys::HOOK_2, $applyData, $form_id, $entry_id, __CLASS__ );
 	}
 
 	public static function redirect_confirmation( $url, $ajax ) {
@@ -139,11 +137,8 @@ class Helpers extends Keys {
 	}
 
 	public static function checkOneConfirmationExists( $confirmation, $form, $entry, $ajax ): bool {
-		$hook1 = 'gf_gateway_request_return';
-		$hook2 = 'gf_IDPay_request_return';
-
-		$applyFilter = apply_filters($hook1, false, $confirmation, $form, $entry, $ajax );
-		$applyFilter = apply_filters($hook2,$applyFilter,$confirmation,$form,$entry,$ajax);
+		$applyFilter = apply_filters(Keys::HOOK_3, false, $confirmation, $form, $entry, $ajax );
+		$applyFilter = apply_filters(Keys::HOOK_4,$applyFilter,$confirmation,$form,$entry,$ajax);
 		return ! $applyFilter;
 	}
 
@@ -241,10 +236,8 @@ class Helpers extends Keys {
 	}
 
 	public static function updateConfigAndRedirectPage( $feedId, $data ) {
-		$hook1 = Keys::AUTHOR . '_gform_gateway_save_config';
-		$hook2 = Keys::AUTHOR . '_gform_IDPay_save_config';
-		$idpayConfig = apply_filters( $hook1, $data );
-		$idpayConfig = apply_filters( $hook2, $idpayConfig );
+		$idpayConfig = apply_filters( Keys::HOOK_5, $data );
+		$idpayConfig = apply_filters( Keys::HOOK_6, $idpayConfig );
 		$formId = Helpers::dataGet( $idpayConfig, 'form_id' );
 		$meta = Helpers::dataGet( $idpayConfig, 'meta' );
 		$feedId  = IDPayDB::updateFeed($feedId,$formId,$meta);
@@ -464,10 +457,8 @@ class Helpers extends Keys {
 		$feed    = ! empty( $feedId ) ? IDPayDB::getFeed( $feedId ) : '';
 		$return  = ! empty( $feed ) ? $feed : false;
 
-		$hook1 = Keys::AUTHOR . '_gf_gateway_get_config_by_entry';
-		$hook2 = Keys::AUTHOR . '_gf_IDPay_get_config_by_entry';
-		$applyFilter = apply_filters($hook1,$return,$entry);
-		return apply_filters($hook2,$applyFilter,$entry);
+		$applyFilter = apply_filters(Keys::HOOK_7,$return,$entry);
+		return apply_filters(Keys::HOOK_8,$applyFilter,$entry);
 	}
 
 	public static function loadConfig( $entry, $form, $paymentType ) {
@@ -479,10 +470,8 @@ class Helpers extends Keys {
 				return null;
 			}
 		} elseif ( $paymentType != 'form' ) {
-			$hook1 = Keys::AUTHOR . '_gf_gateway_config';
-			$hook2 = Keys::AUTHOR . '_gf_IDPay_config';
-			$applyFilter = apply_filters( $hook1, [], $form, $entry );
-			$config = apply_filters($hook2,	$applyFilter,$form,	$entry);
+			$applyFilter = apply_filters( Keys::HOOK_9, [], $form, $entry );
+			$config = apply_filters(Keys::HOOK_10,	$applyFilter,$form,	$entry);
 		}
 
 		return $config;
@@ -511,10 +500,8 @@ class Helpers extends Keys {
 		$total = GFCommon::get_order_total( $form, $entry );
 		$total = ( ! empty( $total ) && $total > 0 ) ? $total : 0;
 
-		$hook1 = Keys::AUTHOR . '_gateway_get_order_total';
-		$hook2 = Keys::AUTHOR . '_IDPay_get_order_total';
-		$applyFilter = apply_filters( $hook1, $total, $form, $entry );
-		return apply_filters( $hook2,$applyFilter,$form,$entry);
+		$applyFilter = apply_filters( Keys::HOOK_11, $total, $form, $entry );
+		return apply_filters( Keys::HOOK_12,$applyFilter,$form,$entry);
 	}
 
 	public static function getPriceOrder( $paymentType, $entry, $form ) {
@@ -594,10 +581,9 @@ class Helpers extends Keys {
 		$entryId = Helpers::dataGet($entry,'id');
 		$paymentType      = gform_get_meta( $entryId, 'payment_type' );
 		$hasCustomPayment = ( $paymentType != 'custom' );
-		$hook1 = Keys::AUTHOR . '_gf_gateway_verify';
-		$hook2 = Keys::AUTHOR . '_gf_IDPay_verify';
-		$confirmPrepare   = apply_filters( $hook1, $hasCustomPayment, $form, $entry );
-		$confirmations    = apply_filters( $hook2, $confirmPrepare, $form, $entry );
+
+		$confirmPrepare   = apply_filters( Keys::HOOK_13, $hasCustomPayment, $form, $entry );
+		$confirmations    = apply_filters( Keys::HOOK_14, $confirmPrepare, $form, $entry );
 		if ( $confirmations ) {
 			$confirms = Helpers::dataGet($form,'confirmations');
 			foreach ( $confirms as $key => $value ) {
@@ -623,7 +609,6 @@ class Helpers extends Keys {
 	public static function checkTypePayment( $amount ): string {
 		return empty( $amount ) || $amount == 0 ? 'Free' : 'Purchase';
 	}
-
 
 	public static function processAddons( $form, $entry, $config, $type ) {
 
@@ -700,6 +685,45 @@ class Helpers extends Keys {
 
 	}
 
+	public static function checkErrorResponse( $response, $http_status, $result ) {
+		$dict = Helpers::loadDictionary();
+		if ( is_wp_error( $response ) ) {
+			$error = $response->get_error_message();
+
+			return [
+				'message' => sprintf( $dict->labelErrorTransaction, $error )
+			];
+		} elseif ( $http_status != 200 || empty( $result->status ) || empty( $result->track_id ) ) {
+			return [
+				'message' => sprintf( $dict->labelErrorTransaction, $result->error_message, $result->error_code )
+			];
+
+		}
+
+		return false;
+	}
+
+	public static function appendDataToRequest( $request, $appendData ) {
+		$all          = array_merge( Helpers::dataGet( $request, 'all' ), $appendData );
+		$request->all = $all;
+
+		return (object) $request;
+	}
+
+	public static function sendSetFinalPriceGravityCore($config,$entry,$form,$status,$transactionId,$pricing){
+		$hook = Keys::HOOK_39 . __CLASS__;
+		$amount = $pricing->amount;
+		do_action(Keys::HOOK_38,$config,$entry,$status,$transactionId,'',$amount,'','');
+		do_action($hook,$config,$form,$entry,$status,$transactionId,'',$amount,'','');
+	}
+
+	public static function sendSetFullFillTransactionGravityCore($entry,$config,$form,$transaction,$pricing){
+		$amount = $pricing->amount;
+		$transId = $transaction->id;
+		do_action( Keys::HOOK_40, $entry, $config, $transId, $amount );
+		do_action( Keys::HOOK_41, $entry, $config, $transId, $amount );
+		do_action( Keys::HOOK_42, $entry, $config, $transId, $amount );
+	}
 
 	public static function prepareFrontEndTools() {
 		include_once Helpers::getBasePath() . '/resources/js/scripts.php';
@@ -817,11 +841,11 @@ class Helpers extends Keys {
 	}
 
 	public static function makeCustomDescription($entry,$form,$feed) {
-		$formId   = $form['id'];
-		$entryId = $entry['id'];
-		$title   = $form['title'];
-		$description = $feed["meta"]["description"];
-		$desc        = $feed["meta"]["payment_description"];
+		$formId   = Helpers::dataGet($form,'id');
+		$entryId = Helpers::dataGet($entry,'id');
+		$title   = Helpers::dataGet($form,'title');
+		$description = Helpers::dataGet($feed,"meta.description");
+		$desc        = Helpers::dataGet($feed,"meta.payment_description");
 
 		$note = ['{entry_id}','{form_title}','{form_id}'];
 		$keys = [ $entryId, $title, $formId ];
@@ -833,10 +857,8 @@ class Helpers extends Keys {
 	}
 
 	public static function getUserRegistrationSlug() {
-		$hook = 'gf_user_registration_slug';
-		return apply_filters( $hook, 'gravityformsuserregistration' ) ?? 'gravityformsuserregistration';
+		$name = 'gravityformsuserregistration';
+		return apply_filters( Keys::HOOK_15, $name ) ?? $name;
 	}
-
-
 
 }
