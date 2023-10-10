@@ -550,22 +550,35 @@ class Helpers extends Keys {
 		];
 	}
 
-	public static function checkApprovedVerifyData( $request ) {
+	public static function checkNotApprovedVerifyData( $request ) {
 		$keys = [ 'status', 'id', 'trackId', 'orderId', 'formId', 'entryId' ];
 		foreach ( $keys as $key ) {
 			if ( Helpers::dataGet( $request, $key ) == null ) {
-				return false;
+				return true;
 			}
 		}
 
-		return true;
+		return false;
 	}
 
-	public static function getStatus( $statusCode ) {
+	public static function getMessage( $messageCode ) {
 		$dict = Helpers::loadDictionary();
-		$key = "Code{$statusCode}";
+		$key = "Code{$messageCode}";
 		$default = Helpers::dataGet($dict,'Code0');
 		return  isset($dict->{$key}) ? Helpers::dataGet($dict,$key) : $default;
+	}
+
+	public static function getMessageCode($type,$transaction,$request){
+		return $type == Keys::TYPE_REJECTED ? ($request->status ?? 0) : $transaction->status ?? 0;
+	}
+
+	public static function getMessageWithCode( $type,$transaction,$request ) {
+		$code = Helpers::getMessageCode($type,$transaction,$request);
+		return (object) [
+		'code' =>  $code,
+		'description' => Helpers::getMessage( $code ),
+
+		];
 	}
 
 	public static function isNotDoubleSpending( $reference_id, $order_id, $transaction_id ) {

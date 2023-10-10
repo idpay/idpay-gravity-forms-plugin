@@ -19,7 +19,7 @@ class IDPayView extends Helpers {
 		$handler = [ IDPayView::class, "route" ];
 		$menus[] = [
 			"name"       => "gf_IDPay",
-			"label"      => __( "IDPay", "gravityformsIDPay" ),
+			"label"      => Keys::AUTHOR,
 			"callback"   => $handler,
 			"permission" => Keys::PERMISSION_ADMIN
 		];

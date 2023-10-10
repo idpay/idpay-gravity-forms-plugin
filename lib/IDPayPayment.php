@@ -27,7 +27,7 @@ class IDPayPayment extends Helpers {
 			$entry["payment_date"]     = date_create()->format( 'Y-m-d H:i:s' );
 			$entry["payment_amount"]   = (float) $amount;
 			$entry["payment_status"]   = "Processing";
-			$entry["payment_method"]   = "IDPay";
+			$entry["payment_method"]   = Keys::AUTHOR;
 			$entry["is_fulfilled"]     = 0;
 			$entry["transaction_id"]   = null;
 			$entry["transaction_type"] = null;
@@ -160,7 +160,7 @@ class IDPayPayment extends Helpers {
 		$entry["transaction_type"] = null;
 		$entry["payment_amount"]   = null;
 		$entry["payment_date"]     = null;
-		$entry["payment_method"]   = "IDPay";
+		$entry["payment_method"]   = Keys::NONE_GATEWAY;
 		GFAPI::update_entry( $entry );
 
 		$queryArgs1  = [ 'no' => 'true' ];

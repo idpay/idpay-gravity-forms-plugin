@@ -5,7 +5,10 @@ class Keys {
 	// GLOBAL KEYS
 	public const VERSION = "2.0.0";
 	public const AUTHOR = "IDPay";
+	public const NONE_GATEWAY = "NoGateway";
 	public const MIN_GRAVITY_VERSION = "1.9.10";
+	public const ERROR = "error";
+
 	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
 	public const PLUGIN_INSTALL_URL = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&".
 	                                  "TB_iframe=true&width=772&height=884";
@@ -14,6 +17,10 @@ class Keys {
 	public const NO_PAYMENT = "NO_PAYMENT";
 	public const SUCCESS_PAYMENT = "SUCCESS_PAYMENT";
 
+	// STEP KEYS Purchase
+	public const TYPE_PURCHASE = "TYPE_PURCHASE";
+	public const TYPE_FREE = "TYPE_FREE";
+	public const TYPE_REJECTED = "TYPE_REJECTED";
 
 	// DB KEYS
 	public const FEEDS = 'getFeeds';

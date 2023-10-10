@@ -161,7 +161,7 @@ class GF_Gateway_IDPay extends Helpers
 
     public static function setLogSystem($plugins)
     {
-        $plugins[ basename(dirname(__FILE__)) ] = "IDPay";
+        $plugins[ basename(dirname(__FILE__)) ] = Keys::AUTHOR;
 
         return $plugins;
     }
