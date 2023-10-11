@@ -28,7 +28,7 @@ class IDPayPayment extends Helpers {
 			$entry["payment_amount"]   = (float) $amount;
 			$entry["payment_status"]   = "Processing";
 			$entry["payment_method"]   = Keys::AUTHOR;
-			$entry["is_fulfilled"]     = 0;
+			$entry["is_fulfilled"]     = Keys::TRANSACTION_IN_PROGRESS_STATE;
 			$entry["transaction_id"]   = null;
 			$entry["transaction_type"] = null;
 			GFAPI::update_entry( $entry );
@@ -156,7 +156,7 @@ class IDPayPayment extends Helpers {
 	public static function processFree( $entry, $formId, $ajax ) {
 
 		$entry["payment_status"]   = null;
-		$entry["is_fulfilled"]     = null;
+		$entry["is_fulfilled"]     = Keys::TRANSACTION_FINAL_STATE;
 		$entry["transaction_type"] = null;
 		$entry["payment_amount"]   = null;
 		$entry["payment_date"]     = null;
@@ -194,10 +194,11 @@ class IDPayPayment extends Helpers {
 		$dict = Helpers::loadDictionary();
 		$entryId      = Helpers::dataGet($entry,'id');
 		$formId       = Helpers::dataGet($form,'id');
-		$Message      = ! empty( $Message ) ? $Message : $dict->labelErrorPayment;
+		$Message      = ! empty( (array) $Message ) ? $Message : $dict->labelErrorPayment;
 		$confirmation = $dict->labelErrorConnectGateway . $Message;
 		$entry                   = GFPersian_Payments::get_entry( $entryId );
 		$entry['payment_status'] = 'Failed';
+		$entry["is_fulfilled"] = Keys::TRANSACTION_FINAL_STATE;
 		GFAPI::update_entry( $entry );
 
 		global $current_user;

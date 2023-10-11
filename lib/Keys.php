@@ -7,7 +7,9 @@ class Keys {
 	public const AUTHOR = "IDPay";
 	public const NONE_GATEWAY = "NoGateway";
 	public const MIN_GRAVITY_VERSION = "1.9.10";
-	public const ERROR = "error";
+	public const VERIFY_COMPLETED = "VERIFY_COMPLETED";
+	public const TRANSACTION_FINAL_STATE = 1;
+	public const TRANSACTION_IN_PROGRESS_STATE = 0;
 
 	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
 	public const PLUGIN_INSTALL_URL = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&".
