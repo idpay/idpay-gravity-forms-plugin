@@ -52,7 +52,7 @@ class IDPayPayment extends Helpers {
 			$response       = IDPayPayment::httpRequest( 'https://api.idpay.ir/v1.1/payment', $paymentDto );
 			$http_status    = wp_remote_retrieve_response_code( $response );
 			$result         = json_decode( wp_remote_retrieve_body( $response ) ) ?? null;
-			$errorResponder = IDPayPayment::checkErrorResponse( $response, $http_status, $result );
+			$errorResponder = IDPayPayment::checkErrorResponsePayment( $response, $http_status, $result );
 
 			if ( ! $errorResponder == false ) {
 				$message = Helpers::dataGet( $errorResponder, 'message' );
@@ -233,7 +233,7 @@ class IDPayPayment extends Helpers {
 		return $confirmation;
 	}
 
-	public static function checkErrorResponse( $response, $http_status, $result ) {
+	public static function checkErrorResponsePayment( $response, $http_status, $result ) {
 		$dict = Helpers::loadDictionary();
 		if ( is_wp_error( $response ) ) {
 			$error = $response->get_error_message();

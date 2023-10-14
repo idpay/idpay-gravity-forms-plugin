@@ -19,6 +19,11 @@ class Keys {
 	public const NO_PAYMENT = "NO_PAYMENT";
 	public const SUCCESS_PAYMENT = "SUCCESS_PAYMENT";
 
+	// PAYMENT KEYS
+	public const VERIFY_SUCCESS = 100;
+	public const PAYMENT_SUCCESS = 10;
+
+
 	// STEP KEYS Purchase
 	public const TYPE_PURCHASE = "TYPE_PURCHASE";
 	public const TYPE_FREE = "TYPE_FREE";
