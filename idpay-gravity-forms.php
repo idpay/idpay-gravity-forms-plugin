@@ -110,14 +110,14 @@ class GF_Gateway_IDPay extends Helpers
 
     public static function setDelayedActivity($is_disabled, $form, $entry)
     {
-        $config = IDPayDB::getActiveFeed($form);
+        $config = Helpers::getFeed($form);
 
         return ! empty($config) ? true : $is_disabled;
     }
 
     public static function setDelayedGravityAddons($is_delayed, $form, $entry, $slug)
     {
-        $config     = IDPayDB::getActiveFeed($form);
+        $config     = Helpers::getFeed($form);
         $delayedFor = Helpers::makeListDelayedAddons($config);
 
         if (! empty($config)) {

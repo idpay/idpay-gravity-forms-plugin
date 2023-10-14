@@ -48,7 +48,7 @@ class IDPayView extends Helpers {
 		$basePath            = Keys::PLUGIN_FOLDER;
 		$file                = '/resources/images/logo.svg';
 		$ImageUrl            = plugins_url( "{$basePath}{$file}" );
-		$config              = IDPayDB::getActiveFeed( $form );
+		$config              = Helpers::getFeed( $form );
 
 		if ( $hasPriceFieldInForm && ! empty( $config ) ) {
 			$html       = '<div class="idpay-logo C9" id="idpay-pay-id-%1$s">';

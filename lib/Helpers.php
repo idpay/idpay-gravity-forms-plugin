@@ -149,7 +149,7 @@ class Helpers extends Keys {
 	}
 
 	public static function checkFeedExists( $form ): bool {
-		return ! empty( IDPayDB::getActiveFeed( $form ) );
+		return ! empty( Helpers::getFeed( $form ) );
 	}
 
 	public static function getGatewayName(): string {
@@ -688,7 +688,7 @@ class Helpers extends Keys {
 		if ( $obj->run == true ) {
 			if ( Helpers::checkExistsAddon( $obj ) ) {
 				$addon = call_user_func( [ $obj->class, 'get_instance' ] );
-				$feeds = $addon->getFeeds( $formId );
+				$feeds = $addon->get_feeds( $formId );
 				foreach ( $feeds as $feed ) {
 					$addon->process_feed( $feed, $entry, $form );
 				}
