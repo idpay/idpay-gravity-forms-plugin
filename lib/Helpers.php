@@ -94,7 +94,7 @@ class Helpers extends Keys {
 		return $setting;
 	}
 
-	public static function Return_URL( $form_id, $entry_id ) {
+	public static function ReturnURL( $form_id, $entry_id ) {
 		$pageURL = GFCommon::is_ssl() ? 'https://' : 'http://';
 		$srName  = Helpers::dataGet( $_SERVER, 'SERVER_NAME' );
 		$srPort  = Helpers::dataGet( $_SERVER, 'SERVER_PORT' );
@@ -120,7 +120,7 @@ class Helpers extends Keys {
 		return apply_filters( Keys::HOOK_2, $applyData, $form_id, $entry_id, __CLASS__ );
 	}
 
-	public static function redirect_confirmation( $url, $ajax ) {
+	public static function redirectConfirmation( $url, $ajax ) {
 		if ( headers_sent() || $ajax ) {
 			$confirmation = "<script type=\"text/javascript\">" . apply_filters( 'gform_cdata_open', '' );
 			$confirmation .= apply_filters( 'gform_cdata_open', '' );
@@ -182,9 +182,8 @@ class Helpers extends Keys {
 		$condition2    = ( ! IDPayOperation::checkApprovedGravityFormVersion() ) || is_wp_error( $entry );
 		$condition3    = ( ! is_numeric( (int) $form_id ) ) || ( ! is_numeric( (int) $entryId ) );
 		$condition4    = empty( $paymentMethod ) || $paymentMethod != Keys::AUTHOR;
-		$condition5    = Helpers::dataGet( $entry, 'is_fulfilled' ) == Keys::TRANSACTION_FINAL_STATE;
 
-		return $condition1 || $condition2 || $condition3 || $condition4 || $condition5;
+		return $condition1 || $condition2 || $condition3 || $condition4;
 	}
 
 	public static function getApiKey() {
@@ -517,14 +516,14 @@ class Helpers extends Keys {
 		return apply_filters( Keys::HOOK_12, $applyFilter, $form, $entry );
 	}
 
-	public static function getPriceOrder($transaction) {
+	public static function getPriceOrder( $transaction ) {
 
 		$paymentType = $transaction->paymentType;
 		$form        = $transaction->form;
 		$entry       = $transaction->entry;
 
-		$entryId  = Helpers::dataGet( $entry, 'id' );
-		$formId   = Helpers::dataGet( $form, 'id' );
+		$entryId = Helpers::dataGet( $entry, 'id' );
+		$formId  = Helpers::dataGet( $form, 'id' );
 
 		if ( $paymentType == 'custom' ) {
 			$amount = gform_get_meta( $entryId, "IDPay_part_price_{$formId}" );
@@ -555,8 +554,8 @@ class Helpers extends Keys {
 
 		return (object) [
 			'id'      => Helpers::dataGet( $request, 'id' ) ?? null,
-			'status'  => Helpers::dataGet( $request, 'status' ) ?? null,
-			'trackId' => Helpers::dataGet( $request, 'track_id' ) ?? null,
+			'status'  => (int) Helpers::dataGet( $request, 'status' ) ?? null,
+			'trackId' => (int) Helpers::dataGet( $request, 'track_id' ) ?? null,
 			'formId'  => (int) Helpers::dataGet( $_GET, 'form_id' ) ?? null,
 			'entryId' => (int) Helpers::dataGet( $request, 'order_id' ) ?? null,
 			'all'     => $all,
@@ -564,7 +563,7 @@ class Helpers extends Keys {
 	}
 
 	public static function checkNotApprovedVerifyData( $request ) {
-		$keys = [ 'status', 'id', 'trackId', 'orderId', 'formId', 'entryId' ];
+		$keys = [ 'status', 'id', 'trackId', 'formId', 'entryId' ];
 		foreach ( $keys as $key ) {
 			if ( Helpers::dataGet( $request, $key ) == null ) {
 				return true;
@@ -583,12 +582,12 @@ class Helpers extends Keys {
 	}
 
 
-	public static function getMessageWithCode( $type, $transaction, $transactionIsFinal) {
-		$code       = $transaction->statusCode ?? 0;
+	public static function getMessageWithCode( $type, $transaction, $transactionIsFinal ) {
+		$code = $transaction->statusCode ?? 0;
 
 		if ( $type == Keys::TYPE_REJECTED ) {
-			$code       = $transactionIsFinal == Keys::TRANSACTION_FINAL_STATE ? 0 : $code;
-			$code       = $code == 100 || $code == 10 ? 0 : $code;
+			$code = $transactionIsFinal == Keys::TRANSACTION_FINAL_STATE ? 0 : $code;
+			$code = $code == 100 || $code == 10 ? 0 : $code;
 		}
 
 		$description = Helpers::dataGet( $transaction, 'description' );
@@ -642,10 +641,10 @@ class Helpers extends Keys {
 		return empty( $amount ) || $amount == 0 ? 'Free' : 'Purchase';
 	}
 
-	public static function processAddons( $type, $transaction) {
-		$form        = $transaction->form;
-		$entry       = $transaction->entry;
-		$config       = $transaction->config;
+	public static function processAddons( $type, $transaction ) {
+		$form   = $transaction->form;
+		$entry  = $transaction->entry;
+		$config = $transaction->config;
 
 		$config = Helpers::dataGet( $config, 'meta.addon' );
 
@@ -721,7 +720,6 @@ class Helpers extends Keys {
 	}
 
 
-
 	public static function appendDataToRequest( $request, $appendData ) {
 		$all          = array_merge( Helpers::dataGet( $request, 'all' ), $appendData );
 		$request->all = $all;
@@ -729,22 +727,22 @@ class Helpers extends Keys {
 		return (object) $request;
 	}
 
-	public static function sendSetFinalPriceGravityCore($transaction, $status) {
-		$form    = $transaction->form;
-		$entry   = $transaction->entry;
-		$config  = $transaction->config;
+	public static function sendSetFinalPriceGravityCore( $transaction, $status ) {
+		$form          = $transaction->form;
+		$entry         = $transaction->entry;
+		$config        = $transaction->config;
 		$transactionId = $transaction->id;
-		$hook   = Keys::HOOK_39 . __CLASS__;
-		$amount = $transaction->amount;
+		$hook          = Keys::HOOK_39 . __CLASS__;
+		$amount        = $transaction->amount;
 
 		do_action( Keys::HOOK_38, $config, $entry, $status, $transactionId, '', $amount, '', '' );
 		do_action( $hook, $config, $form, $entry, $status, $transactionId, '', $amount, '', '' );
 	}
 
-	public static function sendSetFullFillTransactionGravityCore($transaction) {
-		$form    = $transaction->form;
-		$entry   = $transaction->entry;
-		$config  = $transaction->config;
+	public static function sendSetFullFillTransactionGravityCore( $transaction ) {
+		$form   = $transaction->form;
+		$entry  = $transaction->entry;
+		$config = $transaction->config;
 
 		$amount  = $transaction->amount;
 		$transId = $transaction->id;

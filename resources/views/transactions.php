@@ -54,8 +54,10 @@ $checkSettingsNotExits = ! ( $checkDataExists ) ? $html['A'] : '';
 				$counter = 1;
 
 				foreach ( $data as $row ) {
-					$created     = Helpers::getJalaliDateTime( Helpers::dataGet( $row, 'date_created', '-' ) );
-					$paymentDate = Helpers::getJalaliDateTime( Helpers::dataGet( $row, 'payment_date', '-' ) );
+                    $dateCreated = Helpers::dataGet( $row, 'date_created', '-' ) ?? '-';
+                    $datePayment = Helpers::dataGet( $row, 'payment_date', '-' ) ?? '-';
+					$created     = Helpers::getJalaliDateTime($dateCreated);
+					$paymentDate = Helpers::getJalaliDateTime( $datePayment );
 					$status      = Helpers::dataGet( $row, 'payment_status', '-' );
 					$colorStatus = Helpers::makeStatusColor( $status );
 

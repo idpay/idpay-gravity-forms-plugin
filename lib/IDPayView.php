@@ -51,9 +51,9 @@ class IDPayView extends Helpers {
 		$config              = IDPayDB::getActiveFeed( $form );
 
 		if ( $hasPriceFieldInForm && ! empty( $config ) ) {
-			$html = '<div class="idpay-logo C9" id="idpay-pay-id-%1$s">';
-			$html .= '<img class="C10" src="%2$s">%3$s</div>';
-			$buttonHtml .= sprintf($html,$formId,$ImageUrl,$dictionary->labelPayment);
+			$html       = '<div class="idpay-logo C9" id="idpay-pay-id-%1$s">';
+			$html       .= '<img class="C10" src="%2$s">%3$s</div>';
+			$buttonHtml .= sprintf( $html, $formId, $ImageUrl, $dictionary->labelPayment );
 		}
 
 		return $buttonHtml;

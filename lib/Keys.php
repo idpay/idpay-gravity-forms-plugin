@@ -12,7 +12,7 @@ class Keys {
 	public const TRANSACTION_IN_PROGRESS_STATE = 0;
 
 	public const PLUGIN_FOLDER = "idpay-gravity-forms-plugin";
-	public const PLUGIN_INSTALL_URL = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&".
+	public const PLUGIN_INSTALL_URL = "plugin-install.php?tab=plugin-information&plugin=persian-gravity-forms&" .
 	                                  "TB_iframe=true&width=772&height=884";
 
 	// PAYMENT KEYS
@@ -74,13 +74,13 @@ class Keys {
 	public const STATE_NO_CONFIGURED = 'NOT-CONFIGURED';
 
 	// Section Css
-	public const CSS_NOTE_STYLE =  "font-weight: bold;font-size: 16px;font-family: monospace;";
+	public const CSS_NOTE_STYLE = "font-weight: bold;font-size: 16px;font-family: monospace;";
 
 	public const CSS_MESSAGE_STYLE = 'font-weight: bold;direction: rtl;text-align:center;font-size: 20px;' .
-								      'font-family: monospace;padding-top: 10px;padding-bottom: 10px;';
+	                                 'font-family: monospace;padding-top: 10px;padding-bottom: 10px;';
 
-	public const CSS_CONFIRMATION_STYLE =  'direction:rtl;padding: 20px;background-color:%s;color: white;' .
-											'opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;';
+	public const CSS_CONFIRMATION_STYLE = 'direction:rtl;padding: 20px;background-color:%s;color: white;' .
+	                                      'opacity: 0.83;transition: opacity 0.6s;margin-bottom: 15px;';
 
 	// Section Hooks
 	public const HOOK_1 = Keys::AUTHOR . '_gateway_return_url';

@@ -5,11 +5,11 @@ class IDPayVerify extends Helpers {
 	public static function doVerify() {
 
 		$request = Helpers::getRequestData();
-		$entryId = Helpers::dataGet($request,'entryId');
-		$formId  =  Helpers::dataGet($request,'formId');
-		$status  =  Helpers::dataGet($request,'status');
-		$transId =  Helpers::dataGet($request,'id');
-		$trackId =  Helpers::dataGet($request,'trackId');
+		$entryId = Helpers::dataGet( $request, 'entryId' );
+		$formId  = Helpers::dataGet( $request, 'formId' );
+		$status  = Helpers::dataGet( $request, 'status' );
+		$transId = Helpers::dataGet( $request, 'id' );
+		$trackId = Helpers::dataGet( $request, 'trackId' );
 
 		$transaction = (object) [
 			'id'         => $transId,
@@ -37,35 +37,44 @@ class IDPayVerify extends Helpers {
 		$transaction->amount = Helpers::getPriceOrder( $transaction );
 
 		if ( Helpers::isNotApprovedGettingTransaction( $entryId, $formId ) ) {
-			IDPayVerify::completeVerify(Keys::TYPE_REJECTED, $transaction, $request);
+			IDPayVerify::completeVerify( Keys::TYPE_REJECTED, $transaction, $request );
 
 			return Keys::VERIFY_COMPLETED;
 		}
 
 		if ( Helpers::checkNotApprovedVerifyData( $request ) ) {
-			IDPayVerify::completeVerify(Keys::TYPE_REJECTED, $transaction, $request);
-			IDPayVerify::processAddons( Keys::NO_PAYMENT, $transaction);
+			IDPayVerify::completeVerify( Keys::TYPE_REJECTED, $transaction, $request );
+			IDPayVerify::processAddons( Keys::NO_PAYMENT, $transaction );
 
 			return Keys::VERIFY_COMPLETED;
 		}
 
-		$transaction = IDPayVerify::prepare($transaction, $request);
+		if ( Helpers::dataGet( $transaction->entry, 'is_fulfilled' ) == Keys::TRANSACTION_FINAL_STATE ) {
+			$condition = Helpers::dataGet( $transaction->entry, 'payment_status' ) == 'Paid';
+			$status    = $condition ? Keys::TYPE_PURCHASE : Keys::TYPE_REJECTED;
+			IDPayVerify::completeVerify( $status, $transaction, $request );
 
-		if ( $transaction->status ==  Keys::NO_PAYMENT ) {
-			IDPayVerify::completeVerify( Keys::TYPE_REJECTED, $transaction, $request);
-			IDPayVerify::processAddons( Keys::NO_PAYMENT, $transaction);
+			return Keys::VERIFY_COMPLETED;
+		}
+
+		$transaction = IDPayVerify::prepareTransaction( $transaction, $request );
+
+		if ( $transaction->status == Keys::NO_PAYMENT ) {
+			IDPayVerify::completeVerify( Keys::TYPE_REJECTED, $transaction, $request );
+			IDPayVerify::processAddons( Keys::NO_PAYMENT, $transaction );
+
 			return Keys::VERIFY_COMPLETED;
 		}
 
 		$transactionData = (array) Helpers::dataGet( $transaction, 'response' );
 		$request         = IDPayVerify::appendDataToRequest( $request, $transactionData );
 		$condition       = $transaction->statusCode == Keys::VERIFY_SUCCESS;
-		$type = IDPayVerify::checkTypeVerify() == 'Free' ? Keys::TYPE_FREE : Keys::TYPE_PURCHASE;
+		$type            = IDPayVerify::checkTypeVerify() == 'Free' ? Keys::TYPE_FREE : Keys::TYPE_PURCHASE;
 		$type            = $condition ? $type : Keys::TYPE_REJECTED;
-		$paymentStatus   = $condition ? Keys::NO_PAYMENT : Keys::SUCCESS_PAYMENT;
+		$paymentStatus   = $condition ? Keys::SUCCESS_PAYMENT : Keys::NO_PAYMENT;
 
-		IDPayVerify::completeVerify( $type, $transaction, $request);
-		IDPayVerify::processAddons( $paymentStatus,$transaction);
+		IDPayVerify::completeVerify( $type, $transaction, $request );
+		IDPayVerify::processAddons( $paymentStatus, $transaction );
 
 		return Keys::VERIFY_COMPLETED;
 	}
@@ -81,17 +90,18 @@ class IDPayVerify extends Helpers {
 		return $request->id ?? null;
 	}
 
-	public static function prepare($transaction, $request) {
-		$form        = $transaction->form;
-		$entry       = $transaction->entry;
+	public static function prepareTransaction( $transaction, $request ) {
+		$form  = $transaction->form;
+		$entry = $transaction->entry;
 
-		$transaction->id =  IDPayVerify::getFinalTransactionId($request, $entry, $form);
+		$transaction->id = IDPayVerify::getFinalTransactionId( $request, $entry, $form );
 
 		if ( IDPayVerify::checkTypeVerify() == 'Free' ) {
-			$transaction->status =  Keys::SUCCESS_PAYMENT;
-			$transaction->statusCode =  Keys::VERIFY_SUCCESS;
-			$transaction->type =  Keys::TYPE_FREE;
-			$transaction->response =  [];
+			$transaction->status     = Keys::SUCCESS_PAYMENT;
+			$transaction->statusCode = Keys::VERIFY_SUCCESS;
+			$transaction->type       = Keys::TYPE_FREE;
+			$transaction->response   = [];
+
 			return $transaction;
 		}
 
@@ -100,66 +110,70 @@ class IDPayVerify extends Helpers {
 		$condition2 = Helpers::isNotDoubleSpending( $entryId, $transaction->id ) != true;
 
 		if ( $condition1 || $condition2 ) {
-			$transaction->status =  Keys::NO_PAYMENT;
-			$transaction->type =  Keys::TYPE_PURCHASE;
-			$transaction->response =  [];
+			$transaction->status   = Keys::NO_PAYMENT;
+			$transaction->type     = Keys::TYPE_PURCHASE;
+			$transaction->response = [];
+
 			return $transaction;
 		}
 
 		$data = [
-			'id' => $transaction->id,
+			'id'       => $transaction->id,
 			'order_id' => $transaction->entryId
 		];
 
-		$httpClient = (object) [];
-		$httpClient->request       = IDPayVerify::httpRequest( 'https://api.idpay.ir/v1.1/payment/verify',$data);
-		$httpClient->statusCode    = (int) wp_remote_retrieve_response_code( $httpClient->request );
-		$httpClient->response      = json_decode( wp_remote_retrieve_body( $httpClient->request ) ) ?? null;
-		$errorResponder = IDPayVerify::checkErrorResponseVerify($httpClient);
+		$httpClient             = (object) [];
+		$httpClient->request    = IDPayVerify::httpRequest( 'https://api.idpay.ir/v1.1/payment/verify', $data );
+		$httpClient->statusCode = (int) wp_remote_retrieve_response_code( $httpClient->request );
+		$httpClient->response   = json_decode( wp_remote_retrieve_body( $httpClient->request ) ) ?? null;
+		$errorResponder         = IDPayVerify::checkErrorResponseVerify( $httpClient );
 
 		if ( ! $errorResponder == false ) {
-			$transaction->status =  Keys::NO_PAYMENT;
+			$transaction->status      = Keys::NO_PAYMENT;
 			$transaction->statusCode  = $httpClient->statusCode;
-			$transaction->type =  Keys::TYPE_PURCHASE;
+			$transaction->type        = Keys::TYPE_PURCHASE;
 			$transaction->description = Helpers::dataGet( $errorResponder, 'message' );
-			$transaction->response =  [];
+			$transaction->response    = [];
+
 			return $transaction;
 		}
 
-		$statusCode = (int) Helpers::dataGet($httpClient->response,'status');
-		$trackId = Helpers::dataGet($httpClient->response,'track_id');
-		$amount = Helpers::dataGet($httpClient->response,'amount');
+		$statusCode = (int) Helpers::dataGet( $httpClient->response, 'status' );
+		$trackId    = Helpers::dataGet( $httpClient->response, 'track_id' );
+		$amount     = Helpers::dataGet( $httpClient->response, 'amount' );
 
 		$condition1 = $statusCode != Keys::VERIFY_SUCCESS;
-		$condition2 = $transaction->amount != $amount  ;
+		$condition2 = $transaction->amount != $amount;
 		$condition3 = empty( $statusCode ) || empty( $amount ) || empty( $trackId );
 
-		if ( $condition1 || $condition2 || $condition3) {
-			$transaction->status =  Keys::NO_PAYMENT;
-			$transaction->statusCode =  $statusCode ?? 0;
-			$transaction->type =  Keys::TYPE_PURCHASE;
-			$transaction->response = $httpClient->response;
+		if ( $condition1 || $condition2 || $condition3 ) {
+			$transaction->status     = Keys::NO_PAYMENT;
+			$transaction->statusCode = $statusCode ?? 0;
+			$transaction->type       = Keys::TYPE_PURCHASE;
+			$transaction->response   = $httpClient->response;
+
 			return $transaction;
 		}
 
-		$transaction->status =  Keys::SUCCESS_PAYMENT;
-		$transaction->statusCode =  $statusCode ?? 0;
-		$transaction->type =  Keys::TYPE_PURCHASE;
-		$transaction->response = $httpClient->response;
+		$transaction->status     = Keys::SUCCESS_PAYMENT;
+		$transaction->statusCode = $statusCode ?? 0;
+		$transaction->type       = Keys::TYPE_PURCHASE;
+		$transaction->response   = $httpClient->response;
+
 		return $transaction;
 	}
 
 	public static function completeVerify( $type, $transaction, $request ) {
 		$transactionId = $transaction->id;
-		$form    = $transaction->form;
-		$entry   = $transaction->entry;
-		$config  = $transaction->config;
+		$form          = $transaction->form;
+		$entry         = $transaction->entry;
+		$config        = $transaction->config;
 
-		$transactionIsFinal = Helpers::dataGet( $entry, 'is_fulfilled' );
-		$dict          = Helpers::loadDictionary();
-		$message       = Helpers::getMessageWithCode( $type, $transaction, $transactionIsFinal);
-		$messageCode   = $message->code;
-		$messageDesc   = $message->description;
+		$transactionIsFinal = Helpers::dataGet( $entry, 'is_fulfilled' ) ?? 0;
+		$dict               = Helpers::loadDictionary();
+		$message            = Helpers::getMessageWithCode( $type, $transaction, $transactionIsFinal );
+		$messageCode        = $message->code;
+		$messageDesc        = $message->description;
 
 
 		$entryId       = Helpers::dataGet( $entry, 'id' );
@@ -167,7 +181,7 @@ class IDPayVerify extends Helpers {
 		$status        = $type != Keys::TYPE_REJECTED ? 'Paid' : 'Failed';
 		$paymentMethod = $type == Keys::TYPE_FREE ? Keys::NONE_GATEWAY : Keys::AUTHOR;
 		$fullFilled    = Keys::TRANSACTION_FINAL_STATE;
-		$amount        = Helpers::dataGet($transaction,'amount',0);
+		$amount        = Helpers::dataGet( $transaction, 'amount', 0 );
 		$date          = gmdate( "Y-m-d H:i:s" );
 
 		if ( Helpers::dataGet( $entry, 'is_fulfilled' ) == self::TRANSACTION_IN_PROGRESS_STATE ) {
@@ -195,13 +209,13 @@ class IDPayVerify extends Helpers {
 
 		$notesCollectionUser = [
 			Keys::TYPE_FREE     => $dict->labelAcceptedFree,
-			Keys::TYPE_PURCHASE => sprintf( $dict->labelAcceptPurchase, $transId, $trackId ),
+			Keys::TYPE_PURCHASE => sprintf( $dict->labelAcceptPurchase, $transId, $entryId, $trackId ),
 			Keys::TYPE_REJECTED => sprintf( $dict->labelRejectNote, $messageDesc, $messageCode ),
 		];
 
 		$notesCollectionAdmin = [
 			Keys::TYPE_FREE     => $dict->labelAcceptedFree,
-			Keys::TYPE_PURCHASE => sprintf( $dict->labelAcceptPurchase, $transId, $trackId ),
+			Keys::TYPE_PURCHASE => sprintf( $dict->labelAcceptPurchase, $transId, $entryId, $trackId ),
 			Keys::TYPE_REJECTED => sprintf( $dict->labelRejectNote, $messageDesc, $messageCode ),
 		];
 
@@ -212,7 +226,7 @@ class IDPayVerify extends Helpers {
 
 		$entry = GFPersian_Payments::get_entry( $entryId );
 		RGFormsModel::add_note( $entryId, $user->id, $user->username, $noteAdmin );
-		IDPayVerify::sendSetFinalPriceGravityCore($transaction, $status);
+		IDPayVerify::sendSetFinalPriceGravityCore( $transaction, $status );
 		Helpers::processConfirmations( $form, $entry, $noteUser, $status, $config );
 		GFPersian_Payments::notification( $form, $entry );
 		GFPersian_Payments::confirmation( $form, $entry, $noteUser );
@@ -221,9 +235,9 @@ class IDPayVerify extends Helpers {
 	}
 
 	public static function checkErrorResponseVerify( $httpClient ) {
-		$request = $httpClient->request;
+		$request    = $httpClient->request;
 		$httpStatus = $httpClient->statusCode;
-		$response = $httpClient->response;
+		$response   = $httpClient->response;
 
 		$dict = Helpers::loadDictionary();
 		if ( is_wp_error( $request ) ) {

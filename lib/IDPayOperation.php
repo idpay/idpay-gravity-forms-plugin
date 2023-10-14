@@ -135,7 +135,8 @@ class IDPayOperation extends Helpers {
 	public static function getStateIfPluginHasChanged() {
 
 		$setting      = Helpers::getGlobalKey( Keys::KEY_IDPAY );
-		$isConfigured = Helpers::dataGet( $setting, 'enable', false ) == false;
+		$enable       = Helpers::dataGet( $setting, 'enable', false ) ?? false;
+		$isConfigured = $enable == false;
 
 		if ( IDPayOperation::checkNeedToUpgradeVersion( $setting ) ) {
 			return Keys::STATE_UPGRADE;

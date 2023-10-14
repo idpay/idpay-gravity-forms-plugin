@@ -3,8 +3,8 @@
 class IDPayPayment extends Helpers {
 
 	public static function doPayment( $confirmation, $form, $entry, $ajax ) {
-		$entryId = Helpers::dataGet($entry,'id');
-		$formId = Helpers::dataGet($form,'id');
+		$entryId = Helpers::dataGet( $entry, 'id' );
+		$formId  = Helpers::dataGet( $form, 'id' );
 
 		if ( ! IDPayPayment::checkOneConfirmationExists( $confirmation, $form, $entry, $ajax ) ) {
 			return $confirmation;
@@ -33,13 +33,13 @@ class IDPayPayment extends Helpers {
 			$entry["transaction_type"] = null;
 			GFAPI::update_entry( $entry );
 			$entry      = GFPersian_Payments::get_entry( $entryId );
-			$ReturnPath = IDPayPayment::Return_URL( $formId, $entryId );
+			$ReturnPath = IDPayPayment::ReturnURL( $formId, $entryId );
 
 			if ( IDPayPayment::isNotApprovedPrice( $amount ) ) {
 				return IDPayPayment::reject( $entry, $form );
 			}
 
-			$paymentDto = [
+			$dto = [
 				'order_id' => $entryId,
 				'amount'   => $amount,
 				'callback' => $ReturnPath,
@@ -49,7 +49,7 @@ class IDPayPayment extends Helpers {
 				'phone'    => Helpers::dataGet( $data, 'mobile' ),
 			];
 
-			$response       = IDPayPayment::httpRequest( 'https://api.idpay.ir/v1.1/payment', $paymentDto );
+			$response       = IDPayPayment::httpRequest( 'https://api.idpay.ir/v1.1/payment', $dto );
 			$http_status    = wp_remote_retrieve_response_code( $response );
 			$result         = json_decode( wp_remote_retrieve_body( $response ) ) ?? null;
 			$errorResponder = IDPayPayment::checkErrorResponsePayment( $response, $http_status, $result );
@@ -62,28 +62,29 @@ class IDPayPayment extends Helpers {
 
 			gform_update_meta( $entryId, "IdpayTransactionId:$entryId", $result->id );
 
-			return IDPayPayment::redirect_confirmation( $result->link, $ajax );
+			return IDPayPayment::redirectConfirmation( $result->link, $ajax );
 		}
 
 		return $confirmation;
 	}
 
 	public static function checkout( $form, $entry ) {
-		$formId       = Helpers::dataGet($form,'id');
-		$amount       = IDPayPayment::getOrderTotal( $form, $entry );
-		IDPayPayment::sendSetPriceGravityCore($entry,$form,$amount);
+		$formId = Helpers::dataGet( $form, 'id' );
+		$amount = IDPayPayment::getOrderTotal( $form, $entry );
+		IDPayPayment::sendSetPriceGravityCore( $entry, $form, $amount );
+
 		return $amount;
 	}
 
 	public static function handleAutoConfirmation( $confirmation, $form, $entry, $ajax ) {
-		$formId  = Helpers::dataGet($form,'id');
-		$entryId = Helpers::dataGet($entry,'id');
+		$formId  = Helpers::dataGet( $form, 'id' );
+		$entryId = Helpers::dataGet( $entry, 'id' );
 
 		if ( ! IDPayPayment::checkSubmittedForIDPay( $formId ) || ! IDPayPayment::checkFeedExists( $form ) ) {
 			return $confirmation;
 		}
 		$feed        = IDPayPayment::getFeed( $form );
-		$feedId      = Helpers::dataGet($feed,'id');
+		$feedId      = Helpers::dataGet( $feed, 'id' );
 		$gatewayName = IDPayPayment::getGatewayName();
 		$amount      = IDPayPayment::checkout( $form, $entry );
 
@@ -95,7 +96,7 @@ class IDPayPayment extends Helpers {
 	}
 
 	public static function process( $amount, $feed, $entry, $form, $ajax ) {
-		$formId = Helpers::dataGet($form,'id');
+		$formId = Helpers::dataGet( $form, 'id' );
 
 		if ( IDPayPayment::checkTypePayment( $amount ) == 'Free' ) {
 			$confirmation = IDPayPayment::processFree( $entry, $formId, $ajax );
@@ -123,23 +124,23 @@ class IDPayPayment extends Helpers {
 	}
 
 	public static function handleCustomConfirmation( $confirmation, $form, $entry, $ajax ) {
-		$formId = Helpers::dataGet($form,'id');
-		$feed   = IDPayPayment::getFeed( $form );
+		$formId  = Helpers::dataGet( $form, 'id' );
+		$feed    = IDPayPayment::getFeed( $form );
 		$entryId = rgar( $entry, 'id' );
 
-		$amount = gform_get_meta( $entryId, "IDPay_part_price_{$formId}");
-		$amount = IDPayPayment::sendCustomSetPriceGravityCore($entry,$form,$amount);
+		$amount = gform_get_meta( $entryId, "IDPay_part_price_{$formId}" );
+		$amount = IDPayPayment::sendCustomSetPriceGravityCore( $entry, $form, $amount );
 
 
 		$Description = gform_get_meta( $entryId, "IDPay_part_desc_{$formId}" );
 
 		$applyFilter = apply_filters( Keys::HOOK_18, $Description, $form, $entry );
-		$Description = apply_filters( Keys::HOOK_19,$applyFilter, $form, $entry );
+		$Description = apply_filters( Keys::HOOK_19, $applyFilter, $form, $entry );
 
 
-		$Name   = gform_get_meta( $entryId, "IDPay_part_name_{$formId}");
-		$Mail   = gform_get_meta( $entryId, "IDPay_part_email_{$formId}");
-		$Mobile = gform_get_meta( $entryId, "IDPay_part_mobile_{$formId}");
+		$Name   = gform_get_meta( $entryId, "IDPay_part_name_{$formId}" );
+		$Mail   = gform_get_meta( $entryId, "IDPay_part_email_{$formId}" );
+		$Mobile = gform_get_meta( $entryId, "IDPay_part_mobile_{$formId}" );
 
 		$entryId = GFAPI::add_entry( $entry );
 		$entry   = GFPersian_Payments::get_entry( $entryId );
@@ -164,23 +165,23 @@ class IDPayPayment extends Helpers {
 		GFAPI::update_entry( $entry );
 
 		$queryArgs1  = [ 'no' => 'true' ];
-		$queryArgs2  = IDPayPayment::Return_URL( $formId, $entry['id'] );
+		$queryArgs2  = IDPayPayment::ReturnURL( $formId, $entry['id'] );
 		$queryParams = add_query_arg( $queryArgs1, $queryArgs2 );
 
-		return IDPayPayment::redirect_confirmation( $queryParams, $ajax );
+		return IDPayPayment::redirectConfirmation( $queryParams, $ajax );
 	}
 
 	public static function processPurchase( $feed, $entry, $form ) {
 
-		$mobile      = Helpers::dataGet($feed,'meta.payment_mobile');
-		$name        = Helpers::dataGet($feed,'meta.payment_name');
-		$email       = Helpers::dataGet($feed,'meta.payment_email');
-		$desc = Helpers::makeCustomDescription($entry,$form,$feed);
+		$mobile = Helpers::dataGet( $feed, 'meta.payment_mobile' );
+		$name   = Helpers::dataGet( $feed, 'meta.payment_name' );
+		$email  = Helpers::dataGet( $feed, 'meta.payment_email' );
+		$desc   = Helpers::makeCustomDescription( $entry, $form, $feed );
 
-		$mobile      = ! empty( $mobile ) ? Helpers::convertNameToTxtBoxKey( $mobile ) : '';
-		$name        = ! empty( $name ) ? Helpers::convertNameToTxtBoxKey($name )  : '';
-		$email        = ! empty( $email ) ? Helpers::convertNameToTxtBoxKey( $email )  : '';
-		$Mobile      = GFPersian_Payments::fix_mobile($mobile);
+		$mobile = ! empty( $mobile ) ? Helpers::convertNameToTxtBoxKey( $mobile ) : '';
+		$name   = ! empty( $name ) ? Helpers::convertNameToTxtBoxKey( $name ) : '';
+		$email  = ! empty( $email ) ? Helpers::convertNameToTxtBoxKey( $email ) : '';
+		$Mobile = GFPersian_Payments::fix_mobile( $mobile );
 
 		return [
 			'mobile'      => $Mobile,
@@ -191,14 +192,14 @@ class IDPayPayment extends Helpers {
 	}
 
 	public static function reject( $entry, $form, $Message = '' ) {
-		$dict = Helpers::loadDictionary();
-		$entryId      = Helpers::dataGet($entry,'id');
-		$formId       = Helpers::dataGet($form,'id');
-		$Message      = ! empty( (array) $Message ) ? $Message : $dict->labelErrorPayment;
-		$confirmation = $dict->labelErrorConnectGateway . $Message;
+		$dict                    = Helpers::loadDictionary();
+		$entryId                 = Helpers::dataGet( $entry, 'id' );
+		$formId                  = Helpers::dataGet( $form, 'id' );
+		$Message                 = ! empty( (array) $Message ) ? $Message : $dict->labelErrorPayment;
+		$confirmation            = $dict->labelErrorConnectGateway . $Message;
 		$entry                   = GFPersian_Payments::get_entry( $entryId );
 		$entry['payment_status'] = 'Failed';
-		$entry["is_fulfilled"] = Keys::TRANSACTION_FINAL_STATE;
+		$entry["is_fulfilled"]   = Keys::TRANSACTION_FINAL_STATE;
 		GFAPI::update_entry( $entry );
 
 		global $current_user;
@@ -210,7 +211,7 @@ class IDPayPayment extends Helpers {
 		}
 
 		$note = sprintf( $dict->labelErrorConnectIPG, $Message );
-		RGFormsModel::add_note($entryId,$user_id,$user_name,$note);
+		RGFormsModel::add_note( $entryId, $user_id, $user_name, $note );
 		GFPersian_Payments::notification( $form, $entry );
 
 		$anchor   = gf_apply_filters( 'gform_confirmation_anchor', $formId, 0 ) ?
@@ -243,59 +244,59 @@ class IDPayPayment extends Helpers {
 			];
 		} elseif ( $http_status != 201 || empty( $result ) || empty( $result->id ) || empty( $result->link ) ) {
 			return [
-				'message' => sprintf($dict->labelErrorCreatingTransaction,$result->error_message,$result->error_code)
+				'message' => sprintf( $dict->labelErrorCreatingTransaction, $result->error_message, $result->error_code )
 			];
 		}
 
 		return false;
 	}
 
-	public static function sendCustomSetPriceGravityCore($entry,$form,$amount){
+	public static function sendCustomSetPriceGravityCore( $entry, $form, $amount ) {
 
-		$formId = Helpers::dataGet($form,'id');
-		$hook0 = Keys::HOOK_21;
-		$hook1 = Keys::HOOK_22 . $formId;
-		$hook2 = Keys::HOOK_23;
-		$hook3 = Keys::HOOK_24 . $formId;
-		$hook4 = Keys::HOOK_25;
-		$hook5 = Keys::HOOK_26 . $formId;
-		$hook6 = Keys::HOOK_27;
-		$hook7 = Keys::HOOK_28 .$formId;
+		$formId = Helpers::dataGet( $form, 'id' );
+		$hook0  = Keys::HOOK_21;
+		$hook1  = Keys::HOOK_22 . $formId;
+		$hook2  = Keys::HOOK_23;
+		$hook3  = Keys::HOOK_24 . $formId;
+		$hook4  = Keys::HOOK_25;
+		$hook5  = Keys::HOOK_26 . $formId;
+		$hook6  = Keys::HOOK_27;
+		$hook7  = Keys::HOOK_28 . $formId;
 
 		$applyFilter = apply_filters( $hook0, $amount, $form, $entry );
-		$amount = apply_filters( $hook1, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook1, $applyFilter, $form, $entry );
 		$applyFilter = apply_filters( $hook2, $amount, $form, $entry );
-		$amount = apply_filters( $hook3, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook3, $applyFilter, $form, $entry );
 		$applyFilter = apply_filters( $hook4, $amount, $form, $entry );
-		$amount = apply_filters( $hook5, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook5, $applyFilter, $form, $entry );
 		$applyFilter = apply_filters( $hook6, $amount, $form, $entry );
-		$amount = apply_filters( $hook7, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook7, $applyFilter, $form, $entry );
 
-		return $amount ;
+		return $amount;
 
 	}
 
-	public static function sendSetPriceGravityCore($entry,$form,$amount){
+	public static function sendSetPriceGravityCore( $entry, $form, $amount ) {
 
-		$formId = Helpers::dataGet($form,'id');
-		$hook0 = Keys::HOOK_29;
-		$hook1 = Keys::HOOK_30 . $formId;
-		$hook2 = Keys::HOOK_31 ;
-		$hook3 = Keys::HOOK_32 . $formId;
-		$hook4 = Keys::HOOK_33;
-		$hook5 = Keys::HOOK_34 . $formId;
-		$hook6 = Keys::HOOK_35;
-		$hook7 = Keys::HOOK_36 . $formId;
+		$formId = Helpers::dataGet( $form, 'id' );
+		$hook0  = Keys::HOOK_29;
+		$hook1  = Keys::HOOK_30 . $formId;
+		$hook2  = Keys::HOOK_31;
+		$hook3  = Keys::HOOK_32 . $formId;
+		$hook4  = Keys::HOOK_33;
+		$hook5  = Keys::HOOK_34 . $formId;
+		$hook6  = Keys::HOOK_35;
+		$hook7  = Keys::HOOK_36 . $formId;
 
 		$applyFilter = apply_filters( $hook0, $amount, $form, $entry );
-		$amount = apply_filters( $hook1, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook1, $applyFilter, $form, $entry );
 		$applyFilter = apply_filters( $hook2, $amount, $form, $entry );
-		$amount = apply_filters( $hook3, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook3, $applyFilter, $form, $entry );
 		$applyFilter = apply_filters( $hook4, $amount, $form, $entry );
-		$amount = apply_filters( $hook5, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook5, $applyFilter, $form, $entry );
 		$applyFilter = apply_filters( $hook6, $amount, $form, $entry );
-		$amount = apply_filters( $hook7, $applyFilter, $form, $entry );
+		$amount      = apply_filters( $hook7, $applyFilter, $form, $entry );
 
-		return $amount ;
+		return $amount;
 	}
 }

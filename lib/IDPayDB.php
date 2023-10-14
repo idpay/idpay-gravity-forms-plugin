@@ -133,9 +133,9 @@ class IDPayDB extends Helpers {
 		if ( $type == Keys::QUERY_ANALYTICS ) {
 			$list = [];
 			foreach ( $dto as $item ) {
-				$status          = Helpers::dataGet($item,"status");
-				$revenue         = Helpers::dataGet($item,'revenue',0);
-				$transactions    = Helpers::dataGet($item,'transactions',0);
+				$status          = Helpers::dataGet( $item, "status" );
+				$revenue         = Helpers::dataGet( $item, 'revenue', 0 ) ?? 0;
+				$transactions    = Helpers::dataGet( $item, 'transactions', 0 ) ?? 0;
 				$list[ $status ] = [ "revenue" => $revenue, "transactions" => $transactions ];
 			}
 
@@ -166,11 +166,12 @@ class IDPayDB extends Helpers {
 	}
 
 	public static function getActiveFeed( $form ) {
-		$formId = Helpers::dataGet($form,'id');
-		$configs = IDPayDB::getFeedByFormId($formId );
+		$formId  = Helpers::dataGet( $form, 'id' );
+		$configs = IDPayDB::getFeedByFormId( $formId );
 
 		$applyFilter = apply_filters( Keys::HOOK_16, $configs, $form );
-		return apply_filters(Keys::HOOK_17,$applyFilter,$form);
+
+		return apply_filters( Keys::HOOK_17, $applyFilter, $form );
 	}
 
 	public static function getTableName() {
@@ -181,10 +182,10 @@ class IDPayDB extends Helpers {
 
 	public static function SaveOrUpdateFeed() {
 		check_ajax_referer( 'gf_IDPay_update_feed_active', 'gf_IDPay_update_feed_active' );
-		$id   = absint( rgpost( 'feed_id' ) );
-		$feed = IDPayDB::getFeed( $id );
-		$formId = Helpers::dataGet($feed,'form_id');
-		$meta = Helpers::dataGet($feed,'meta');
+		$id     = absint( rgpost( 'feed_id' ) );
+		$feed   = IDPayDB::getFeed( $id );
+		$formId = Helpers::dataGet( $feed, 'form_id' );
+		$meta   = Helpers::dataGet( $feed, 'meta' );
 		IDPayDB::updateFeed( $id, $formId, $meta );
 	}
 
@@ -426,12 +427,12 @@ class IDPayDB extends Helpers {
 
 	public static function loadPagination( $methodName, $filters ) {
 		global $wp;
-		$dict = Helpers::loadDictionary();
-		$labelfPage = $dict->labelNextPage;
-		$labelbPage = $dict->labelBackPage;
-		$adminUrl = admin_url( $wp->request ) . 'admin.php';
+		$dict            = Helpers::loadDictionary();
+		$labelfPage      = $dict->labelNextPage;
+		$labelbPage      = $dict->labelBackPage;
+		$adminUrl        = admin_url( $wp->request ) . 'admin.php';
 		$currentUrl      = add_query_arg( $_SERVER['QUERY_STRING'], '', $adminUrl );
-		$number = sanitize_text_field( rgget( 'page_number' ) );
+		$number          = sanitize_text_field( rgget( 'page_number' ) );
 		$pageNumber      = rgget( 'page_number' ) != '' ? $number : 1;
 		$countMethodName = "{$methodName}Count";
 		$count           = IDPayDB::{$countMethodName}( $filters );
