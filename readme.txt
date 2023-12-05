@@ -2,7 +2,7 @@
 
 title : IDPay For Wp Gravity Forms
 Tags: gravityforms, gravity-forms, payment, idpay, gateway, آیدی پی
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 Tested up to: 6.4.1
 Contributors: MimDeveloper.Tv (Mohammad-Malek)
 License: GPLv2 or later
