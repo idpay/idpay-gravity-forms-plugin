@@ -2,7 +2,7 @@
 
 title : IDPay For Wp Gravity Forms
 Tags: gravityforms, gravity-forms, payment, idpay, gateway, آیدی پی
-Stable tag: 3.0.1
+Stable tag: 3.1.1
 Tested up to: 6.4.1
 Contributors: MimDeveloper.Tv (Mohammad-Malek)
 License: GPLv2 or later
@@ -26,7 +26,7 @@ For doing a transaction through IDPay gateway, you must have an API Key. You can
 
 == Changelog ==
 
-== 3.0.0, DEC 04, 2023 ==
+== 3.1.1, DEC 04, 2023 ==
 * New Version Plugin And Many Add Features
 * Fix All Problems
 * Update Structures
