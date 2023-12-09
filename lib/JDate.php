@@ -310,15 +310,3 @@ class JDate {
 		return array( $gy, $gm, $gd );
 	}
 }
-
-function parsidate( $input, $datetime = 'now', $lang = 'per' ) {
-	$bndate = bn_parsidate::getInstance();
-
-	return $bndate->persian_date( $input, $datetime, $lang );
-}
-
-function gregdate( $input, $datetime ) {
-	$bndate = bn_parsidate::getInstance();
-
-	return $bndate->gregorian_date( $input, $datetime );
-}
