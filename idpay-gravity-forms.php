@@ -4,7 +4,7 @@
  * Plugin Name: IDPay For Wp Gravity Forms
  * Author: IDPay
  * Description: IDPay is Secure Payment Gateway For Wp Gravity Forms.
- * Version: 2.0.0
+ * Version: 3.1.1
  * Author URI: https://idpay.ir
  * Author Email: info@idpay.ir
  * Text Domain: idpay-gravity-forms
